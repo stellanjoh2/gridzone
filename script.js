@@ -982,8 +982,8 @@ class TronPong {
         // this.scene.add(ballLight);
         // this.ballLights.push(ballLight);
         
-        // Keep reference to first light for compatibility
-        this.ballLight = ballLight;
+        // // Keep reference to first light for compatibility
+        // this.ballLight = ballLight;
         
         // Animated circulating lights removed
     }
