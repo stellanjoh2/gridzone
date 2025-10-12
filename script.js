@@ -1489,8 +1489,51 @@ class TronPong {
     createPaddles() {
         // Player paddle (LIME GREEN) - at bottom
         // PILL SHAPE - Create using cylinder + 2 hemispheres (compatible with r128!)
-        const paddle1Material = new THREE.MeshBasicMaterial({
-            color: 0x88ff00             // Like goal walls - no PBR, just pure color!
+        // EXPERIMENT: Use exact laser wall shader!
+        const paddle1Material = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0 },
+                baseColor: { value: new THREE.Color(0x88ff00) }, // Bright green!
+                emissiveIntensity: { value: 5.0 },
+                opacity: { value: 1.0 } // Opaque for paddle
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                varying vec3 vPosition;
+                
+                void main() {
+                    vUv = uv;
+                    vPosition = position;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float time;
+                uniform vec3 baseColor;
+                uniform float emissiveIntensity;
+                uniform float opacity;
+                varying vec2 vUv;
+                varying vec3 vPosition;
+                
+                void main() {
+                    // Animated gradient moving downwards quickly
+                    float gradient = fract(vUv.y * 3.0 - time * 2.0); // Fast downward movement
+                    
+                    // Create striped pattern
+                    float stripes = smoothstep(0.3, 0.7, gradient);
+                    
+                    // Pulsing intensity
+                    float pulse = 0.8 + 0.2 * sin(time * 3.0);
+                    
+                    // Combine effects
+                    vec3 color = baseColor * (stripes * 0.5 + 0.5) * pulse;
+                    
+                    gl_FragColor = vec4(color * emissiveIntensity, opacity);
+                }
+            `,
+            transparent: false,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
         });
         
         // Create pill shape: cylinder body + 2 sphere caps
@@ -3527,6 +3570,11 @@ class TronPong {
         // Update shader time uniform for animation
         this.playerGoal.material.uniforms.time.value = this.goalAnimationTime;
         this.aiGoal.material.uniforms.time.value = this.goalAnimationTime;
+        
+        // Update paddle1 shader time (EXPERIMENT: using laser wall shader!)
+        if (this.paddle1 && this.paddle1.userData.material && this.paddle1.userData.material.uniforms && this.paddle1.userData.material.uniforms.time) {
+            this.paddle1.userData.material.uniforms.time.value = this.goalAnimationTime;
+        }
         
         // Fast blink animation when green (goal scored!)
         if (this.goalBlinkTimer > 0 && this.goalBlinkTarget) {
