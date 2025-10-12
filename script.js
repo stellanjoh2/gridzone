@@ -1307,12 +1307,12 @@ class TronPong {
         
         // Create light for this ball (if we don't have one yet)
         if (ballIndex >= this.ballLights.length) {
-            const ballLight = new THREE.PointLight(0x88ff00, 3.75, 45); // Lime green (+25% intensity)
+            const ballLight = new THREE.PointLight(0x88ff00, 2.0, 45); // Weaker for subtle floor illumination
             ballLight.castShadow = true;
             ballLight.shadow.mapSize.width = 512;
             ballLight.shadow.mapSize.height = 512;
             ballLight.shadow.bias = -0.001;
-            ballLight.layers.set(0); // Only affects layer 0 (not paddles on layer 1)
+            ballLight.layers.set(0);
             this.scene.add(ballLight);
             this.ballLights.push(ballLight);
             console.log(`Created light for ball ${ballIndex + 1}`);
