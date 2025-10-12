@@ -1337,7 +1337,7 @@ class TronPong {
         if (owner === 'player') {
             // LIME GREEN for player
             ball.material.color.setHex(0x88ff00);
-            ball.material.emissive.setHex(0x88ff00);
+            // No emissive for MeshBasicMaterial!
             
             // Update trail color
             if (trail) {
@@ -1354,7 +1354,7 @@ class TronPong {
         } else if (owner === 'ai') {
             // Magenta for AI
             ball.material.color.setHex(0xff00ff);
-            ball.material.emissive.setHex(0xff00ff);
+            // No emissive for MeshBasicMaterial!
             
             // Update trail color
             if (trail) {
