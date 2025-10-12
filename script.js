@@ -532,8 +532,8 @@ class TronPong {
         const bloomShader = {
             uniforms: {
                 tDiffuse: { value: null },
-                bloomStrength: { value: 0.6 }, // Subtle strength
-                bloomRadius: { value: 2.5 } // Very tight, close to objects
+                bloomStrength: { value: 2.0 }, // Strong like Three.js examples (was 0.6)
+                bloomRadius: { value: 5.0 } // Wider glow (was 2.5)
             },
             vertexShader: `
                 varying vec2 vUv;
@@ -571,7 +571,7 @@ class TronPong {
                     
                     // Much lower threshold - let EVERYTHING bloom!
                     float brightness = dot(sum.rgb, vec3(0.2126, 0.7152, 0.0722));
-                    float bloomAmount = smoothstep(0.05, 0.3, brightness); // Super low threshold!
+                    float bloomAmount = smoothstep(0.3, 0.8, brightness); // Higher threshold for emissive objects
                     gl_FragColor = sum * bloomStrength * bloomAmount;
                 }
             `
