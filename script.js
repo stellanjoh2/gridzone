@@ -924,66 +924,46 @@ class TronPong {
     }
     
     createLighting() {
-        // TEST: ALL LIGHTS DISABLED
-        // // Ambient light - teal tinted
-        // const ambientLight = new THREE.AmbientLight(0x1a5566, 0.3);
-        // this.scene.add(ambientLight);
+        // Ambient light - MUCH weaker to not wash out emissive colors
+        const ambientLight = new THREE.AmbientLight(0x1a5566, 0.05); // Was 0.3, now 0.05
+        this.scene.add(ambientLight);
         
-        // // Soft LIME GREEN omni light positioned very high and closer to camera
-        // this.overheadLight = new THREE.PointLight(0x88ff00, 4, 120);
-        // this.overheadLight.position.set(0, 60, 20);
-        // this.overheadLight.castShadow = false; // Disabled for performance - use ball light for shadows
-        // this.overheadLight.layers.set(0); // Only affects layer 0 (not paddles on layer 1)
-        // this.scene.add(this.overheadLight);
+        // Soft LIME GREEN omni light - MUCH weaker
+        this.overheadLight = new THREE.PointLight(0x88ff00, 1.0, 120); // Was 4, now 1.0
+        this.overheadLight.position.set(0, 60, 20);
+        this.overheadLight.castShadow = false;
+        this.overheadLight.layers.set(0);
+        this.scene.add(this.overheadLight);
         
-        // // Magenta light behind enemy at same height (halfway between far and close)
-        // this.overheadLight2 = new THREE.PointLight(0xff00ff, 4, 120);
-        // this.overheadLight2.position.set(0, 60, -77); // Halfway between -120 and -35
-        // this.overheadLight2.castShadow = false; // Disabled for performance
-        // this.overheadLight2.layers.set(0); // Only affects layer 0 (not paddles on layer 1)
-        // this.scene.add(this.overheadLight2);
+        // Magenta light behind enemy - MUCH weaker
+        this.overheadLight2 = new THREE.PointLight(0xff00ff, 1.0, 120); // Was 4, now 1.0
+        this.overheadLight2.position.set(0, 60, -77);
+        this.overheadLight2.castShadow = false;
+        this.overheadLight2.layers.set(0);
+        this.scene.add(this.overheadLight2);
         
-        // // LIME GREEN light above player paddle - subtle neutral intensity
-        // // Positioned slightly in front so shadow falls BEHIND paddle
-        // this.playerLight = new THREE.PointLight(0x88ff00, 1.5, 200); // Increased intensity for better shadows
-        // this.playerLight.position.set(0, 3, 13); // z=13 (2 units in front) for shadow behind paddle
-        // this.playerLight.castShadow = true;
-        // this.playerLight.shadow.mapSize.width = 1024; // Higher resolution shadows
-        // this.playerLight.shadow.mapSize.height = 1024;
-        // this.playerLight.shadow.camera.near = 0.1;
-        // this.playerLight.shadow.camera.far = 25;
-        // this.playerLight.shadow.bias = -0.005;
-        // this.playerLight.layers.set(0); // Only affects layer 0 (not paddles on layer 1)
-        // this.scene.add(this.playerLight);
+        // DISABLED: Paddle lights - paddles look better with just emissive!
+        // Player paddle doesn't need external light
+        this.playerLight = null;
         
-        // // Magenta light above AI paddle - subtle neutral intensity
-        // // Positioned slightly in front so shadow falls BEHIND paddle
-        // this.aiLight = new THREE.PointLight(0xff00ff, 1.5, 200); // Increased intensity for better shadows
-        // this.aiLight.position.set(0, 3, -13); // z=-13 (2 units in front) for shadow behind paddle
-        // this.aiLight.castShadow = true;
-        // this.aiLight.shadow.mapSize.width = 1024; // Higher resolution shadows
-        // this.aiLight.shadow.mapSize.height = 1024;
-        // this.aiLight.shadow.camera.near = 0.1;
-        // this.aiLight.shadow.camera.far = 25;
-        // this.aiLight.shadow.bias = -0.005;
-        // this.aiLight.layers.set(0); // Only affects layer 0 (not paddles on layer 1)
-        // this.scene.add(this.aiLight);
+        // AI paddle doesn't need external light
+        this.aiLight = null;
         
         // Ball lights with shadows - one per ball (max 2)
         this.ballLights = [];
         
-        // // Create first ball light - LIME GREEN (+25% intensity)
-        // const ballLight = new THREE.PointLight(0x88ff00, 3.75, 45);
-        // ballLight.castShadow = true;
-        // ballLight.shadow.mapSize.width = 512;
-        // ballLight.shadow.mapSize.height = 512;
-        // ballLight.shadow.bias = -0.001;
-        // ballLight.layers.set(0); // Only affects layer 0 (not paddles on layer 1)
-        // this.scene.add(ballLight);
-        // this.ballLights.push(ballLight);
+        // Create first ball light - weaker for subtle floor illumination
+        const ballLight = new THREE.PointLight(0x88ff00, 2.0, 45); // Was 3.75, now 2.0
+        ballLight.castShadow = true;
+        ballLight.shadow.mapSize.width = 512;
+        ballLight.shadow.mapSize.height = 512;
+        ballLight.shadow.bias = -0.001;
+        ballLight.layers.set(0);
+        this.scene.add(ballLight);
+        this.ballLights.push(ballLight);
         
-        // // Keep reference to first light for compatibility
-        // this.ballLight = ballLight;
+        // Keep reference to first light for compatibility
+        this.ballLight = ballLight;
         
         // Animated circulating lights removed
     }
