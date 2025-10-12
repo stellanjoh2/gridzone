@@ -2208,11 +2208,10 @@ class TronPong {
     
     
     triggerPaddleBlink(paddle, paddleName) {
-        // Flash paddle to white (paddle is now a Group, access material via userData)
+        // Flash paddle BRIGHTER in its own color (not white!)
         const material = paddle.userData.material;
-        material.color.setHex(0xffffff);
-        material.emissive.setHex(0xffffff);
-        material.emissiveIntensity = 2.0;
+        // Keep original colors, just boost emissive intensity!
+        material.emissiveIntensity = 6.0; // SUPER BRIGHT (was 2.0)
         
         // Boost the paddle's point light intensity when hit
         if (paddleName === 'paddle1' && this.playerLight) {
@@ -2226,32 +2225,18 @@ class TronPong {
     }
     
     updatePaddleBlinks(deltaTime) {
-        // Paddle 1 blink - fade out gradually
+        // Paddle 1 blink - fade emissive intensity back to normal
         if (this.paddleBlinkTimers.paddle1 > 0) {
             this.paddleBlinkTimers.paddle1 -= deltaTime;
             
-            // Calculate fade progress (0 = fully faded, 1 = full white) - 1 second duration
+            // Calculate fade progress (0 = fully faded, 1 = bright) - 1 second duration
             const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle1 / 1.0);
             
-            // Interpolate between white and original color
-            const originalColor = this.paddle1.userData.originalColor;
-            const originalEmissive = this.paddle1.userData.originalEmissive;
-            const originalIntensity = this.paddle1.userData.originalEmissiveIntensity || 0.0;
+            const originalIntensity = this.paddle1.userData.originalEmissiveIntensity || 2.0;
             
-            // Lerp colors
-            const r = Math.floor(255 * fadeProgress + ((originalColor >> 16) & 255) * (1 - fadeProgress));
-            const g = Math.floor(255 * fadeProgress + ((originalColor >> 8) & 255) * (1 - fadeProgress));
-            const b = Math.floor(255 * fadeProgress + (originalColor & 255) * (1 - fadeProgress));
-            
-            const er = Math.floor(255 * fadeProgress + ((originalEmissive >> 16) & 255) * (1 - fadeProgress));
-            const eg = Math.floor(255 * fadeProgress + ((originalEmissive >> 8) & 255) * (1 - fadeProgress));
-            const eb = Math.floor(255 * fadeProgress + (originalEmissive & 255) * (1 - fadeProgress));
-            
-            // Access material via userData (paddle is now a Group)
+            // Just fade emissive intensity, colors stay the same!
             const material = this.paddle1.userData.material;
-            material.color.setRGB(r / 255, g / 255, b / 255);
-            material.emissive.setRGB(er / 255, eg / 255, eb / 255);
-            material.emissiveIntensity = 2.0 * fadeProgress + originalIntensity * (1 - fadeProgress);
+            material.emissiveIntensity = 6.0 * fadeProgress + originalIntensity * (1 - fadeProgress);
             
             // Also fade the light intensity
             if (this.playerLight) {
@@ -2259,32 +2244,18 @@ class TronPong {
             }
         }
         
-        // Paddle 2 blink - fade out gradually
+        // Paddle 2 blink - fade emissive intensity back to normal
         if (this.paddleBlinkTimers.paddle2 > 0) {
             this.paddleBlinkTimers.paddle2 -= deltaTime;
             
-            // Calculate fade progress (0 = fully faded, 1 = full white) - 1 second duration
+            // Calculate fade progress (0 = fully faded, 1 = bright) - 1 second duration
             const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle2 / 1.0);
             
-            // Interpolate between white and original color
-            const originalColor = this.paddle2.userData.originalColor;
-            const originalEmissive = this.paddle2.userData.originalEmissive;
-            const originalIntensity = this.paddle2.userData.originalEmissiveIntensity || 0.0;
+            const originalIntensity = this.paddle2.userData.originalEmissiveIntensity || 2.0;
             
-            // Lerp colors
-            const r = Math.floor(255 * fadeProgress + ((originalColor >> 16) & 255) * (1 - fadeProgress));
-            const g = Math.floor(255 * fadeProgress + ((originalColor >> 8) & 255) * (1 - fadeProgress));
-            const b = Math.floor(255 * fadeProgress + (originalColor & 255) * (1 - fadeProgress));
-            
-            const er = Math.floor(255 * fadeProgress + ((originalEmissive >> 16) & 255) * (1 - fadeProgress));
-            const eg = Math.floor(255 * fadeProgress + ((originalEmissive >> 8) & 255) * (1 - fadeProgress));
-            const eb = Math.floor(255 * fadeProgress + (originalEmissive & 255) * (1 - fadeProgress));
-            
-            // Access material via userData (paddle is now a Group)
+            // Just fade emissive intensity, colors stay the same!
             const material = this.paddle2.userData.material;
-            material.color.setRGB(r / 255, g / 255, b / 255);
-            material.emissive.setRGB(er / 255, eg / 255, eb / 255);
-            material.emissiveIntensity = 2.0 * fadeProgress + originalIntensity * (1 - fadeProgress);
+            material.emissiveIntensity = 6.0 * fadeProgress + originalIntensity * (1 - fadeProgress);
             
             // Also fade the light intensity
             if (this.aiLight) {
