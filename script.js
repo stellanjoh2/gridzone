@@ -554,7 +554,7 @@ class TronPong {
                     
                     // High-quality blur
                     vec4 sum = vec4(0.0);
-                    float blurSize = 0.005 * bloomRadius; // Larger spread
+                    float blurSize = 0.0045 * bloomRadius; // 10% reduction from 0.005
                     float totalWeight = 0.0;
                     
                     // Larger kernel for higher quality
