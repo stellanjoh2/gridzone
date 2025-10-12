@@ -1515,10 +1515,10 @@ class TronPong {
         const paddle1Material = new THREE.MeshPhysicalMaterial({
             color: 0x88ff00,        // Vibrant lime green
             emissive: 0x88ff00,     // GREEN emissive
-            emissiveIntensity: 0.1, // Very subtle glow at rest (brightens on hit)
-            metalness: 0.3,         // Reduced from 0.9 (less reflective)
-            roughness: 0.8,         // Increased from 0.1 (more matte, less specular)
-            clearcoat: 0.0          // Removed clearcoat layer (was causing extra brightness)
+            emissiveIntensity: 0.15, // Match ball (was 0.1)
+            metalness: 0.9,         // Match ball
+            roughness: 0.05,        // Match ball
+            clearcoat: 1.0          // Match ball
         });
         
         // Create pill shape: cylinder body + 2 sphere caps
@@ -1543,7 +1543,7 @@ class TronPong {
         this.paddle1.position.set(0, 0, 15);
         this.paddle1.userData.originalColor = 0x88ff00; // Lime green
         this.paddle1.userData.originalEmissive = 0x88ff00; // GREEN emissive for glow
-        this.paddle1.userData.originalEmissiveIntensity = 0.1; // Very subtle glow at rest
+        this.paddle1.userData.originalEmissiveIntensity = 0.15; // Match ball
         // Store material reference for blink animations
         this.paddle1.userData.material = paddle1Material;
         this.scene.add(this.paddle1);
@@ -1553,10 +1553,10 @@ class TronPong {
         const paddle2Material = new THREE.MeshPhysicalMaterial({
             color: 0xff00ff,
             emissive: 0xff00ff,     // MAGENTA emissive
-            emissiveIntensity: 0.1, // Very subtle glow at rest (brightens on hit)
-            metalness: 0.3,         // Reduced from 0.9 (less reflective)
-            roughness: 0.8,         // Increased from 0.1 (more matte, less specular)
-            clearcoat: 0.0          // Removed clearcoat layer (was causing extra brightness)
+            emissiveIntensity: 0.15, // Match ball (was 0.1)
+            metalness: 0.9,         // Match ball
+            roughness: 0.05,        // Match ball
+            clearcoat: 1.0          // Match ball
         });
         
         // Create pill shape: cylinder body + 2 sphere caps
@@ -1581,7 +1581,7 @@ class TronPong {
         this.paddle2.position.set(0, 0, -15);
         this.paddle2.userData.originalColor = 0xff00ff;
         this.paddle2.userData.originalEmissive = 0xff00ff; // MAGENTA emissive for glow
-        this.paddle2.userData.originalEmissiveIntensity = 0.1; // Very subtle glow at rest
+        this.paddle2.userData.originalEmissiveIntensity = 0.15; // Match ball
         // Store material reference for blink animations
         this.paddle2.userData.material = paddle2Material;
         this.scene.add(this.paddle2);
@@ -2254,7 +2254,7 @@ class TronPong {
             // Calculate fade progress (0 = fully faded, 1 = bright) - 1 second duration
             const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle1 / 1.0);
             
-            const originalIntensity = this.paddle1.userData.originalEmissiveIntensity || 0.1;
+            const originalIntensity = this.paddle1.userData.originalEmissiveIntensity || 0.15;
             
             // Just fade emissive intensity, colors stay the same!
             const material = this.paddle1.userData.material;
@@ -2273,7 +2273,7 @@ class TronPong {
             // Calculate fade progress (0 = fully faded, 1 = bright) - 1 second duration
             const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle2 / 1.0);
             
-            const originalIntensity = this.paddle2.userData.originalEmissiveIntensity || 0.1;
+            const originalIntensity = this.paddle2.userData.originalEmissiveIntensity || 0.15;
             
             // Just fade emissive intensity, colors stay the same!
             const material = this.paddle2.userData.material;
