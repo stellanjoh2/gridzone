@@ -2333,10 +2333,12 @@ class TronPong {
     
     
     triggerPaddleBlink(paddle, paddleName) {
-        // Flash paddle BRIGHTER in its own color (not white!)
+        // Flash paddle WHITE (similar to walls!)
         const material = paddle.userData.material;
-        // Keep original colors, just boost emissive intensity!
-        material.emissiveIntensity = 6.0; // SUPER BRIGHT (was 2.0)
+        
+        // Set target color to white for shader material
+        material.uniforms.baseColor.value.setHex(0xffffff); // WHITE!
+        material.uniforms.emissiveIntensity.value = 8.0; // SUPER BRIGHT
         
         // Boost the paddle's point light intensity when hit
         if (paddleName === 'paddle1' && this.playerLight) {
@@ -2345,21 +2347,32 @@ class TronPong {
             this.aiLight.intensity = 8.0; // Bright flash!
         }
         
-        // Set timer for emissive fade (1 second - shorter than pushback)
-        this.paddleBlinkTimers[paddleName] = 1.0;
+        // Set timer for fade back to original color (0.5 seconds - fast like walls)
+        this.paddleBlinkTimers[paddleName] = 0.5;
     }
     
     updatePaddleBlinks(deltaTime) {
-        // Paddle 1 blink - fade emissive intensity back to normal
+        // Paddle 1 blink - fade from white back to green
         if (this.paddleBlinkTimers.paddle1 > 0) {
             this.paddleBlinkTimers.paddle1 -= deltaTime;
             
-            // Calculate fade progress (0 = fully faded, 1 = bright) - 1 second duration
-            const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle1 / 1.0);
+            // Calculate fade progress (0 = fully faded back to original, 1 = white)
+            const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle1 / 0.5);
             
-            // MeshBasicMaterial doesn't have emissiveIntensity
-            // Could flash color here, but keeping it simple for now
-            // const material = this.paddle1.userData.material;
+            const material = this.paddle1.userData.material;
+            const originalColor = 0x88ff00; // Green
+            const whiteColor = 0xffffff;
+            
+            // Lerp from white back to original green
+            const r = Math.floor(((whiteColor >> 16) & 255) * fadeProgress + ((originalColor >> 16) & 255) * (1 - fadeProgress));
+            const g = Math.floor(((whiteColor >> 8) & 255) * fadeProgress + ((originalColor >> 8) & 255) * (1 - fadeProgress));
+            const b = Math.floor((whiteColor & 255) * fadeProgress + (originalColor & 255) * (1 - fadeProgress));
+            
+            const lerpedColor = (r << 16) | (g << 8) | b;
+            material.uniforms.baseColor.value.setHex(lerpedColor);
+            
+            // Fade emissive intensity back to original
+            material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
             
             // Also fade the light intensity
             if (this.playerLight) {
@@ -2367,16 +2380,27 @@ class TronPong {
             }
         }
         
-        // Paddle 2 blink - fade emissive intensity back to normal
+        // Paddle 2 blink - fade from white back to magenta
         if (this.paddleBlinkTimers.paddle2 > 0) {
             this.paddleBlinkTimers.paddle2 -= deltaTime;
             
-            // Calculate fade progress (0 = fully faded, 1 = bright) - 1 second duration
-            const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle2 / 1.0);
+            // Calculate fade progress (0 = fully faded back to original, 1 = white)
+            const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle2 / 0.5);
             
-            // MeshBasicMaterial doesn't have emissiveIntensity
-            // Could flash color here, but keeping it simple for now
-            // const material = this.paddle2.userData.material;
+            const material = this.paddle2.userData.material;
+            const originalColor = 0xff00ff; // Magenta
+            const whiteColor = 0xffffff;
+            
+            // Lerp from white back to original magenta
+            const r = Math.floor(((whiteColor >> 16) & 255) * fadeProgress + ((originalColor >> 16) & 255) * (1 - fadeProgress));
+            const g = Math.floor(((whiteColor >> 8) & 255) * fadeProgress + ((originalColor >> 8) & 255) * (1 - fadeProgress));
+            const b = Math.floor((whiteColor & 255) * fadeProgress + (originalColor & 255) * (1 - fadeProgress));
+            
+            const lerpedColor = (r << 16) | (g << 8) | b;
+            material.uniforms.baseColor.value.setHex(lerpedColor);
+            
+            // Fade emissive intensity back to original
+            material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
             
             // Also fade the light intensity
             if (this.aiLight) {
