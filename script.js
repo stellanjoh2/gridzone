@@ -1261,8 +1261,12 @@ class TronPong {
                 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial.clone());
                 
                 cube.position.set(posX, -2, posZ);
-                cube.receiveShadow = true;
-                cube.castShadow = true;
+                
+                // OPTIMIZATION: Only enable shadows for cubes in/near the play area
+                // Play area is roughly -12 to +12 in X (between walls) and -15 to +15 in Z (paddle range)
+                const isInPlayArea = Math.abs(posX) < 13 && Math.abs(posZ) < 16;
+                cube.receiveShadow = isInPlayArea;
+                cube.castShadow = isInPlayArea;
                 
                 // Store original values for animation
                 cube.userData.originalY = -2;
