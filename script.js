@@ -2035,6 +2035,12 @@ class TronPong {
             if (this.sounds.music) {
                 this.sounds.music.pause();
             }
+            
+            // Stop goal alarm if playing
+            if (this.sounds.goalAlarm) {
+                this.sounds.goalAlarm.pause();
+                this.sounds.goalAlarm.currentTime = 0;
+            }
         } else {
             this.domElements.pauseMenu.style.display = 'none';
             this.playSound('menuSelect'); // Play menu sound when closing pause menu
