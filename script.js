@@ -455,6 +455,9 @@ class TronPong {
         );
         this.camera.position.set(0, 18, 22);
         this.camera.lookAt(0, -4, 0);
+        // Enable camera to see both layer 0 and layer 1 (paddles are on layer 1)
+        this.camera.layers.enable(0);
+        this.camera.layers.enable(1);
         
         // Renderer setup
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -947,6 +950,7 @@ class TronPong {
         this.playerLight.shadow.camera.near = 0.1;
         this.playerLight.shadow.camera.far = 25;
         this.playerLight.shadow.bias = -0.005;
+        this.playerLight.layers.set(0); // Only affects layer 0 (not paddles on layer 1)
         this.scene.add(this.playerLight);
         
         // Magenta light above AI paddle - subtle neutral intensity
@@ -959,6 +963,7 @@ class TronPong {
         this.aiLight.shadow.camera.near = 0.1;
         this.aiLight.shadow.camera.far = 25;
         this.aiLight.shadow.bias = -0.005;
+        this.aiLight.layers.set(0); // Only affects layer 0 (not paddles on layer 1)
         this.scene.add(this.aiLight);
         
         // Ball lights with shadows - one per ball (max 2)
@@ -1576,6 +1581,19 @@ class TronPong {
         // Store material reference for blink animations
         this.paddle2.userData.material = paddle2Material;
         this.scene.add(this.paddle2);
+        
+        // Exclude paddles from their own point lights using layers
+        // Move paddle meshes to layer 1 (camera still sees them, but paddle lights won't affect them)
+        this.paddle1.traverse((child) => {
+            if (child.isMesh) {
+                child.layers.set(1); // Layer 1 only
+            }
+        });
+        this.paddle2.traverse((child) => {
+            if (child.isMesh) {
+                child.layers.set(1); // Layer 1 only
+            }
+        });
     }
     
     createBoundaries() {
