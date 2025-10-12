@@ -2477,7 +2477,7 @@ class TronPong {
         // OPTIMIZED: Only check cubes near ball positions (spatial optimization)
         if (!this.floorCubes || this.floorCubes.length === 0) return;
         
-        const maxElevation = 1.8; // DRAMATIC elevation! (was 0.8)
+        const maxElevation = 2.8; // SUPER DRAMATIC elevation! More visible waves
         const activationRadius = 4.5; // LARGER magnetic field (was 2.5)
         const activationRadiusSq = activationRadius * activationRadius; // Cache squared radius
         const easeSpeed = 0.06; // Slightly slower return for smoother feel
