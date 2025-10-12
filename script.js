@@ -931,9 +931,9 @@ class TronPong {
         this.overheadLight.castShadow = false; // Disabled for performance - use ball light for shadows
         this.scene.add(this.overheadLight);
         
-        // Magenta light behind enemy at same height (closer to play field for better lighting)
+        // Magenta light behind enemy at same height (halfway between far and close)
         this.overheadLight2 = new THREE.PointLight(0xff00ff, 4, 120);
-        this.overheadLight2.position.set(0, 60, -35); // Moved from -120 to -35 (closer to AI at z=-15)
+        this.overheadLight2.position.set(0, 60, -77); // Halfway between -120 and -35
         this.overheadLight2.castShadow = false; // Disabled for performance
         this.scene.add(this.overheadLight2);
         
@@ -3641,7 +3641,8 @@ class TronPong {
         if (!this.gameStarted) {
             this.updateStartMenuCamera(deltaTime);
             this.updateStartMenuGamepad(); // Check for gamepad start button
-            // Skip game logic before game starts
+            this.updatePlayerPaddle(); // Allow paddle movement and tilt during menu
+            // Skip other game logic before game starts
         } else if (this.isPaused) {
             // Pause menu - spinning camera + skip game logic
             this.updatePauseCamera(deltaTime);
