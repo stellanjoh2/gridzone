@@ -534,7 +534,7 @@ class TronPong {
             uniforms: {
                 tDiffuse: { value: null },
                 bloomStrength: { value: 0.8 },
-                bloomRadius: { value: 2.125 } // 15% reduction from 2.5
+                bloomRadius: { value: 1.7 } // 20% reduction from 2.125
             },
             vertexShader: `
                 varying vec2 vUv;
