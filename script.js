@@ -3321,14 +3321,14 @@ class TronPong {
         
         // Update world light boost (both lights flash on any hit)
         if (this.worldLightBoost > 0) {
-            this.overheadLight.intensity = 4 + this.worldLightBoost;
-            this.overheadLight2.intensity = 4 + this.worldLightBoost;
+            this.overheadLight.intensity = 1.0 + this.worldLightBoost;
+            this.overheadLight2.intensity = 1.0 + this.worldLightBoost;
             this.worldLightBoost *= 0.92; // Smooth decay
             
             if (this.worldLightBoost < 0.01) {
                 this.worldLightBoost = 0;
-                this.overheadLight.intensity = 4; // Reset to base intensity
-                this.overheadLight2.intensity = 4; // Reset to base intensity
+                this.overheadLight.intensity = 1.0; // Reset to base intensity
+                this.overheadLight2.intensity = 1.0; // Reset to base intensity
             }
         }
         
