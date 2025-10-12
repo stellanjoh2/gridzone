@@ -931,9 +931,9 @@ class TronPong {
         this.overheadLight.castShadow = false; // Disabled for performance - use ball light for shadows
         this.scene.add(this.overheadLight);
         
-        // Magenta light way behind enemy at same height
+        // Magenta light behind enemy at same height (closer to play field for better lighting)
         this.overheadLight2 = new THREE.PointLight(0xff00ff, 4, 120);
-        this.overheadLight2.position.set(0, 60, -120);
+        this.overheadLight2.position.set(0, 60, -35); // Moved from -120 to -35 (closer to AI at z=-15)
         this.overheadLight2.castShadow = false; // Disabled for performance
         this.scene.add(this.overheadLight2);
         
