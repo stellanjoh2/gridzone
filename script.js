@@ -998,7 +998,7 @@ class TronPong {
             for (let row = 0; row < sideGridRows; row++) {
                 for (let col = 0; col < sideGridCols; col++) {
                     const width = 1 + Math.random() * 3;
-                    const height = 0.2 + Math.random() * 9.6; // Average height ~5 units
+                    const height = 0.2 + Math.random() * 7.6; // Average height ~4 units
                     const depth = 1 + Math.random() * 3;
                     
                     const geometry = new THREE.BoxGeometry(width, height, depth);
@@ -1221,47 +1221,6 @@ class TronPong {
                 this.scene.add(cube);
             }
         }
-        
-        // Create floor planes for environment cubes to stand on
-        // Floor sits just below the main play area floor (at y = -2.1)
-        const envFloorY = -2.1;
-        const envFloorMaterial = new THREE.MeshStandardMaterial({
-            color: this.defaultMaterialConfig.color,
-            metalness: this.defaultMaterialConfig.metalness,
-            roughness: this.defaultMaterialConfig.roughness,
-            emissive: this.defaultMaterialConfig.emissive,
-            emissiveIntensity: this.defaultMaterialConfig.emissiveIntensity
-        });
-        
-        // Left side floor
-        const leftFloorGeometry = new THREE.PlaneGeometry(100, 100);
-        const leftFloor = new THREE.Mesh(leftFloorGeometry, envFloorMaterial.clone());
-        leftFloor.rotation.x = -Math.PI / 2; // Horizontal
-        leftFloor.position.set(-50, envFloorY, 0);
-        leftFloor.receiveShadow = true;
-        this.scene.add(leftFloor);
-        
-        // Right side floor
-        const rightFloor = new THREE.Mesh(leftFloorGeometry, envFloorMaterial.clone());
-        rightFloor.rotation.x = -Math.PI / 2;
-        rightFloor.position.set(50, envFloorY, 0);
-        rightFloor.receiveShadow = true;
-        this.scene.add(rightFloor);
-        
-        // Back floor
-        const backFloorGeometry = new THREE.PlaneGeometry(100, 80);
-        const backFloor = new THREE.Mesh(backFloorGeometry, envFloorMaterial.clone());
-        backFloor.rotation.x = -Math.PI / 2;
-        backFloor.position.set(0, envFloorY, -60);
-        backFloor.receiveShadow = true;
-        this.scene.add(backFloor);
-        
-        // Front floor
-        const frontFloor = new THREE.Mesh(backFloorGeometry, envFloorMaterial.clone());
-        frontFloor.rotation.x = -Math.PI / 2;
-        frontFloor.position.set(0, envFloorY, 60);
-        frontFloor.receiveShadow = true;
-        this.scene.add(frontFloor);
     }
     
     createGrid() {
