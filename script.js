@@ -222,7 +222,8 @@ class TronPong {
             combo: null,
             score: null,
             multiBall: null,
-            goalAlarm: null
+            goalAlarm: null,
+            menuSelect: null  // Missing!
         };
         
         this.cacheDOMElements(); // Cache DOM first!
