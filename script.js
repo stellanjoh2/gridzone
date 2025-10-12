@@ -1516,9 +1516,9 @@ class TronPong {
             color: 0x88ff00,        // Vibrant lime green
             emissive: 0x88ff00,     // GREEN emissive
             emissiveIntensity: 0.1, // Very subtle glow at rest (brightens on hit)
-            metalness: 0.9,
-            roughness: 0.1,
-            clearcoat: 1.0
+            metalness: 0.3,         // Reduced from 0.9 (less reflective)
+            roughness: 0.8,         // Increased from 0.1 (more matte, less specular)
+            clearcoat: 0.0          // Removed clearcoat layer (was causing extra brightness)
         });
         
         // Create pill shape: cylinder body + 2 sphere caps
@@ -1554,9 +1554,9 @@ class TronPong {
             color: 0xff00ff,
             emissive: 0xff00ff,     // MAGENTA emissive
             emissiveIntensity: 0.1, // Very subtle glow at rest (brightens on hit)
-            metalness: 0.9,
-            roughness: 0.1,
-            clearcoat: 1.0
+            metalness: 0.3,         // Reduced from 0.9 (less reflective)
+            roughness: 0.8,         // Increased from 0.1 (more matte, less specular)
+            clearcoat: 0.0          // Removed clearcoat layer (was causing extra brightness)
         });
         
         // Create pill shape: cylinder body + 2 sphere caps
