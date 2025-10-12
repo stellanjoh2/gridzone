@@ -1287,10 +1287,8 @@ class TronPong {
     
     spawnBall(x, y, z, velocity) {
         const ballGeometry = new THREE.SphereGeometry(0.5, 24, 24);
-        const ballMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x88ff00,
-            emissive: 0x88ff00,         // Self-illuminating green
-            emissiveIntensity: 0.8      // Much lower - show true color (was 2.0)
+        const ballMaterial = new THREE.MeshBasicMaterial({
+            color: 0x88ff00             // Like goal walls - no PBR, just pure color!
         });
         
         const ball = new THREE.Mesh(ballGeometry, ballMaterial);
@@ -1490,10 +1488,8 @@ class TronPong {
     createPaddles() {
         // Player paddle (LIME GREEN) - at bottom
         // PILL SHAPE - Create using cylinder + 2 hemispheres (compatible with r128!)
-        const paddle1Material = new THREE.MeshPhysicalMaterial({
-            color: 0x88ff00,
-            emissive: 0x88ff00,         // Self-illuminating green
-            emissiveIntensity: 0.8      // Much lower - show true color (was 2.0)
+        const paddle1Material = new THREE.MeshBasicMaterial({
+            color: 0x88ff00             // Like goal walls - no PBR, just pure color!
         });
         
         // Create pill shape: cylinder body + 2 sphere caps
@@ -1525,10 +1521,8 @@ class TronPong {
         
         // AI paddle (MAGENTA) - at top
         // PILL SHAPE - Create using cylinder + 2 hemispheres
-        const paddle2Material = new THREE.MeshPhysicalMaterial({
-            color: 0xff00ff,
-            emissive: 0xff00ff,         // Self-illuminating magenta
-            emissiveIntensity: 0.8      // Much lower - show true color (was 2.0)
+        const paddle2Material = new THREE.MeshBasicMaterial({
+            color: 0xff00ff             // Like goal walls - no PBR, just pure color!
         });
         
         // Create pill shape: cylinder body + 2 sphere caps
