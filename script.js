@@ -1266,7 +1266,7 @@ class TronPong {
                 
                 cube.position.set(posX, -2, posZ);
                 cube.receiveShadow = true;
-                cube.castShadow = true;
+                cube.castShadow = false; // Floor tiles don't cast shadows
                 
                 // Store original values for animation
                 cube.userData.originalY = -2;
