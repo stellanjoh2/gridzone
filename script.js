@@ -511,10 +511,10 @@ class TronPong {
         const width = window.innerWidth;
         const height = window.innerHeight;
         
-        // Main render target (higher resolution for better bloom quality)
+        // Main render target (FULL resolution for maximum bloom quality!)
         this.bloomRenderTarget = new THREE.WebGLRenderTarget(
-            width / 2,
-            height / 2,
+            width,
+            height,
             renderTargetParameters
         );
         
@@ -533,8 +533,8 @@ class TronPong {
         const bloomShader = {
             uniforms: {
                 tDiffuse: { value: null },
-                bloomStrength: { value: 0.8 }, // Much gentler (was 3.0!)
-                bloomRadius: { value: 2.5 } // Tighter around objects
+                bloomStrength: { value: 1.8 }, // Boosted for laser materials!
+                bloomRadius: { value: 4.5 } // Wider, softer glow
             },
             vertexShader: `
                 varying vec2 vUv;
@@ -552,14 +552,14 @@ class TronPong {
                 void main() {
                     vec4 color = texture2D(tDiffuse, vUv);
                     
-                    // Smooth, soft blur - tighter
+                    // High-quality blur
                     vec4 sum = vec4(0.0);
-                    float blurSize = 0.003 * bloomRadius; // Smaller blur size (was 0.006)
+                    float blurSize = 0.005 * bloomRadius; // Larger spread
                     float totalWeight = 0.0;
                     
-                    // Smaller kernel for tighter glow
-                    for(float x = -5.0; x <= 5.0; x += 1.0) {
-                        for(float y = -5.0; y <= 5.0; y += 1.0) {
+                    // Larger kernel for higher quality
+                    for(float x = -7.0; x <= 7.0; x += 0.7) {
+                        for(float y = -7.0; y <= 7.0; y += 0.7) {
                             float distance = length(vec2(x, y));
                             float weight = exp(-distance * 0.15); // Very gentle falloff
                             vec2 offset = vec2(x, y) * blurSize;
@@ -1998,9 +1998,9 @@ class TronPong {
             this.camera.updateProjectionMatrix();
             this.renderer.setSize(window.innerWidth, window.innerHeight);
             
-            // Resize bloom render target
+            // Resize bloom render target (FULL resolution!)
             if (this.bloomRenderTarget) {
-                this.bloomRenderTarget.setSize(window.innerWidth / 2, window.innerHeight / 2);
+                this.bloomRenderTarget.setSize(window.innerWidth, window.innerHeight);
             }
             
             // Resize fisheye render target
