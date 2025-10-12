@@ -958,8 +958,8 @@ class TronPong {
         // Ball lights with shadows - one per ball (max 2)
         this.ballLights = [];
         
-        // Create first ball light - LIME GREEN
-        const ballLight = new THREE.PointLight(0x88ff00, 3, 45);
+        // Create first ball light - LIME GREEN (+25% intensity)
+        const ballLight = new THREE.PointLight(0x88ff00, 3.75, 45);
         ballLight.castShadow = true;
         ballLight.shadow.mapSize.width = 512;
         ballLight.shadow.mapSize.height = 512;
@@ -998,7 +998,7 @@ class TronPong {
             for (let row = 0; row < sideGridRows; row++) {
                 for (let col = 0; col < sideGridCols; col++) {
                     const width = 1 + Math.random() * 3;
-                    const height = 0.2 + Math.random() * 2;
+                    const height = 0.2 + Math.random() * 11.6; // Average height ~6 (wall height)
                     const depth = 1 + Math.random() * 3;
                     
                     const geometry = new THREE.BoxGeometry(width, height, depth);
@@ -1032,7 +1032,7 @@ class TronPong {
         for (let row = 0; row < backGridRows; row++) {
             for (let col = 0; col < backGridCols; col++) {
                 const width = 1 + Math.random() * 3;
-                const height = 0.2 + Math.random() * 2;
+                const height = 0.2 + Math.random() * 11.6; // Average height ~6 (wall height)
                 const depth = 1 + Math.random() * 3;
                 
                 const geometry = new THREE.BoxGeometry(width, height, depth);
@@ -1065,7 +1065,7 @@ class TronPong {
         for (let row = 0; row < frontGridRows; row++) {
             for (let col = 0; col < frontGridCols; col++) {
                 const width = 1 + Math.random() * 3;
-                const height = 0.2 + Math.random() * 2;
+                const height = 0.2 + Math.random() * 11.6; // Average height ~6 (wall height)
                 const depth = 1 + Math.random() * 3;
                 
                 const geometry = new THREE.BoxGeometry(width, height, depth);
@@ -1315,7 +1315,7 @@ class TronPong {
         
         // Create light for this ball (if we don't have one yet)
         if (ballIndex >= this.ballLights.length) {
-            const ballLight = new THREE.PointLight(0x88ff00, 3, 45); // Lime green
+            const ballLight = new THREE.PointLight(0x88ff00, 3.75, 45); // Lime green (+25% intensity)
             ballLight.castShadow = true;
             ballLight.shadow.mapSize.width = 512;
             ballLight.shadow.mapSize.height = 512;
