@@ -566,9 +566,9 @@ class TronPong {
                     
                     sum /= totalWeight;
                     
-                    // Only bright areas bloom with softer threshold
+                    // Much lower threshold - let EVERYTHING bloom!
                     float brightness = dot(sum.rgb, vec3(0.2126, 0.7152, 0.0722));
-                    float bloomAmount = smoothstep(0.3, 0.8, brightness); // Smooth transition
+                    float bloomAmount = smoothstep(0.05, 0.3, brightness); // Super low threshold!
                     gl_FragColor = sum * bloomStrength * bloomAmount;
                 }
             `
