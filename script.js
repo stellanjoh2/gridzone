@@ -529,8 +529,8 @@ class TronPong {
         const bloomShader = {
             uniforms: {
                 tDiffuse: { value: null },
-                bloomStrength: { value: 0.8 }, // Moderate strength
-                bloomRadius: { value: 4 } // Tighter, localized glow
+                bloomStrength: { value: 0.6 }, // Subtle strength
+                bloomRadius: { value: 2.5 } // Very tight, close to objects
             },
             vertexShader: `
                 varying vec2 vUv;
