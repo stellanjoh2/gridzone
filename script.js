@@ -1258,15 +1258,15 @@ class TronPong {
                 // Only create floor cubes within laser wall boundaries!
                 if (Math.abs(posZ) > laserWallBoundary) continue;
                 
+                // OPTIMIZATION: Only create cubes in the extended play area
+                // Play area: -12 to +12 in X (walls), extended to -18 to +18 in Z (includes some buffer)
+                if (Math.abs(posX) > 14 || Math.abs(posZ) > 18) continue;
+                
                 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial.clone());
                 
                 cube.position.set(posX, -2, posZ);
-                
-                // OPTIMIZATION: Only enable shadows for cubes in/near the play area
-                // Play area is roughly -12 to +12 in X (between walls) and -15 to +15 in Z (paddle range)
-                const isInPlayArea = Math.abs(posX) < 13 && Math.abs(posZ) < 16;
-                cube.receiveShadow = isInPlayArea;
-                cube.castShadow = isInPlayArea;
+                cube.receiveShadow = true;
+                cube.castShadow = true;
                 
                 // Store original values for animation
                 cube.userData.originalY = -2;
