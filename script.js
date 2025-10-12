@@ -1307,12 +1307,7 @@ class TronPong {
     spawnBall(x, y, z, velocity) {
         const ballGeometry = new THREE.SphereGeometry(0.5, 24, 24);
         const ballMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x88ff00,            // Vibrant lime green
-            emissive: 0x88ff00,         // Vibrant lime green emissive
-            emissiveIntensity: 0.15,    // Very subtle glow at rest
-            metalness: 0.9,
-            roughness: 0.05,
-            clearcoat: 1.0
+            color: 0x88ff00            // Just base color, no other properties
         });
         
         const ball = new THREE.Mesh(ballGeometry, ballMaterial);
@@ -1513,12 +1508,7 @@ class TronPong {
         // Player paddle (LIME GREEN) - at bottom
         // PILL SHAPE - Create using cylinder + 2 hemispheres (compatible with r128!)
         const paddle1Material = new THREE.MeshPhysicalMaterial({
-            color: 0x88ff00,        // Vibrant lime green
-            emissive: 0x88ff00,     // GREEN emissive
-            emissiveIntensity: 0.15, // Match ball (was 0.1)
-            metalness: 0.9,         // Match ball
-            roughness: 0.05,        // Match ball
-            clearcoat: 1.0          // Match ball
+            color: 0x88ff00        // Just base color, no other properties
         });
         
         // Create pill shape: cylinder body + 2 sphere caps
@@ -1551,12 +1541,7 @@ class TronPong {
         // AI paddle (MAGENTA) - at top
         // PILL SHAPE - Create using cylinder + 2 hemispheres
         const paddle2Material = new THREE.MeshPhysicalMaterial({
-            color: 0xff00ff,
-            emissive: 0xff00ff,     // MAGENTA emissive
-            emissiveIntensity: 0.15, // Match ball (was 0.1)
-            metalness: 0.9,         // Match ball
-            roughness: 0.05,        // Match ball
-            clearcoat: 1.0          // Match ball
+            color: 0xff00ff        // Just base color, no other properties
         });
         
         // Create pill shape: cylinder body + 2 sphere caps
