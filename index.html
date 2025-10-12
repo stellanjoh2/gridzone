@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tron Pong 3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        canvas {
+            display: block;
+        }
+        
+        /* Vignette effect */
+        #vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 0%, transparent 35%, rgba(0, 0, 0, 0.4) 65%, rgba(0, 0, 0, 0.8) 100%);
+            z-index: 50;
+        }
+        
+        /* Grain and chromatic aberration overlay */
+        #postfx-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: screen;
+            opacity: 0.25;
+        }
+        
+        /* Film grain animation */
+        @keyframes grain {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-5%, -10%); }
+            20% { transform: translate(-15%, 5%); }
+            30% { transform: translate(7%, -25%); }
+            40% { transform: translate(-5%, 25%); }
+            50% { transform: translate(-15%, 10%); }
+            60% { transform: translate(15%, 0%); }
+            70% { transform: translate(0%, 15%); }
+            80% { transform: translate(3%, 35%); }
+            90% { transform: translate(-10%, 10%); }
+        }
+        
+        #grain {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="5" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>');
+            opacity: 0.35;
+            animation: grain 0.4s steps(12) infinite;
+        }
+        
+        #chromatic-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            mix-blend-mode: screen;
+            opacity: 0.15;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            opacity: 0.3;
+            z-index: -1;
+        }
+        
+        #logo {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #88ff00;
+            font-size: 180px;
+            font-weight: bold;
+            text-shadow: 0 0 40px #88ff00, 0 0 80px #88ff00, 0 0 120px #88ff00;
+            letter-spacing: 15px;
+            pointer-events: none;
+            z-index: 100;
+            animation: logoGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes logoGlow {
+            0%, 100% {
+                text-shadow: 0 0 40px #88ff00, 0 0 80px #88ff00, 0 0 120px #88ff00;
+                opacity: 1;
+            }
+            50% {
+                text-shadow: 0 0 60px #88ff00, 0 0 120px #88ff00, 0 0 180px #88ff00;
+                opacity: 0.9;
+            }
+        }
+        
+        #ui {
+            position: absolute;
+            top: 68%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #88ff00;
+            font-size: 48px;
+            text-shadow: 0 0 20px #88ff00;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        #deathScreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.3);
+            z-index: 200;
+            animation: redFlashLong 2s ease-in-out;
+            pointer-events: none;
+            backdrop-filter: blur(0px);
+        }
+        
+        #deathScreen.active {
+            animation: redFlashLong 2s ease-in-out, blurScreen 2s ease-in-out;
+        }
+        
+        @keyframes redFlashLong {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 0.8; }
+            100% { opacity: 0; }
+        }
+        
+        @keyframes blurScreen {
+            0% { backdrop-filter: blur(0px); }
+            50% { backdrop-filter: blur(10px); }
+            100% { backdrop-filter: blur(15px); }
+        }
+        
+        #pauseMenu {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 4, 40, 0.9);
+            padding: 40px 60px;
+            border-radius: 10px;
+            border: 2px solid #88ff00;
+            box-shadow: 0 0 30px #88ff00;
+            z-index: 150;
+        }
+        
+        #pauseMenu h2 {
+            color: #88ff00;
+            font-size: 48px;
+            text-shadow: 0 0 20px #88ff00;
+            margin-bottom: 20px;
+        }
+        
+        #pauseMenu p {
+            color: #ff00ff;
+            font-size: 18px;
+            text-shadow: 0 0 10px #ff00ff;
+            margin: 10px 0;
+        }
+        
+        #score {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            color: #88ff00;
+            font-size: 36px;
+            text-shadow: 0 0 10px #88ff00;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        #combo {
+            position: absolute;
+            top: 70px;
+            width: 100%;
+            text-align: center;
+            color: #88ff00;
+            font-size: 72px;
+            font-weight: bold;
+            text-shadow: 0 0 30px #88ff00, 0 0 60px #88ff00;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.3s ease-out;
+        }
+        
+        #combo.active {
+            opacity: 1;
+            transform: scale(1);
+            animation: comboFlash 0.5s ease-in-out 3;
+        }
+        
+        @keyframes comboFlash {
+            0%, 100% {
+                opacity: 1;
+                text-shadow: 0 0 30px #88ff00, 0 0 60px #88ff00;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.3;
+                text-shadow: 0 0 50px #88ff00, 0 0 100px #88ff00, 0 0 150px #88ff00;
+                transform: scale(1.1);
+            }
+        }
+        
+        #lifeScore {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+            color: #ff00ff;
+            font-size: 24px;
+            text-shadow: 0 0 10px #ff00ff;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        #lifeScore .label {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        /* Lens flare effect overlay */
+        canvas {
+            filter: brightness(1.1) contrast(1.05);
+        }
+        
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9998;
+            background: radial-gradient(circle at 50% 40%, rgba(136, 255, 0, 0.05) 0%, transparent 30%),
+                        radial-gradient(circle at 50% 40%, rgba(255, 0, 255, 0.03) 0%, transparent 40%),
+                        radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 20%),
+                        radial-gradient(circle at 70% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 20%);
+            animation: lensFlareShimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes lensFlareShimmer {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 0.8; }
+        }
+        
+        #resetButton:hover {
+            background: #ff3355;
+            transform: scale(1.05);
+            box-shadow: 0 0 30px #ff0033;
+        }
+        
+        #resetButton:active {
+            transform: scale(0.98);
+        }
+        
+        #awesomeText {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #ffffff;
+            font-size: 120px;
+            font-weight: bold;
+            text-shadow: 0 0 40px #88ff00, 0 0 80px #88ff00, 0 0 120px #88ff00;
+            pointer-events: none;
+            z-index: 150;
+            opacity: 0;
+        }
+        
+        #awesomeText.active {
+            animation: hardBlinkEnter 0.6s ease-out forwards;
+        }
+        
+        #awesomeText.exit {
+            animation: hardBlinkExit 0.6s ease-out forwards;
+        }
+        
+        #multiBallText {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #ffffff;
+            font-size: 120px;
+            font-weight: bold;
+            text-shadow: 0 0 40px #ff00ff, 0 0 80px #ff00ff, 0 0 120px #ff00ff;
+            pointer-events: none;
+            z-index: 150;
+            opacity: 0;
+            white-space: nowrap;
+        }
+        
+        #multiBallText.active {
+            animation: hardBlinkEnter 0.6s ease-out forwards;
+        }
+        
+        #multiBallText.exit {
+            animation: hardBlinkExit 0.6s ease-out forwards;
+        }
+        
+        #deathText {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-size: 120px;
+            font-weight: bold;
+            text-shadow: 0 0 40px #ff0000, 0 0 80px #ff0000, 0 0 120px #ff0000;
+            letter-spacing: 10px;
+        }
+        
+        /* Hard blink animations (3 quick blinks) */
+        @keyframes hardBlinkEnter {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+            8% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            16% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+            24% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            32% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+            40% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        
+        @keyframes hardBlinkExit {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            58% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+            66% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            74% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+            82% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            90% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="score">
+        <span style="color: #88ff00;">YOU <span id="player1Score">0</span></span> - <span style="color: #ff00ff;">AI <span id="player2Score">0</span></span>
+    </div>
+    <div id="combo"></div>
+    <div id="awesomeText">AWESOME</div>
+    <div id="multiBallText">MULTI-BALL!!!</div>
+    <div id="lifeScore">
+        <div class="label">LIFE SCORE</div>
+        <div id="lifeScoreValue">0</div>
+    </div>
+    <div id="logo">PONG9000</div>
+    <div id="ui" style="display: none;">PRESS SPACE TO START</div>
+    
+    <div id="deathScreen">
+        <div id="deathText">YOU DIED</div>
+    </div>
+    
+    <div id="pauseMenu">
+        <h2>PAUSED</h2>
+        <p>Press ESC / OPTIONS to resume</p>
+        <p>A/D or ARROW KEYS / Left Stick to move</p>
+        <p>SPACE / X to start</p>
+        <button id="resetButton" style="margin-top: 20px; padding: 12px 24px; font-family: 'Orbitron', sans-serif; font-size: 16px; background: #ff0033; color: white; border: 2px solid #ff0033; border-radius: 5px; cursor: pointer; text-shadow: 0 0 10px #ff0033; box-shadow: 0 0 20px #ff0033; transition: all 0.2s ease;">RESET GAME</button>
+        <p style="margin-top: 15px; font-size: 14px; color: #88ff00;">SQUARE / ⬜ to reset</p>
+    </div>
+    
+    <!-- Vignette overlay -->
+    <div id="vignette"></div>
+    
+    <!-- Post-processing overlays removed -->
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
