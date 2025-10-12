@@ -2442,23 +2442,13 @@ class TronPong {
     }
     
     updateParticles() {
-        if (!this.particles || this.isPaused || !this.ball) return;
+        if (!this.particles || this.isPaused) return;
         
         const positions = this.particles.geometry.attributes.position.array;
         const time = this.clock.getElapsedTime();
-        const ballPos = this.ball.position;
         
-        // Physics constants
-        const avoidanceRadius = 3.5;
-        const avoidanceRadiusSq = avoidanceRadius * avoidanceRadius;
-        const avoidanceStrength = 0.15;
-        const returnStrength = 0.015;
-        const damping = 0.97;
-        
-        // Cache ball position
-        const bx = ballPos.x;
-        const by = ballPos.y;
-        const bz = ballPos.z;
+        // OPTIMIZATION: Ball interaction disabled - not visible and wastes performance
+        // Particles now just float gently with basic animation
         
         // Only update every other frame for performance
         if (!this._particleUpdateFrame) this._particleUpdateFrame = 0;
@@ -2470,57 +2460,11 @@ class TronPong {
             if (skipFrame && i % 2 === 0) continue;
             const idx = i * 3;
             
-            // Current particle position
-            const px = positions[idx];
-            const py = positions[idx + 1];
-            const pz = positions[idx + 2];
-            
-            // Calculate distance to ball (squared to avoid sqrt)
-            const dx = px - bx;
-            const dy = py - by;
-            const dz = pz - bz;
-            const distanceSq = dx * dx + dy * dy + dz * dz;
-            
-            // Ball avoidance force (air drag effect)
-            if (distanceSq < avoidanceRadiusSq && distanceSq > 0.01) {
-                const distance = Math.sqrt(distanceSq); // Only sqrt when needed
-                const force = (1 - distance / avoidanceRadius) * avoidanceStrength;
-                
-                // Normalize direction and apply force (using cached distance)
-                const invDist = 1 / distance;
-                this.particleVelocities[i].x += dx * invDist * force;
-                this.particleVelocities[i].y += dy * invDist * force;
-                this.particleVelocities[i].z += dz * invDist * force;
-            }
-            
-            // Return to original position force
-            const original = this.particleOriginalPositions[i];
-            this.particleVelocities[i].x += (original.x - px) * returnStrength;
-            this.particleVelocities[i].y += (original.y - py) * returnStrength;
-            this.particleVelocities[i].z += (original.z - pz) * returnStrength;
-            
-            // Apply damping
-            this.particleVelocities[i].x *= damping;
-            this.particleVelocities[i].y *= damping;
-            this.particleVelocities[i].z *= damping;
-            
             // Add gentle floating motion
             const floatOffset = Math.sin(time + i * 0.1) * 0.002;
             
-            // Update position
-            positions[idx] += this.particleVelocities[i].x;
-            positions[idx + 1] += this.particleVelocities[i].y + floatOffset;
-            positions[idx + 2] += this.particleVelocities[i].z;
-            
-            // Keep particles within bounds
-            const py_new = positions[idx + 1];
-            if (py_new > 6) {
-                positions[idx + 1] = 6;
-                this.particleVelocities[i].y *= -0.5;
-            } else if (py_new < -2) {
-                positions[idx + 1] = -2;
-                this.particleVelocities[i].y *= -0.5;
-            }
+            // Update position - just float up and down gently
+            positions[idx + 1] += floatOffset;
         }
         
         this.particles.geometry.attributes.position.needsUpdate = true;
