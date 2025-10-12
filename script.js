@@ -174,6 +174,12 @@ class TronPong {
         this.paddle1Pushback = 0; // Current pushback distance
         this.paddle2Pushback = 0;
         
+        // Paddle tilt (for directional movement immersion)
+        this.paddle1Tilt = 0; // Current tilt angle
+        this.paddle2Tilt = 0;
+        this.paddleTiltSpeed = 0.15; // How fast tilt responds to movement
+        this.maxPaddleTilt = 0.35; // Max tilt angle in radians (~20 degrees)
+        
         // Random floor obstacles
         this.obstacleTimer = 0;
         this.obstacleInterval = 10.0; // Spawn obstacle every 10 seconds
@@ -1944,8 +1950,12 @@ class TronPong {
         this.nextBallThreshold = 2;
         this.paddle1Pushback = 0;
         this.paddle2Pushback = 0;
+        this.paddle1Tilt = 0;
+        this.paddle2Tilt = 0;
         this.paddle1.position.z = 15;
         this.paddle2.position.z = -15;
+        this.paddle1.rotation.z = 0;
+        this.paddle2.rotation.z = 0;
         
         // Start cinematic camera transition!
         this.startCameraTransition();
@@ -2669,10 +2679,21 @@ class TronPong {
                 this.paddle1.position.z = 15; // Reset to exact position
             }
         }
+        
+        // Paddle tilt based on movement direction
+        const targetTiltPaddle1 = paddleVelocity * -30; // Convert velocity to tilt (-30 multiplier for ~20 degree max)
+        const clampedTilt1 = Math.max(-this.maxPaddleTilt, Math.min(this.maxPaddleTilt, targetTiltPaddle1));
+        this.paddle1Tilt += (clampedTilt1 - this.paddle1Tilt) * this.paddleTiltSpeed;
+        
+        // Apply tilt rotation (rotate around Z axis)
+        this.paddle1.rotation.z = this.paddle1Tilt;
     }
     
     updateAIPaddle() {
         if (!this.gameStarted || this.isPaused || this.balls.length === 0) return;
+        
+        // Store previous position for tilt calculation
+        const previousX = this.paddle2.position.x;
         
         // Track closest ball moving towards AI
         let closestBall = null;
@@ -2708,6 +2729,9 @@ class TronPong {
                 this.paddle2.position.x -= this.aiSpeed * this.timeScale;
             }
         
+        // Calculate paddle velocity for tilt
+        const paddleVelocity = this.paddle2.position.x - previousX;
+        
         // Apply paddle pushback (HEAVY weighty impact feel)
         if (this.paddle2Pushback > 0) {
             this.paddle2.position.z = -15 - this.paddle2Pushback; // Base position - pushback (opposite direction)
@@ -2718,6 +2742,14 @@ class TronPong {
                 this.paddle2.position.z = -15; // Reset to exact position
             }
         }
+        
+        // Paddle tilt based on movement direction
+        const targetTiltPaddle2 = paddleVelocity * -30; // Convert velocity to tilt (-30 multiplier for ~20 degree max)
+        const clampedTilt2 = Math.max(-this.maxPaddleTilt, Math.min(this.maxPaddleTilt, targetTiltPaddle2));
+        this.paddle2Tilt += (clampedTilt2 - this.paddle2Tilt) * this.paddleTiltSpeed;
+        
+        // Apply tilt rotation (rotate around Z axis)
+        this.paddle2.rotation.z = this.paddle2Tilt;
     }
     
     updateBall() {
@@ -3387,8 +3419,12 @@ class TronPong {
         // Reset paddle pushback
         this.paddle1Pushback = 0;
         this.paddle2Pushback = 0;
+        this.paddle1Tilt = 0;
+        this.paddle2Tilt = 0;
         this.paddle1.position.z = 15;
         this.paddle2.position.z = -15;
+        this.paddle1.rotation.z = 0;
+        this.paddle2.rotation.z = 0;
         
         // Spawn first ball with FIXED, predictable velocity (always toward AI)
         // This ensures consistent, clean restarts with no random jumps
@@ -3433,6 +3469,10 @@ class TronPong {
         this.paddle2.position.set(0, 0, -15);
         this.paddle1Pushback = 0;
         this.paddle2Pushback = 0;
+        this.paddle1Tilt = 0;
+        this.paddle2Tilt = 0;
+        this.paddle1.rotation.z = 0;
+        this.paddle2.rotation.z = 0;
         
         // Reset camera
         this.cameraShake = { x: 0, y: 0, intensity: 0 };
