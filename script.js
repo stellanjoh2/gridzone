@@ -2222,11 +2222,9 @@ class TronPong {
             // Calculate fade progress (0 = fully faded, 1 = bright) - 1 second duration
             const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle1 / 1.0);
             
-            const originalIntensity = this.paddle1.userData.originalEmissiveIntensity || 0.8;
-            
-            // Just fade emissive intensity, colors stay the same!
-            const material = this.paddle1.userData.material;
-            material.emissiveIntensity = 6.0 * fadeProgress + originalIntensity * (1 - fadeProgress);
+            // MeshBasicMaterial doesn't have emissiveIntensity
+            // Could flash color here, but keeping it simple for now
+            // const material = this.paddle1.userData.material;
             
             // Also fade the light intensity
             if (this.playerLight) {
@@ -2241,11 +2239,9 @@ class TronPong {
             // Calculate fade progress (0 = fully faded, 1 = bright) - 1 second duration
             const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle2 / 1.0);
             
-            const originalIntensity = this.paddle2.userData.originalEmissiveIntensity || 0.8;
-            
-            // Just fade emissive intensity, colors stay the same!
-            const material = this.paddle2.userData.material;
-            material.emissiveIntensity = 6.0 * fadeProgress + originalIntensity * (1 - fadeProgress);
+            // MeshBasicMaterial doesn't have emissiveIntensity
+            // Could flash color here, but keeping it simple for now
+            // const material = this.paddle2.userData.material;
             
             // Also fade the light intensity
             if (this.aiLight) {
