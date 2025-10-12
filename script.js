@@ -532,8 +532,8 @@ class TronPong {
         const bloomShader = {
             uniforms: {
                 tDiffuse: { value: null },
-                bloomStrength: { value: 3.0 }, // Even stronger (was 2.0)
-                bloomRadius: { value: 6.0 } // Even wider (was 5.0)
+                bloomStrength: { value: 3.0 }, // Strong glow
+                bloomRadius: { value: 2.5 } // Tighter around objects (was 6.0)
             },
             vertexShader: `
                 varying vec2 vUv;
@@ -551,14 +551,14 @@ class TronPong {
                 void main() {
                     vec4 color = texture2D(tDiffuse, vUv);
                     
-                    // Smooth, soft blur
+                    // Smooth, soft blur - tighter
                     vec4 sum = vec4(0.0);
-                    float blurSize = 0.006 * bloomRadius; // Larger blur size
+                    float blurSize = 0.003 * bloomRadius; // Smaller blur size (was 0.006)
                     float totalWeight = 0.0;
                     
-                    // Smooth kernel with small steps for soft glow
-                    for(float x = -8.0; x <= 8.0; x += 1.0) {
-                        for(float y = -8.0; y <= 8.0; y += 1.0) {
+                    // Smaller kernel for tighter glow
+                    for(float x = -5.0; x <= 5.0; x += 1.0) {
+                        for(float y = -5.0; y <= 5.0; y += 1.0) {
                             float distance = length(vec2(x, y));
                             float weight = exp(-distance * 0.15); // Very gentle falloff
                             vec2 offset = vec2(x, y) * blurSize;
