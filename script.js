@@ -41,7 +41,7 @@ class TronPong {
         
         // Multi-ball system
         this.successfulHits = 0; // Track successful paddle hits
-        this.nextBallThreshold = 2; // Add ball after this many hits
+        this.nextBallThreshold = 4; // Add ball after this many hits (changed from 2 to 4)
         this.maxBalls = 2; // Maximum 2 balls on screen (multi-ball only)
         
         // Cache DOM elements for better performance
@@ -1947,7 +1947,7 @@ class TronPong {
         
         // Reset game state
         this.successfulHits = 0;
-        this.nextBallThreshold = 2;
+        this.nextBallThreshold = 4; // Changed from 2 to 4
         this.paddle1Pushback = 0;
         this.paddle2Pushback = 0;
         this.paddle1Tilt = 0;
@@ -3420,7 +3420,7 @@ class TronPong {
         
         // Reset multi-ball system
         this.successfulHits = 0;
-        this.nextBallThreshold = 2;
+        this.nextBallThreshold = 4; // Changed from 2 to 4
         
         // Reset paddle pushback
         this.paddle1Pushback = 0;
