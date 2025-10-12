@@ -533,8 +533,8 @@ class TronPong {
         const bloomShader = {
             uniforms: {
                 tDiffuse: { value: null },
-                bloomStrength: { value: 0.8 }, // Back to original
-                bloomRadius: { value: 2.5 } // Back to original
+                bloomStrength: { value: 0.8 },
+                bloomRadius: { value: 2.125 } // 15% reduction from 2.5
             },
             vertexShader: `
                 varying vec2 vUv;
@@ -1278,60 +1278,6 @@ class TronPong {
         }
         
         console.log(`Floor created with ${this.floorCubes.length} cubes (confined within laser walls)`);
-        
-        // Create cyan glowing plane below the floor grid for light leaking effect
-        const underfloorSize = 60; // Large enough to cover the area
-        const underfloorGeometry = new THREE.PlaneGeometry(underfloorSize, underfloorSize);
-        
-        // Use laser shader material like the players (cyan color)
-        const underfloorMaterial = new THREE.ShaderMaterial({
-            uniforms: {
-                time: { value: 0 },
-                baseColor: { value: new THREE.Color(0x00ffff) }, // Pure cyan
-                emissiveIntensity: { value: 3.0 }, // Strong glow
-                opacity: { value: 1.0 }
-            },
-            vertexShader: `
-                varying vec2 vUv;
-                varying vec3 vPosition;
-                void main() {
-                    vUv = uv;
-                    vPosition = position;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                uniform float time;
-                uniform vec3 baseColor;
-                uniform float emissiveIntensity;
-                uniform float opacity;
-                varying vec2 vUv;
-                varying vec3 vPosition;
-                
-                void main() {
-                    // Animated gradient with pulsing effect
-                    float gradient = sin(vUv.y * 3.14159 + time * 0.5) * 0.5 + 0.5;
-                    float pulse = sin(time * 2.0) * 0.15 + 0.85;
-                    
-                    // Animated stripes
-                    float stripes = sin((vUv.x + vUv.y) * 20.0 + time) * 0.1 + 0.9;
-                    
-                    vec3 finalColor = baseColor * emissiveIntensity * gradient * pulse * stripes;
-                    gl_FragColor = vec4(finalColor, opacity);
-                }
-            `,
-            transparent: false,
-            side: THREE.DoubleSide,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-        
-        this.underfloorPlane = new THREE.Mesh(underfloorGeometry, underfloorMaterial);
-        this.underfloorPlane.rotation.x = -Math.PI / 2; // Rotate to be horizontal
-        this.underfloorPlane.position.y = -3.5; // Below the floor cubes (which are at -2)
-        this.scene.add(this.underfloorPlane);
-        
-        console.log('Cyan underfloor plane created for light leaking effect');
     }
     
     
@@ -3731,11 +3677,6 @@ class TronPong {
             if (ball && ball.material && ball.material.uniforms && ball.material.uniforms.time) {
                 ball.material.uniforms.time.value = this.goalAnimationTime;
             }
-        }
-        
-        // Update underfloor plane shader time
-        if (this.underfloorPlane && this.underfloorPlane.material && this.underfloorPlane.material.uniforms && this.underfloorPlane.material.uniforms.time) {
-            this.underfloorPlane.material.uniforms.time.value = this.goalAnimationTime;
         }
         
         // Fast blink animation when green (goal scored!)
