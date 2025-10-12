@@ -3450,8 +3450,7 @@ class TronPong {
         this.score = { player1: 0, player2: 0 };
         this.updateScore();
         
-        // Reset game state
-        this.gameStarted = false;
+        // Keep game running - just reset state
         this.isPaused = false;
         
         // Reset combo
@@ -3486,20 +3485,26 @@ class TronPong {
         this.cameraTilt = 0;
         this.cameraLookOffset = 0;
         
-        // Reset ball
+        // Clear all balls
         this.resetBall();
         
-        // Hide pause menu and show start UI
+        // Hide pause menu - stay in game
         this.domElements.pauseMenu.style.display = 'none';
-        this.domElements.ui.style.display = 'block';
         
-        // Stop and reset music
-        if (this.sounds.music) {
-            this.sounds.music.pause();
-            this.sounds.music.currentTime = 0;
-        }
+        // Restart the game immediately with a new ball
+        this.successfulHits = 0;
+        this.nextBallThreshold = 4;
         
-        console.log('✅ Full game reset complete!');
+        // Spawn ball immediately to continue playing
+        this.spawnBall(0, 0, 0, {
+            x: 0,
+            y: 0,
+            z: -0.15 // Always toward enemy/AI
+        });
+        
+        // Music keeps playing (don't stop it)
+        
+        console.log('✅ Full game reset complete - continuing gameplay!');
     }
     
     updateScore() {
