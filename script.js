@@ -533,8 +533,8 @@ class TronPong {
         const bloomShader = {
             uniforms: {
                 tDiffuse: { value: null },
-                bloomStrength: { value: 1.8 }, // Boosted for laser materials!
-                bloomRadius: { value: 4.5 } // Wider, softer glow
+                bloomStrength: { value: 0.88 }, // +10% from 0.8
+                bloomRadius: { value: 2.75 } // +10% from 2.5
             },
             vertexShader: `
                 varying vec2 vUv;
