@@ -507,10 +507,10 @@ class TronPong {
         const width = window.innerWidth;
         const height = window.innerHeight;
         
-        // Main render target (lower resolution for better performance)
+        // Main render target (higher resolution for better bloom quality)
         this.bloomRenderTarget = new THREE.WebGLRenderTarget(
-            width / 4,
-            height / 4,
+            width / 2,
+            height / 2,
             renderTargetParameters
         );
         
@@ -529,8 +529,8 @@ class TronPong {
         const bloomShader = {
             uniforms: {
                 tDiffuse: { value: null },
-                bloomStrength: { value: 0.4 }, // Lower intensity (was 0.8)
-                bloomRadius: { value: 7 } // Wider spread (was 4.375)
+                bloomStrength: { value: 2.0 }, // AGGRESSIVE bloom (was 0.4)
+                bloomRadius: { value: 15 } // THICC spread (was 7)
             },
             vertexShader: `
                 varying vec2 vUv;
@@ -553,11 +553,11 @@ class TronPong {
                     float blurSize = 0.004 * bloomRadius;
                     float totalWeight = 0.0;
                     
-                    // Smaller kernel for better performance
-                    for(float x = -4.0; x <= 4.0; x += 2.0) {
-                        for(float y = -4.0; y <= 4.0; y += 2.0) {
+                    // BIGGER kernel for soft, diffuse glow
+                    for(float x = -6.0; x <= 6.0; x += 1.5) {
+                        for(float y = -6.0; y <= 6.0; y += 1.5) {
                             float distance = length(vec2(x, y));
-                            float weight = exp(-distance * distance / 20.0); // Gaussian falloff
+                            float weight = exp(-distance * 0.3); // Gentler falloff for THICC bloom
                             vec2 offset = vec2(x, y) * blurSize;
                             sum += texture2D(tDiffuse, vUv + offset) * weight;
                             totalWeight += weight;
@@ -1301,7 +1301,7 @@ class TronPong {
         const ballMaterial = new THREE.MeshPhysicalMaterial({
             color: 0x88ff00,            // Vibrant lime green
             emissive: 0x88ff00,         // Vibrant lime green emissive
-            emissiveIntensity: 0.5,
+            emissiveIntensity: 2.5,     // AGGRESSIVE GLOW (was 0.5)
             metalness: 0.9,
             roughness: 0.05,
             clearcoat: 1.0
@@ -1505,8 +1505,8 @@ class TronPong {
         // PILL SHAPE - Create using cylinder + 2 hemispheres (compatible with r128!)
         const paddle1Material = new THREE.MeshPhysicalMaterial({
             color: 0x88ff00,        // Vibrant lime green
-            emissive: 0x000000,     // Black emissive in neutral state - no glow!
-            emissiveIntensity: 0.0, // No intensity
+            emissive: 0x88ff00,     // GREEN emissive - ALWAYS GLOWING
+            emissiveIntensity: 2.0, // Strong glow at rest
             metalness: 0.9,
             roughness: 0.1,
             clearcoat: 1.0
@@ -1533,8 +1533,8 @@ class TronPong {
         this.paddle1.add(rightCap);
         this.paddle1.position.set(0, 0, 15);
         this.paddle1.userData.originalColor = 0x88ff00; // Lime green
-        this.paddle1.userData.originalEmissive = 0x000000; // Black emissive for neutral
-        this.paddle1.userData.originalEmissiveIntensity = 0.0; // Store neutral intensity (no glow)
+        this.paddle1.userData.originalEmissive = 0x88ff00; // GREEN emissive for glow
+        this.paddle1.userData.originalEmissiveIntensity = 2.0; // Strong glow intensity
         // Store material reference for blink animations
         this.paddle1.userData.material = paddle1Material;
         this.scene.add(this.paddle1);
@@ -1543,8 +1543,8 @@ class TronPong {
         // PILL SHAPE - Create using cylinder + 2 hemispheres
         const paddle2Material = new THREE.MeshPhysicalMaterial({
             color: 0xff00ff,
-            emissive: 0x000000, // Black emissive in neutral state - no glow!
-            emissiveIntensity: 0.0, // No intensity
+            emissive: 0xff00ff,     // MAGENTA emissive - ALWAYS GLOWING
+            emissiveIntensity: 2.0, // Strong glow at rest
             metalness: 0.9,
             roughness: 0.1,
             clearcoat: 1.0
@@ -1571,8 +1571,8 @@ class TronPong {
         this.paddle2.add(rightCap2);
         this.paddle2.position.set(0, 0, -15);
         this.paddle2.userData.originalColor = 0xff00ff;
-        this.paddle2.userData.originalEmissive = 0x000000; // Black emissive for neutral
-        this.paddle2.userData.originalEmissiveIntensity = 0.0; // Store neutral intensity (no glow)
+        this.paddle2.userData.originalEmissive = 0xff00ff; // MAGENTA emissive for glow
+        this.paddle2.userData.originalEmissiveIntensity = 2.0; // Strong glow intensity
         // Store material reference for blink animations
         this.paddle2.userData.material = paddle2Material;
         this.scene.add(this.paddle2);
@@ -1683,7 +1683,7 @@ class TronPong {
             uniforms: {
                 time: { value: 0 },
                 baseColor: { value: new THREE.Color(0xff3300) }, // Deep red/orange - DANGER MODE!
-                emissiveIntensity: { value: 3.0 },
+                emissiveIntensity: { value: 5.0 }, // AGGRESSIVE GLOW (was 3.0)
                 opacity: { value: 0.3 } // More transparent for deeper effect
             },
             vertexShader: `
@@ -1875,7 +1875,7 @@ class TronPong {
             
             // Resize bloom render target
             if (this.bloomRenderTarget) {
-                this.bloomRenderTarget.setSize(window.innerWidth / 4, window.innerHeight / 4);
+                this.bloomRenderTarget.setSize(window.innerWidth / 2, window.innerHeight / 2);
             }
             
             // Resize fisheye render target
@@ -3621,7 +3621,7 @@ class TronPong {
         // Return to red/orange after 2.5 seconds (longer duration)
         setTimeout(() => {
             goal.material.uniforms.baseColor.value.copy(goal.userData.originalColor);
-            goal.material.uniforms.emissiveIntensity.value = 3.0;
+            goal.material.uniforms.emissiveIntensity.value = 5.0; // Back to strong glow (was 3.0)
             goal.material.uniforms.opacity.value = 0.3; // Back to subtle
             
             // Return to normal speed
