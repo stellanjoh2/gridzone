@@ -1571,18 +1571,19 @@ class TronPong {
         this.paddle2.userData.material = paddle2Material;
         this.scene.add(this.paddle2);
         
+        // TEST: Comment out layer isolation to see if paddles match ball
         // Exclude paddles from their own point lights using layers
         // Move paddle meshes to layer 1 (camera still sees them, but paddle lights won't affect them)
-        this.paddle1.traverse((child) => {
-            if (child.isMesh) {
-                child.layers.set(1); // Layer 1 only
-            }
-        });
-        this.paddle2.traverse((child) => {
-            if (child.isMesh) {
-                child.layers.set(1); // Layer 1 only
-            }
-        });
+        // this.paddle1.traverse((child) => {
+        //     if (child.isMesh) {
+        //         child.layers.set(1); // Layer 1 only
+        //     }
+        // });
+        // this.paddle2.traverse((child) => {
+        //     if (child.isMesh) {
+        //         child.layers.set(1); // Layer 1 only
+        //     }
+        // });
     }
     
     createBoundaries() {
