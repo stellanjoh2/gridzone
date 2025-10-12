@@ -1288,8 +1288,51 @@ class TronPong {
     
     spawnBall(x, y, z, velocity) {
         const ballGeometry = new THREE.SphereGeometry(0.5, 24, 24);
-        const ballMaterial = new THREE.MeshBasicMaterial({
-            color: 0x88ff00             // Like goal walls - no PBR, just pure color!
+        // Use same laser wall shader!
+        const ballMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0 },
+                baseColor: { value: new THREE.Color(0x88ff00) }, // Bright green!
+                emissiveIntensity: { value: 5.0 },
+                opacity: { value: 1.0 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                varying vec3 vPosition;
+                
+                void main() {
+                    vUv = uv;
+                    vPosition = position;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float time;
+                uniform vec3 baseColor;
+                uniform float emissiveIntensity;
+                uniform float opacity;
+                varying vec2 vUv;
+                varying vec3 vPosition;
+                
+                void main() {
+                    // Animated gradient moving downwards quickly
+                    float gradient = fract(vUv.y * 3.0 - time * 2.0);
+                    
+                    // Create striped pattern
+                    float stripes = smoothstep(0.3, 0.7, gradient);
+                    
+                    // Pulsing intensity
+                    float pulse = 0.8 + 0.2 * sin(time * 3.0);
+                    
+                    // Combine effects
+                    vec3 color = baseColor * (stripes * 0.5 + 0.5) * pulse;
+                    
+                    gl_FragColor = vec4(color * emissiveIntensity, opacity);
+                }
+            `,
+            transparent: false,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
         });
         
         const ball = new THREE.Mesh(ballGeometry, ballMaterial);
@@ -1336,8 +1379,11 @@ class TronPong {
         
         if (owner === 'player') {
             // LIME GREEN for player
-            ball.material.color.setHex(0x88ff00);
-            // No emissive for MeshBasicMaterial!
+            if (ball.material.uniforms && ball.material.uniforms.baseColor) {
+                ball.material.uniforms.baseColor.value.setHex(0x88ff00); // ShaderMaterial
+            } else if (ball.material.color) {
+                ball.material.color.setHex(0x88ff00); // Fallback
+            }
             
             // Update trail color
             if (trail) {
@@ -1353,8 +1399,11 @@ class TronPong {
             }
         } else if (owner === 'ai') {
             // Magenta for AI
-            ball.material.color.setHex(0xff00ff);
-            // No emissive for MeshBasicMaterial!
+            if (ball.material.uniforms && ball.material.uniforms.baseColor) {
+                ball.material.uniforms.baseColor.value.setHex(0xff00ff); // ShaderMaterial
+            } else if (ball.material.color) {
+                ball.material.color.setHex(0xff00ff); // Fallback
+            }
             
             // Update trail color
             if (trail) {
@@ -1565,8 +1614,51 @@ class TronPong {
         
         // AI paddle (MAGENTA) - at top
         // PILL SHAPE - Create using cylinder + 2 hemispheres
-        const paddle2Material = new THREE.MeshBasicMaterial({
-            color: 0xff00ff             // Like goal walls - no PBR, just pure color!
+        // Use same laser wall shader!
+        const paddle2Material = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0 },
+                baseColor: { value: new THREE.Color(0xff00ff) }, // Bright magenta!
+                emissiveIntensity: { value: 5.0 },
+                opacity: { value: 1.0 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                varying vec3 vPosition;
+                
+                void main() {
+                    vUv = uv;
+                    vPosition = position;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float time;
+                uniform vec3 baseColor;
+                uniform float emissiveIntensity;
+                uniform float opacity;
+                varying vec2 vUv;
+                varying vec3 vPosition;
+                
+                void main() {
+                    // Animated gradient moving downwards quickly
+                    float gradient = fract(vUv.y * 3.0 - time * 2.0);
+                    
+                    // Create striped pattern
+                    float stripes = smoothstep(0.3, 0.7, gradient);
+                    
+                    // Pulsing intensity
+                    float pulse = 0.8 + 0.2 * sin(time * 3.0);
+                    
+                    // Combine effects
+                    vec3 color = baseColor * (stripes * 0.5 + 0.5) * pulse;
+                    
+                    gl_FragColor = vec4(color * emissiveIntensity, opacity);
+                }
+            `,
+            transparent: false,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
         });
         
         // Create pill shape: cylinder body + 2 sphere caps
@@ -3571,9 +3663,20 @@ class TronPong {
         this.playerGoal.material.uniforms.time.value = this.goalAnimationTime;
         this.aiGoal.material.uniforms.time.value = this.goalAnimationTime;
         
-        // Update paddle1 shader time (EXPERIMENT: using laser wall shader!)
+        // Update paddle shaders time (using laser wall shader!)
         if (this.paddle1 && this.paddle1.userData.material && this.paddle1.userData.material.uniforms && this.paddle1.userData.material.uniforms.time) {
             this.paddle1.userData.material.uniforms.time.value = this.goalAnimationTime;
+        }
+        if (this.paddle2 && this.paddle2.userData.material && this.paddle2.userData.material.uniforms && this.paddle2.userData.material.uniforms.time) {
+            this.paddle2.userData.material.uniforms.time.value = this.goalAnimationTime;
+        }
+        
+        // Update ball shaders time
+        for (let i = 0; i < this.balls.length; i++) {
+            const ball = this.balls[i];
+            if (ball && ball.material && ball.material.uniforms && ball.material.uniforms.time) {
+                ball.material.uniforms.time.value = this.goalAnimationTime;
+            }
         }
         
         // Fast blink animation when green (goal scored!)
