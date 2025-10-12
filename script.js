@@ -569,9 +569,9 @@ class TronPong {
                     
                     sum /= totalWeight;
                     
-                    // Much lower threshold - let EVERYTHING bloom!
+                    // Low threshold - emissive objects bloom easily
                     float brightness = dot(sum.rgb, vec3(0.2126, 0.7152, 0.0722));
-                    float bloomAmount = smoothstep(0.3, 0.8, brightness); // Higher threshold for emissive objects
+                    float bloomAmount = smoothstep(0.01, 0.2, brightness); // Very low threshold
                     gl_FragColor = sum * bloomStrength * bloomAmount;
                 }
             `
