@@ -943,12 +943,18 @@ class TronPong {
         this.overheadLight2.layers.set(0);
         this.scene.add(this.overheadLight2);
         
-        // DISABLED: Paddle lights - paddles look better with just emissive!
-        // Player paddle doesn't need external light
-        this.playerLight = null;
+        // Paddle lights to illuminate environment!
+        // Player paddle light (lime-yellow)
+        this.playerLight = new THREE.PointLight(0xCCFF00, 2.5, 25); // Lime-yellow, medium intensity, 25 units range
+        this.playerLight.castShadow = false; // No shadows for performance
+        this.playerLight.layers.set(0);
+        this.scene.add(this.playerLight);
         
-        // AI paddle doesn't need external light
-        this.aiLight = null;
+        // AI paddle light (magenta)
+        this.aiLight = new THREE.PointLight(0xff00ff, 2.5, 25); // Magenta, medium intensity, 25 units range
+        this.aiLight.castShadow = false; // No shadows for performance
+        this.aiLight.layers.set(0);
+        this.scene.add(this.aiLight);
         
         // Ball lights with shadows - one per ball (max 2)
         this.ballLights = [];
@@ -2376,7 +2382,7 @@ class TronPong {
             
             // Also fade the light intensity
             if (this.playerLight) {
-                this.playerLight.intensity = 8.0 * fadeProgress + 1.5 * (1 - fadeProgress);
+                this.playerLight.intensity = 8.0 * fadeProgress + 2.5 * (1 - fadeProgress);
             }
         }
         
@@ -2404,7 +2410,7 @@ class TronPong {
             
             // Also fade the light intensity
             if (this.aiLight) {
-                this.aiLight.intensity = 8.0 * fadeProgress + 1.5 * (1 - fadeProgress);
+                this.aiLight.intensity = 8.0 * fadeProgress + 2.5 * (1 - fadeProgress);
             }
         }
         
