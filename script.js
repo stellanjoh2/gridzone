@@ -533,7 +533,7 @@ class TronPong {
         const bloomShader = {
             uniforms: {
                 tDiffuse: { value: null },
-                bloomStrength: { value: 3.36 }, // +20% from 2.8
+                bloomStrength: { value: 0.5 }, // +20% from 2.8
                 bloomRadius: { value: 1.7 } // 20% reduction from 2.125
             },
             vertexShader: `
@@ -930,7 +930,7 @@ class TronPong {
         this.scene.add(ambientLight);
         
         // Soft LIME YELLOW omni light - MUCH weaker
-        this.overheadLight = new THREE.PointLight(0xCCFF00, 1.0, 120); // Was 4, now 1.0
+        this.overheadLight = new THREE.PointLight(0x00FEFC, 1.0, 120); // Was 4, now 1.0
         this.overheadLight.position.set(0, 60, 20);
         this.overheadLight.castShadow = false;
         this.overheadLight.layers.set(0);
@@ -945,7 +945,7 @@ class TronPong {
         
         // Paddle lights to illuminate environment!
         // Player paddle light (lime-yellow)
-        this.playerLight = new THREE.PointLight(0xCCFF00, 8.0, 35); // Lime-yellow, BRIGHT, wider range
+        this.playerLight = new THREE.PointLight(0x00FEFC, 8.0, 35); // Lime-yellow, BRIGHT, wider range
         this.playerLight.castShadow = false; // No shadows for performance
         this.playerLight.layers.set(0);
         this.scene.add(this.playerLight);
@@ -960,7 +960,7 @@ class TronPong {
         this.ballLights = [];
         
         // Create first ball light - weaker for subtle floor illumination
-        const ballLight = new THREE.PointLight(0xCCFF00, 2.0, 45); // Was 3.75, now 2.0
+        const ballLight = new THREE.PointLight(0x00FEFC, 2.0, 45); // Was 3.75, now 2.0
         ballLight.castShadow = true;
         ballLight.shadow.mapSize.width = 512;
         ballLight.shadow.mapSize.height = 512;
@@ -1298,7 +1298,7 @@ class TronPong {
         const ballMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 time: { value: 0 },
-                baseColor: { value: new THREE.Color(0xCCFF00) }, // Bright lime-yellow!
+                baseColor: { value: new THREE.Color(0x00FEFC) }, // Bright lime-yellow!
                 emissiveIntensity: { value: 5.0 },
                 opacity: { value: 1.0 }
             },
@@ -1355,7 +1355,7 @@ class TronPong {
         
         // Create light for this ball (if we don't have one yet)
         if (ballIndex >= this.ballLights.length) {
-            const ballLight = new THREE.PointLight(0xCCFF00, 2.0, 45); // Weaker for subtle floor illumination
+            const ballLight = new THREE.PointLight(0x00FEFC, 2.0, 45); // Weaker for subtle floor illumination
             ballLight.castShadow = true;
             ballLight.shadow.mapSize.width = 512;
             ballLight.shadow.mapSize.height = 512;
@@ -1386,22 +1386,22 @@ class TronPong {
         if (owner === 'player') {
             // LIME YELLOW for player
             if (ball.material.uniforms && ball.material.uniforms.baseColor) {
-                ball.material.uniforms.baseColor.value.setHex(0xCCFF00); // ShaderMaterial
+                ball.material.uniforms.baseColor.value.setHex(0x00FEFC); // ShaderMaterial
             } else if (ball.material.color) {
-                ball.material.color.setHex(0xCCFF00); // Fallback
+                ball.material.color.setHex(0x00FEFC); // Fallback
             }
             
             // Update trail color
             if (trail) {
-                trail.mesh.material.color.setHex(0xCCFF00);
+                trail.mesh.material.color.setHex(0x00FEFC);
                 trail.spheres.forEach(sphere => {
-                    sphere.material.color.setHex(0xCCFF00);
+                    sphere.material.color.setHex(0x00FEFC);
             });
             }
             
             // Update ball light color
             if (this.ballLights[ballIndex]) {
-                this.ballLights[ballIndex].color.setHex(0xCCFF00);
+                this.ballLights[ballIndex].color.setHex(0x00FEFC);
             }
         } else if (owner === 'ai') {
             // Magenta for AI
@@ -1451,7 +1451,7 @@ class TronPong {
         
         // Soft glowing material
         const trailMaterial = new THREE.LineBasicMaterial({
-            color: 0xCCFF00,        // Lime-yellow
+            color: 0x00FEFC,        // Lime-yellow
             transparent: true,
             opacity: 0.6,
             linewidth: 8,
@@ -1466,7 +1466,7 @@ class TronPong {
         for (let i = 0; i < 12; i++) {
             const sphereGeometry = new THREE.SphereGeometry(0.3, 6, 6);
             const sphereMaterial = new THREE.MeshBasicMaterial({
-                color: 0xCCFF00,        // Lime-yellow
+                color: 0x00FEFC,        // Lime-yellow
                 transparent: true,
                 opacity: 0.3 * (1 - i / 12),
                 blending: THREE.AdditiveBlending
@@ -1548,7 +1548,7 @@ class TronPong {
         const paddle1Material = new THREE.ShaderMaterial({
             uniforms: {
                 time: { value: 0 },
-                baseColor: { value: new THREE.Color(0xCCFF00) }, // Bright lime-yellow!
+                baseColor: { value: new THREE.Color(0x00FEFC) }, // Bright lime-yellow!
                 emissiveIntensity: { value: 5.0 },
                 opacity: { value: 1.0 } // Opaque for paddle
             },
@@ -1611,8 +1611,8 @@ class TronPong {
         this.paddle1.add(leftCap);
         this.paddle1.add(rightCap);
         this.paddle1.position.set(0, 0, 15);
-        this.paddle1.userData.originalColor = 0xCCFF00; // Lime-yellow
-        this.paddle1.userData.originalEmissive = 0xCCFF00; // Lime-yellow emissive for glow
+        this.paddle1.userData.originalColor = 0x00FEFC; // Lime-yellow
+        this.paddle1.userData.originalEmissive = 0x00FEFC; // Lime-yellow emissive for glow
         this.paddle1.userData.originalEmissiveIntensity = 0.8; // Show true color (was 2.0)
         // Store material reference for blink animations
         this.paddle1.userData.material = paddle1Material;
@@ -2366,7 +2366,7 @@ class TronPong {
             const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle1 / 0.5);
             
             const material = this.paddle1.userData.material;
-            const originalColor = 0xCCFF00; // Lime-yellow
+            const originalColor = 0x00FEFC; // Lime-yellow
             const whiteColor = 0xffffff;
             
             // Lerp from white back to original green
@@ -2955,7 +2955,7 @@ class TronPong {
                 this.triggerCameraShake(0.4, false, false, -1);
                 this.triggerWallBlink(this.leftWallCubes, ball.position.z);
                 this.triggerRumble(0.2, 80);
-                this.createImpactEffect(ball.position.clone(), 0xCCFF00);
+                this.createImpactEffect(ball.position.clone(), 0x00FEFC);
                 this.worldLightBoost = 12.0;
             this.playSound('wallHit');
         }
@@ -2976,7 +2976,7 @@ class TronPong {
                 this.triggerCameraShake(0.4, false, false, 1);
                 this.triggerWallBlink(this.rightWallCubes, ball.position.z);
                 this.triggerRumble(0.2, 80);
-                this.createImpactEffect(ball.position.clone(), 0xCCFF00);
+                this.createImpactEffect(ball.position.clone(), 0x00FEFC);
                 this.worldLightBoost = 12.0;
             this.playSound('wallHit');
         }
@@ -3047,7 +3047,7 @@ class TronPong {
                 this.triggerCameraShake(0.5, true, true);
             this.triggerPaddleBlink(this.paddle1, 'paddle1');
                 this.triggerRumble(0.4, 120);
-                this.createImpactEffect(ball.position.clone(), 0xCCFF00); // Lime green
+                this.createImpactEffect(ball.position.clone(), 0x00FEFC); // Lime green
                 
                 // Paddle pushback!
                 this.paddle1Pushback = 1.5; // Push back 1.5 units (increased from 0.8)
@@ -3491,15 +3491,15 @@ class TronPong {
         // Update player light position to follow player paddle
         if (this.playerLight && this.paddle1) {
             this.playerLight.position.x = this.paddle1.position.x;
-            this.playerLight.position.y = 5; // Higher above paddle to avoid blocking
-            this.playerLight.position.z = this.paddle1.position.z - 3; // In front of paddle (toward center)
+            this.playerLight.position.y = 1; // Higher above paddle to avoid blocking
+            this.playerLight.position.z = this.paddle1.position.z - 0; // In front of paddle (toward center)
         }
         
         // Update AI light position to follow AI paddle
         if (this.aiLight && this.paddle2) {
             this.aiLight.position.x = this.paddle2.position.x;
-            this.aiLight.position.y = 5; // Higher above paddle to avoid blocking
-            this.aiLight.position.z = this.paddle2.position.z + 3; // In front of paddle (toward center)
+            this.aiLight.position.y = 1; // Higher above paddle to avoid blocking
+            this.aiLight.position.z = this.paddle2.position.z + 0; // In front of paddle (toward center)
         }
     }
     
