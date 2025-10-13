@@ -964,7 +964,7 @@ class TronPong {
         this.scene.add(this.playerLight);
         
         // AI paddle light (magenta)
-        this.aiLight = new THREE.PointLight(0xff00ff, 0.0i 5, 35); // 75% reduced total (was 0.5)
+        this.aiLight = new THREE.PointLight(0xff00ff, 0.05, 35); // 95% reduced total (was 0.5)
         this.aiLight.castShadow = false; // No shadows for performance
         this.aiLight.layers.set(0);
         this.scene.add(this.aiLight);
@@ -2434,9 +2434,9 @@ class TronPong {
             // Fade emissive intensity back to original
             material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
             
-            // Also fade the light intensity (flash at 12.0, base is 0.25)
+            // Also fade the light intensity (flash at 12.0, base is 0.05)
             if (this.playerLight) {
-                this.playerLight.intensity = 12.0 * fadeProgress + 0.25 * (1 - fadeProgress);
+                this.playerLight.intensity = 12.0 * fadeProgress + 0.05 * (1 - fadeProgress);
             }
         }
         
@@ -2462,9 +2462,9 @@ class TronPong {
             // Fade emissive intensity back to original
             material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
             
-            // Also fade the light intensity (flash at 12.0, base is 0.25)
+            // Also fade the light intensity (flash at 12.0, base is 0.05)
             if (this.aiLight) {
-                this.aiLight.intensity = 12.0 * fadeProgress + 0.25 * (1 - fadeProgress);
+                this.aiLight.intensity = 12.0 * fadeProgress + 0.05 * (1 - fadeProgress);
             }
         }
         
