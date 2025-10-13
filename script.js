@@ -3206,6 +3206,11 @@ class TronPong {
                 this.playSound('score');
                 this.showAwesomeText();
             this.updateScore();
+            
+            // Spawn new ball after celebration (2.5s delay to match goal animation)
+            setTimeout(() => {
+                this.spawnBall(0, 0, 0, { x: 0.15, y: 0, z: -0.15 });
+            }, 2500);
             }
         }
         
@@ -3840,7 +3845,7 @@ class TronPong {
             // Normal game logic
         this.updateGamepad();
         this.updatePlayerPaddle();
-        // this.updateAIPaddle(); // FROZEN FOR TESTING
+        this.updateAIPaddle();
         this.updateBall();
         this.updateDynamicCamera();
         this.updateCameraShake();
