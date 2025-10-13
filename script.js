@@ -58,6 +58,11 @@ class TronPong {
         this.bonusPaddleWidth = 10; // 2x width
         this.paddleWidthTransition = 0; // 0 = normal, 1 = bonus width
         
+        // RED FLICKER on enemy hit
+        this.bonusCubeFlickerActive = false;
+        this.bonusCubeFlickerTimer = 0;
+        this.bonusCubeFlickerDuration = 0.9; // 3 flickers @ 0.3s each
+        
         // Cache DOM elements for better performance
         this.domElements = {
             player1Score: null,
@@ -108,9 +113,9 @@ class TronPong {
             active: true,
             angle: 0, // Current rotation angle
             radius: 25, // Distance from center
-            height: 3, // Height above ground (lower than gameplay camera)
+            height: 8, // Angled up to see more arena (was 3)
             speed: 0.15, // Rotation speed (radians per second)
-            lookAtHeight: 2 // What height to look at
+            lookAtHeight: 0 // Look at ground level (was 2)
         };
         
         // Pause menu camera (slower idle rotation)
@@ -959,13 +964,13 @@ class TronPong {
         
         // Paddle lights to illuminate environment!
         // Player paddle light (lime-yellow)
-        this.playerLight = new THREE.PointLight(0x00FEFC, 0.5, 35); // 50% reduced (was 1.0)
+        this.playerLight = new THREE.PointLight(0x00FEFC, 0.25, 35); // 75% reduced total (was 0.5)
         this.playerLight.castShadow = false; // No shadows for performance
         this.playerLight.layers.set(0);
         this.scene.add(this.playerLight);
         
         // AI paddle light (magenta)
-        this.aiLight = new THREE.PointLight(0xff00ff, 0.5, 35); // 50% reduced (was 1.0)
+        this.aiLight = new THREE.PointLight(0xff00ff, 0.25, 35); // 75% reduced total (was 0.5)
         this.aiLight.castShadow = false; // No shadows for performance
         this.aiLight.layers.set(0);
         this.scene.add(this.aiLight);
@@ -2636,12 +2641,42 @@ class TronPong {
     updateBonusCube(deltaTime) {
         if (!this.bonusCube) return;
         
+        // RED FLICKER ANIMATION (enemy hit)
+        if (this.bonusCubeFlickerActive) {
+            this.bonusCubeFlickerTimer += deltaTime;
+            
+            // 3 flickers @ 0.3s each = 0.9s total
+            const flickerCycle = (this.bonusCubeFlickerTimer % 0.3) / 0.3; // 0-1 per flicker
+            const isRed = flickerCycle < 0.5; // Red for first half, cyan for second half
+            
+            if (this.bonusCube.userData.material && this.bonusCube.userData.material.uniforms) {
+                this.bonusCube.userData.material.uniforms.baseColor.value.setHex(isRed ? 0xff0000 : 0x00FEFC);
+                this.bonusCube.userData.material.uniforms.emissiveIntensity.value = isRed ? 8.0 : 3.0;
+            }
+            
+            // After 0.9s, remove cube
+            if (this.bonusCubeFlickerTimer >= this.bonusCubeFlickerDuration) {
+                this.scene.remove(this.bonusCube);
+                this.bonusCube = null;
+                this.bonusCubeActive = false;
+                this.bonusCubeFlickerActive = false;
+                this.bonusCubeFlickerTimer = 0;
+                console.log('🔴 BONUS CUBE REMOVED after red flicker');
+            }
+            return;
+        }
+        
         // Update shader time for animation
         if (this.bonusCube.userData.material && this.bonusCube.userData.material.uniforms) {
             this.bonusCube.userData.material.uniforms.time.value = this.goalAnimationTime;
+            
+            // BLINK like winning laser wall!
+            const blinkSpeed = 2.0;
+            const blinkIntensity = 5.0 + Math.sin(this.goalAnimationTime * blinkSpeed) * 3.0; // 2.0-8.0 range
+            this.bonusCube.userData.material.uniforms.emissiveIntensity.value = blinkIntensity;
         }
         
-        // Blink animation on spawn
+        // Spawn scale animation
         if (this.bonusCube.userData.blinkTimer < this.bonusCube.userData.blinkDuration) {
             this.bonusCube.userData.blinkTimer += deltaTime;
             
@@ -2829,7 +2864,7 @@ class TronPong {
     }
     
     checkBonusCubeCollision() {
-        if (!this.bonusCube || !this.bonusCubeActive) return;
+        if (!this.bonusCube || !this.bonusCubeActive || this.bonusCubeFlickerActive) return;
         
         // Check all balls for collision with bonus cube
         for (let i = 0; i < this.balls.length; i++) {
@@ -2841,14 +2876,14 @@ class TronPong {
                 // Check who hit it based on ball color/ownership
                 if (this.currentBallOwner === 'player') {
                     this.triggerBonus();
+                    // Remove bonus cube immediately on player hit
+                    this.scene.remove(this.bonusCube);
+                    this.bonusCube = null;
+                    this.bonusCubeActive = false;
                 } else {
                     this.triggerBonusLoss();
+                    // Start flicker animation (cube removed after flicker)
                 }
-                
-                // Remove bonus cube
-                this.scene.remove(this.bonusCube);
-                this.bonusCube = null;
-                this.bonusCubeActive = false;
                 return;
             }
         }
@@ -2872,10 +2907,13 @@ class TronPong {
     }
     
     triggerBonusLoss() {
-        console.log('💀 ENEMY HIT BONUS - Cube disappears, no effect!');
+        console.log('💀 ENEMY HIT BONUS - Red flicker then disappear!');
         
-        // Enemy gets nothing - cube just disappears
-        // No bonus effect for enemy!
+        // Start red flicker animation
+        this.bonusCubeFlickerActive = true;
+        this.bonusCubeFlickerTimer = 0;
+        
+        // Enemy gets nothing - cube just flickers and disappears
     }
     
     showBonusText() {
