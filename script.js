@@ -67,7 +67,6 @@ class TronPong {
         this.domElements = {
             player1Score: null,
             player2Score: null,
-            lifeScoreValue: null,
             combo: null,
             ui: null,
             deathScreen: null,
@@ -89,10 +88,6 @@ class TronPong {
         this.consecutiveHits = 0;
         this.currentCombo = 0;
         this.comboTimeout = null;
-        
-        // Life score (based on ball active time)
-        this.lifeScore = 0;
-        this.lifeScoreAccumulator = 0;
         
         // Camera system - reduced follow sensitivity
         this.cameraShake = { 
@@ -254,7 +249,6 @@ class TronPong {
         // Cache DOM queries to avoid repeated lookups
         this.domElements.player1Score = document.getElementById('player1Score');
         this.domElements.player2Score = document.getElementById('player2Score');
-        this.domElements.lifeScoreValue = document.getElementById('lifeScoreValue');
         this.domElements.combo = document.getElementById('combo');
         this.domElements.ui = document.getElementById('ui');
         this.domElements.deathScreen = document.getElementById('deathScreen');
@@ -3594,15 +3588,6 @@ class TronPong {
             this.updateScore();
             this.resetBall(); // Reset entire game
         }
-        
-        // Update life score
-        if (this.gameStarted && !this.isPaused) {
-            const baseScore = 10;
-            const comboMultiplier = this.currentCombo || 1;
-            this.lifeScoreAccumulator += baseScore * comboMultiplier;
-            this.lifeScore = Math.floor(this.lifeScoreAccumulator);
-            this.updateLifeScore();
-        }
     }
     
     showDeathScreen() {
@@ -4110,10 +4095,6 @@ class TronPong {
         this.comboTimeout = setTimeout(() => {
             this.resetCombo();
         }, 3000);
-    }
-    
-    updateLifeScore() {
-        this.domElements.lifeScoreValue.textContent = this.lifeScore.toLocaleString();
     }
     
     updateGoals(deltaTime) {
