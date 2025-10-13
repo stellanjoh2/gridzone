@@ -2155,11 +2155,24 @@ class TronPong {
         const deadzone = 0.15;
         
         if (Math.abs(leftStickX) > deadzone) {
+            // Calculate paddle half-width (accounts for bonus effect)
+            const scaleFactor = 1.0 + (this.bonusActivePaddle === this.paddle1 ? this.paddleWidthTransition : 0);
+            const paddleHalfWidth = 2.5 * scaleFactor; // Normal: 2.5, Bonus: 5.0
+            
+            // Wall boundaries (walls are at ±11.5)
+            const wallPosition = 11.5;
+            const maxX = wallPosition - paddleHalfWidth;
+            const minX = -(wallPosition - paddleHalfWidth);
+            
             const speed = this.paddleSpeed * Math.abs(leftStickX) * this.timeScale; // Apply timeScale for slow motion
-            if (leftStickX < 0 && this.paddle1.position.x > -10) {
+            if (leftStickX < 0 && this.paddle1.position.x > minX) {
                 this.paddle1.position.x -= speed;
-            } else if (leftStickX > 0 && this.paddle1.position.x < 10) {
+                // Clamp to prevent wall intersection
+                this.paddle1.position.x = Math.max(this.paddle1.position.x, minX);
+            } else if (leftStickX > 0 && this.paddle1.position.x < maxX) {
                 this.paddle1.position.x += speed;
+                // Clamp to prevent wall intersection
+                this.paddle1.position.x = Math.min(this.paddle1.position.x, maxX);
             }
         }
         
@@ -3089,12 +3102,25 @@ class TronPong {
         // Store previous position for tilt calculation
         const previousX = this.paddle1.position.x;
         
+        // Calculate paddle half-width (accounts for bonus effect)
+        const scaleFactor = 1.0 + (this.bonusActivePaddle === this.paddle1 ? this.paddleWidthTransition : 0);
+        const paddleHalfWidth = 2.5 * scaleFactor; // Normal: 2.5, Bonus: 5.0
+        
+        // Wall boundaries (walls are at ±11.5)
+        const wallPosition = 11.5;
+        const maxX = wallPosition - paddleHalfWidth; // Dynamic based on paddle width
+        const minX = -(wallPosition - paddleHalfWidth);
+        
         // Player controls (A/D or Arrow keys) - apply timeScale for slow motion
-        if ((this.keys['a'] || this.keys['arrowleft']) && this.paddle1.position.x > -10) {
+        if ((this.keys['a'] || this.keys['arrowleft']) && this.paddle1.position.x > minX) {
             this.paddle1.position.x -= this.paddleSpeed * this.timeScale;
+            // Clamp to prevent wall intersection
+            this.paddle1.position.x = Math.max(this.paddle1.position.x, minX);
         }
-        if ((this.keys['d'] || this.keys['arrowright']) && this.paddle1.position.x < 10) {
+        if ((this.keys['d'] || this.keys['arrowright']) && this.paddle1.position.x < maxX) {
             this.paddle1.position.x += this.paddleSpeed * this.timeScale;
+            // Clamp to prevent wall intersection
+            this.paddle1.position.x = Math.min(this.paddle1.position.x, maxX);
         }
         
         // Calculate paddle velocity for camera tilt
@@ -3165,11 +3191,23 @@ class TronPong {
         const error = (Math.random() - 0.5) * (1 - this.aiDifficulty) * 2;
         const targetWithError = targetX + error;
         
+        // Calculate AI paddle half-width (always normal width - no bonus for AI)
+        const paddleHalfWidth = 2.5; // AI paddle is always normal size
+        
+        // Wall boundaries (walls are at ±11.5)
+        const wallPosition = 11.5;
+        const maxX = wallPosition - paddleHalfWidth; // = 9.0
+        const minX = -(wallPosition - paddleHalfWidth); // = -9.0
+        
         // Move towards target (apply timeScale for slow motion)
-            if (currentX < targetWithError - 0.5 && this.paddle2.position.x < 10) {
+            if (currentX < targetWithError - 0.5 && this.paddle2.position.x < maxX) {
                 this.paddle2.position.x += this.aiSpeed * this.timeScale;
-            } else if (currentX > targetWithError + 0.5 && this.paddle2.position.x > -10) {
+                // Clamp to prevent wall intersection
+                this.paddle2.position.x = Math.min(this.paddle2.position.x, maxX);
+            } else if (currentX > targetWithError + 0.5 && this.paddle2.position.x > minX) {
                 this.paddle2.position.x -= this.aiSpeed * this.timeScale;
+                // Clamp to prevent wall intersection
+                this.paddle2.position.x = Math.max(this.paddle2.position.x, minX);
             }
         
         // Calculate paddle velocity for tilt
