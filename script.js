@@ -2598,7 +2598,7 @@ class TronPong {
             // GREEN LASER COLOR (like goal walls when scoring!)
             pillar.userData.targetColor = 0x00ff00; // Bright green
             pillar.userData.targetEmissive = 0x00ff00; // Green emissive
-            pillar.userData.targetIntensity = 5.0; // SUPER BRIGHT like laser walls!
+            pillar.userData.targetIntensity = 2.5; // Bright but not washing out to white
             
             // Wave duration - consistent across all pillars
             pillar.userData.blinkDuration = 1.5; // 1.5 second glow
