@@ -2579,6 +2579,37 @@ class TronPong {
         }
     }
     
+    triggerCelebratoryWave() {
+        // CELEBRATORY WAVE - travels from AI goal toward player!
+        // Creates a wave of GREEN laser light that flows down both walls
+        const waveSpeed = 0.05; // Time delay per unit distance
+        const aiGoalZ = -19; // Starting point (AI goal end)
+        
+        // Trigger wave on BOTH walls
+        const allWalls = [...this.leftWallCubes, ...this.rightWallCubes];
+        
+        for (let pillar of allWalls) {
+            // Calculate distance from AI goal (wave origin)
+            const distanceFromOrigin = Math.abs(pillar.userData.zPosition - aiGoalZ);
+            
+            // Delay based on distance from AI goal (wave travels toward player)
+            pillar.userData.blinkDelay = distanceFromOrigin * waveSpeed;
+            
+            // GREEN LASER COLOR (like goal walls when scoring!)
+            pillar.userData.targetColor = 0x00ff00; // Bright green
+            pillar.userData.targetEmissive = 0x00ff00; // Green emissive
+            pillar.userData.targetIntensity = 5.0; // SUPER BRIGHT like laser walls!
+            
+            // Wave duration - consistent across all pillars
+            pillar.userData.blinkDuration = 1.5; // 1.5 second glow
+            
+            // Subtle displacement - push outward slightly
+            pillar.userData.targetDisplacement = 0.8;
+        }
+        
+        console.log('🎉 CELEBRATORY WAVE TRIGGERED!');
+    }
+    
     updateParticles() {
         if (!this.particles || this.isPaused) return;
         
@@ -3171,6 +3202,7 @@ class TronPong {
                 this.score.player1++;
                 // Flash AI goal GREEN (ball went past AI) - WIN!
                 this.flashGoalGreen(this.aiGoal);
+                this.triggerCelebratoryWave(); // CELEBRATORY WAVE!
                 this.playSound('score');
                 this.showAwesomeText();
             this.updateScore();
@@ -3808,7 +3840,7 @@ class TronPong {
             // Normal game logic
         this.updateGamepad();
         this.updatePlayerPaddle();
-        this.updateAIPaddle();
+        // this.updateAIPaddle(); // FROZEN FOR TESTING
         this.updateBall();
         this.updateDynamicCamera();
         this.updateCameraShake();
