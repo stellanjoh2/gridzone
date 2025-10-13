@@ -1629,6 +1629,10 @@ class TronPong {
         this.paddle1.userData.originalEmissiveIntensity = 0.8; // Show true color (was 2.0)
         // Store material reference for blink animations
         this.paddle1.userData.material = paddle1Material;
+        // Store paddle parts for proper scaling (cylinder extends, caps move)
+        this.paddle1.userData.cylinder = cylinder;
+        this.paddle1.userData.leftCap = leftCap;
+        this.paddle1.userData.rightCap = rightCap;
         this.scene.add(this.paddle1);
         
         // AI paddle (MAGENTA) - at top
@@ -2103,7 +2107,15 @@ class TronPong {
         
         // Reset bonus effect
         if (this.bonusActivePaddle) {
-            this.bonusActivePaddle.scale.x = 1.0;
+            // Reset paddle parts
+            const cylinder = this.bonusActivePaddle.userData.cylinder;
+            const leftCap = this.bonusActivePaddle.userData.leftCap;
+            const rightCap = this.bonusActivePaddle.userData.rightCap;
+            if (cylinder && leftCap && rightCap) {
+                cylinder.scale.x = 1.0;
+                leftCap.position.x = -2;
+                rightCap.position.x = 2;
+            }
             this.bonusActivePaddle = null;
         }
         this.bonusTimer = 0;
@@ -2569,11 +2581,22 @@ class TronPong {
                 this.paddleWidthTransition = Math.min(1.0, this.paddleWidthTransition);
             }
             
-            // Calculate current width based on transition
-            const currentWidth = this.normalPaddleWidth + (this.bonusPaddleWidth - this.normalPaddleWidth) * this.paddleWidthTransition;
+            // Calculate scale factor (1.0 = normal, 2.0 = double)
+            const scaleFactor = 1.0 + this.paddleWidthTransition;
             
-            // Apply width to active paddle
-            this.bonusActivePaddle.scale.x = currentWidth / this.normalPaddleWidth;
+            // PROPER SCALING: Only extend cylinder, move caps outward
+            const cylinder = this.bonusActivePaddle.userData.cylinder;
+            const leftCap = this.bonusActivePaddle.userData.leftCap;
+            const rightCap = this.bonusActivePaddle.userData.rightCap;
+            
+            if (cylinder && leftCap && rightCap) {
+                // Scale cylinder in X (extends the body)
+                cylinder.scale.x = scaleFactor;
+                
+                // Move caps outward to match extended cylinder
+                leftCap.position.x = -2 * scaleFactor; // Move left cap
+                rightCap.position.x = 2 * scaleFactor; // Move right cap
+            }
             
             // Timer expired - contract back
             if (this.bonusTimer <= 0) {
@@ -2583,12 +2606,39 @@ class TronPong {
                 
                 // Fully contracted - deactivate bonus
                 if (this.paddleWidthTransition <= 0) {
-                    this.bonusActivePaddle.scale.x = 1.0;
+                    // Reset to normal
+                    if (cylinder && leftCap && rightCap) {
+                        cylinder.scale.x = 1.0;
+                        leftCap.position.x = -2;
+                        rightCap.position.x = 2;
+                    }
                     this.bonusActivePaddle = null;
                     this.bonusTimer = 0;
                     console.log('⏱️ BONUS EXPIRED - Paddle back to normal');
                 }
             }
+        }
+    }
+    
+    updateBonusCube(deltaTime) {
+        if (!this.bonusCube) return;
+        
+        // Update shader time for animation
+        if (this.bonusCube.userData.material && this.bonusCube.userData.material.uniforms) {
+            this.bonusCube.userData.material.uniforms.time.value = this.goalAnimationTime;
+        }
+        
+        // Blink animation on spawn
+        if (this.bonusCube.userData.blinkTimer < this.bonusCube.userData.blinkDuration) {
+            this.bonusCube.userData.blinkTimer += deltaTime;
+            
+            // Scale from 0.5 to 1.0 with bounce
+            const progress = this.bonusCube.userData.blinkTimer / this.bonusCube.userData.blinkDuration;
+            const scale = 0.5 + (0.5 * Math.min(1.0, progress * 1.2)); // Slightly overshoot
+            this.bonusCube.scale.set(scale, scale, scale);
+        } else {
+            // Ensure it's at full scale
+            this.bonusCube.scale.set(1.0, 1.0, 1.0);
         }
     }
     
@@ -2695,14 +2745,52 @@ class TronPong {
         // Choose random valid tile
         const randomTile = validTiles[Math.floor(Math.random() * validTiles.length)];
         
-        // Create NEON GREEN cube - perfect color match to player
+        // Create NEON GREEN cube - same shader as player paddle!
         const cubeGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-        const cubeMaterial = new THREE.MeshStandardMaterial({
-            color: 0x00FEFC,
-            emissive: 0x00FEFC,
-            emissiveIntensity: 2.0,
-            metalness: 0.8,
-            roughness: 0.2
+        const cubeMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0 },
+                baseColor: { value: new THREE.Color(0x00FEFC) }, // Player color!
+                emissiveIntensity: { value: 5.0 },
+                opacity: { value: 1.0 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                varying vec3 vPosition;
+                
+                void main() {
+                    vUv = uv;
+                    vPosition = position;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float time;
+                uniform vec3 baseColor;
+                uniform float emissiveIntensity;
+                uniform float opacity;
+                varying vec2 vUv;
+                varying vec3 vPosition;
+                
+                void main() {
+                    // Animated gradient moving downwards quickly
+                    float gradient = fract(vUv.y * 3.0 - time * 2.0);
+                    
+                    // Create striped pattern
+                    float stripes = smoothstep(0.3, 0.7, gradient);
+                    
+                    // Pulsing intensity
+                    float pulse = 0.8 + 0.2 * sin(time * 3.0);
+                    
+                    // Combine effects
+                    vec3 color = baseColor * (stripes * 0.5 + 0.5) * pulse;
+                    
+                    gl_FragColor = vec4(color * emissiveIntensity, opacity);
+                }
+            `,
+            transparent: false,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
         });
         
         this.bonusCube = new THREE.Mesh(cubeGeometry, cubeMaterial);
@@ -2711,6 +2799,14 @@ class TronPong {
             randomTile.position.y + 1.2, // Slightly elevated above tile
             randomTile.position.z
         );
+        
+        // Store shader reference for animation
+        this.bonusCube.userData.material = cubeMaterial;
+        
+        // Blink animation on spawn
+        this.bonusCube.userData.blinkTimer = 0;
+        this.bonusCube.userData.blinkDuration = 0.5; // Quick blink
+        this.bonusCube.scale.set(0.5, 0.5, 0.5); // Start small
         
         // Mark as active
         this.bonusCubeActive = true;
@@ -2748,6 +2844,9 @@ class TronPong {
     triggerBonus() {
         console.log('🎁 BONUS COLLECTED BY PLAYER!');
         
+        // Play success sound
+        this.playSound('multiBall'); // Nice uplifting sound!
+        
         // Show BONUS text
         this.showBonusText();
         
@@ -2760,14 +2859,10 @@ class TronPong {
     }
     
     triggerBonusLoss() {
-        console.log('💀 ENEMY HIT BONUS - ROUND LOST!');
+        console.log('💀 ENEMY HIT BONUS - Cube disappears, no effect!');
         
-        // BONUS EFFECT: Enemy gets wider paddle!
-        this.bonusActivePaddle = this.paddle2; // AI paddle
-        this.bonusTimer = this.bonusDuration;
-        this.paddleWidthTransition = 0; // Start transition
-        
-        console.log('✨ ENEMY PADDLE WIDENING - oh no!');
+        // Enemy gets nothing - cube just disappears
+        // No bonus effect for enemy!
     }
     
     showBonusText() {
@@ -3263,8 +3358,10 @@ class TronPong {
         }
         
         // Player paddle collision (bottom)
+            // Calculate paddle width (accounts for bonus effect)
+            const paddle1HalfWidth = 2.5 * (1.0 + (this.bonusActivePaddle === this.paddle1 ? this.paddleWidthTransition : 0));
             if (ball.position.z >= 14.5 && 
-                Math.abs(ball.position.x - paddle1X) < 2.5) {
+                Math.abs(ball.position.x - paddle1X) < paddle1HalfWidth) {
                 velocity.z *= -1.05;
                 velocity.x += (ball.position.x - paddle1X) * 0.1;
                 this.triggerCameraShake(0.5, true, true);
@@ -3790,7 +3887,15 @@ class TronPong {
         
         // Reset bonus effect
         if (this.bonusActivePaddle) {
-            this.bonusActivePaddle.scale.x = 1.0;
+            // Reset paddle parts
+            const cylinder = this.bonusActivePaddle.userData.cylinder;
+            const leftCap = this.bonusActivePaddle.userData.leftCap;
+            const rightCap = this.bonusActivePaddle.userData.rightCap;
+            if (cylinder && leftCap && rightCap) {
+                cylinder.scale.x = 1.0;
+                leftCap.position.x = -2;
+                rightCap.position.x = 2;
+            }
             this.bonusActivePaddle = null;
         }
         this.bonusTimer = 0;
@@ -4067,6 +4172,7 @@ class TronPong {
         this.updateAnimatedLights();
         this.updatePaddleBlinks(deltaTime);
         this.updateBonusEffect(deltaTime);
+        this.updateBonusCube(deltaTime);
         this.updateParticles();
         this.updateFloorGlow();
         this.updateObstacles();
