@@ -269,7 +269,7 @@ class TronPong {
             this.sounds.paddleHit = new Audio('Laser_9_converted.wav');
             this.sounds.wallHit = new Audio('Bounce_Deep_converted.wav');
             this.sounds.death = new Audio('816043__etheraudio__crunchy-retro-pitch-down-echo-thing.wav');
-            this.sounds.music = new Audio('ethereal-ambient-music-55115.mp3');
+            this.sounds.music = new Audio('sleepwalker.mp3'); // New in-game music!
             this.sounds.combo = new Audio('video-game-bonus-323603.mp3');
             this.sounds.score = new Audio('arcade-ui-18-229517.mp3');
             this.sounds.multiBall = new Audio('213149__complex_waveform__8bit-style-bonus-effect.wav');
