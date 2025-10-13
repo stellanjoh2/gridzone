@@ -2595,10 +2595,10 @@ class TronPong {
             // Delay based on distance from AI goal (wave travels toward player)
             pillar.userData.blinkDelay = distanceFromOrigin * waveSpeed;
             
-            // GREEN LASER COLOR (like goal walls when scoring!)
+            // PURE LASER GREEN - same as winning goal walls! (no white!)
             pillar.userData.targetColor = 0x00ff00; // Bright green
             pillar.userData.targetEmissive = 0x00ff00; // Green emissive
-            pillar.userData.targetIntensity = 2.5; // Bright but not washing out to white
+            pillar.userData.targetIntensity = 1.2; // Pure green, no bloom to white
             
             // Wave duration - consistent across all pillars
             pillar.userData.blinkDuration = 1.5; // 1.5 second glow
