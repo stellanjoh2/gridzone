@@ -50,6 +50,14 @@ class TronPong {
         this.bonusCubeSpawnInterval = 5; // Spawn every 5 player hits
         this.bonusCubeActive = false; // Only 1 can exist at a time
         
+        // BONUS EFFECT - Paddle Width
+        this.bonusActivePaddle = null; // Which paddle has bonus (paddle1 or paddle2)
+        this.bonusTimer = 0; // Countdown timer for bonus duration
+        this.bonusDuration = 5.0; // 5 seconds
+        this.normalPaddleWidth = 5; // Normal paddle width
+        this.bonusPaddleWidth = 10; // 2x width
+        this.paddleWidthTransition = 0; // 0 = normal, 1 = bonus width
+        
         // Cache DOM elements for better performance
         this.domElements = {
             player1Score: null,
@@ -2093,6 +2101,14 @@ class TronPong {
             this.bonusCubeActive = false;
         }
         
+        // Reset bonus effect
+        if (this.bonusActivePaddle) {
+            this.bonusActivePaddle.scale.x = 1.0;
+            this.bonusActivePaddle = null;
+        }
+        this.bonusTimer = 0;
+        this.paddleWidthTransition = 0;
+        
         this.paddle1Pushback = 0;
         this.paddle2Pushback = 0;
         this.paddle1Tilt = 0;
@@ -2541,6 +2557,41 @@ class TronPong {
         }
     }
     
+    updateBonusEffect(deltaTime) {
+        // Handle bonus paddle width effect
+        if (this.bonusActivePaddle) {
+            // Countdown timer
+            this.bonusTimer -= deltaTime;
+            
+            // Quick widen (0.3 seconds)
+            if (this.paddleWidthTransition < 1.0) {
+                this.paddleWidthTransition += deltaTime * 5; // Fast transition (5x speed)
+                this.paddleWidthTransition = Math.min(1.0, this.paddleWidthTransition);
+            }
+            
+            // Calculate current width based on transition
+            const currentWidth = this.normalPaddleWidth + (this.bonusPaddleWidth - this.normalPaddleWidth) * this.paddleWidthTransition;
+            
+            // Apply width to active paddle
+            this.bonusActivePaddle.scale.x = currentWidth / this.normalPaddleWidth;
+            
+            // Timer expired - contract back
+            if (this.bonusTimer <= 0) {
+                // Quick contract (0.3 seconds)
+                this.paddleWidthTransition -= deltaTime * 5;
+                this.paddleWidthTransition = Math.max(0, this.paddleWidthTransition);
+                
+                // Fully contracted - deactivate bonus
+                if (this.paddleWidthTransition <= 0) {
+                    this.bonusActivePaddle.scale.x = 1.0;
+                    this.bonusActivePaddle = null;
+                    this.bonusTimer = 0;
+                    console.log('⏱️ BONUS EXPIRED - Paddle back to normal');
+                }
+            }
+        }
+    }
+    
     triggerWallBlink(wallPillars, ballZ) {
         // Create shockwave effect - impact center sends wave outward to nearby pillars
         // Energy dissipates as wave travels: weaker light + slower fadeout at distance
@@ -2695,24 +2746,28 @@ class TronPong {
     }
     
     triggerBonus() {
-        console.log('🎁 BONUS COLLECTED!');
+        console.log('🎁 BONUS COLLECTED BY PLAYER!');
         
         // Show BONUS text
         this.showBonusText();
         
-        // TODO: Add bonus effect here (speed boost, extra ball, etc.)
-        // For now, just show the message
+        // BONUS EFFECT: 2x Paddle Width for 5 seconds!
+        this.bonusActivePaddle = this.paddle1; // Player paddle
+        this.bonusTimer = this.bonusDuration;
+        this.paddleWidthTransition = 0; // Start transition
+        
+        console.log('✨ PLAYER PADDLE WIDENING!');
     }
     
     triggerBonusLoss() {
         console.log('💀 ENEMY HIT BONUS - ROUND LOST!');
         
-        // Player loses the round
-        this.score.player2++; // Enemy scores
-        this.updateScore();
+        // BONUS EFFECT: Enemy gets wider paddle!
+        this.bonusActivePaddle = this.paddle2; // AI paddle
+        this.bonusTimer = this.bonusDuration;
+        this.paddleWidthTransition = 0; // Start transition
         
-        // Reset the game
-        this.resetBall();
+        console.log('✨ ENEMY PADDLE WIDENING - oh no!');
     }
     
     showBonusText() {
@@ -3733,6 +3788,14 @@ class TronPong {
             this.bonusCubeActive = false;
         }
         
+        // Reset bonus effect
+        if (this.bonusActivePaddle) {
+            this.bonusActivePaddle.scale.x = 1.0;
+            this.bonusActivePaddle = null;
+        }
+        this.bonusTimer = 0;
+        this.paddleWidthTransition = 0;
+        
         // Reset paddle pushback
         this.paddle1Pushback = 0;
         this.paddle2Pushback = 0;
@@ -4003,6 +4066,7 @@ class TronPong {
         this.updateCameraShake();
         this.updateAnimatedLights();
         this.updatePaddleBlinks(deltaTime);
+        this.updateBonusEffect(deltaTime);
         this.updateParticles();
         this.updateFloorGlow();
         this.updateObstacles();
