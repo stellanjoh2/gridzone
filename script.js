@@ -44,6 +44,12 @@ class TronPong {
         this.nextBallThreshold = 4; // Add ball after this many hits (changed from 2 to 4)
         this.maxBalls = 2; // Maximum 2 balls on screen (multi-ball only)
         
+        // BONUS CUBE SYSTEM
+        this.playerHits = 0; // Track player-only hits
+        this.bonusCube = null; // The active bonus cube
+        this.bonusCubeSpawnInterval = 5; // Spawn every 5 player hits
+        this.bonusCubeActive = false; // Only 1 can exist at a time
+        
         // Cache DOM elements for better performance
         this.domElements = {
             player1Score: null,
@@ -945,13 +951,13 @@ class TronPong {
         
         // Paddle lights to illuminate environment!
         // Player paddle light (lime-yellow)
-        this.playerLight = new THREE.PointLight(0x00FEFC, 1.0, 35); // Lime-yellow, BRIGHT, wider range
+        this.playerLight = new THREE.PointLight(0x00FEFC, 0.5, 35); // 50% reduced (was 1.0)
         this.playerLight.castShadow = false; // No shadows for performance
         this.playerLight.layers.set(0);
         this.scene.add(this.playerLight);
         
         // AI paddle light (magenta)
-        this.aiLight = new THREE.PointLight(0xff00ff, 1.0, 35); // Magenta, BRIGHT, wider range
+        this.aiLight = new THREE.PointLight(0xff00ff, 0.5, 35); // 50% reduced (was 1.0)
         this.aiLight.castShadow = false; // No shadows for performance
         this.aiLight.layers.set(0);
         this.scene.add(this.aiLight);
@@ -2078,6 +2084,15 @@ class TronPong {
         // Reset game state
         this.successfulHits = 0;
         this.nextBallThreshold = 4; // Changed from 2 to 4
+        this.playerHits = 0; // Reset bonus cube counter
+        
+        // Remove bonus cube if active
+        if (this.bonusCube) {
+            this.scene.remove(this.bonusCube);
+            this.bonusCube = null;
+            this.bonusCubeActive = false;
+        }
+        
         this.paddle1Pushback = 0;
         this.paddle2Pushback = 0;
         this.paddle1Tilt = 0;
@@ -2609,6 +2624,115 @@ class TronPong {
         console.log('🎉 CELEBRATORY WAVE TRIGGERED!');
     }
     
+    spawnBonusCube() {
+        // Don't spawn if one already exists
+        if (this.bonusCubeActive || this.bonusCube) {
+            return;
+        }
+        
+        // Choose random floor tile
+        const randomTile = this.floorCubes[Math.floor(Math.random() * this.floorCubes.length)];
+        
+        // Create NEON GREEN cube - perfect color match to player
+        const cubeGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+        const cubeMaterial = new THREE.MeshStandardMaterial({
+            color: 0x00FEFC,
+            emissive: 0x00FEFC,
+            emissiveIntensity: 2.0,
+            metalness: 0.8,
+            roughness: 0.2
+        });
+        
+        this.bonusCube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        this.bonusCube.position.set(
+            randomTile.position.x,
+            randomTile.position.y + 1.2, // Slightly elevated above tile
+            randomTile.position.z
+        );
+        
+        // Mark as active
+        this.bonusCubeActive = true;
+        
+        this.scene.add(this.bonusCube);
+        console.log('🟢 BONUS CUBE SPAWNED!');
+    }
+    
+    checkBonusCubeCollision() {
+        if (!this.bonusCube || !this.bonusCubeActive) return;
+        
+        // Check all balls for collision with bonus cube
+        for (let i = 0; i < this.balls.length; i++) {
+            const ball = this.balls[i];
+            const distance = ball.position.distanceTo(this.bonusCube.position);
+            
+            // Collision detected!
+            if (distance < 1.5) {
+                // Check who hit it based on ball color/ownership
+                if (this.currentBallOwner === 'player') {
+                    this.triggerBonus();
+                } else {
+                    this.triggerBonusLoss();
+                }
+                
+                // Remove bonus cube
+                this.scene.remove(this.bonusCube);
+                this.bonusCube = null;
+                this.bonusCubeActive = false;
+                return;
+            }
+        }
+    }
+    
+    triggerBonus() {
+        console.log('🎁 BONUS COLLECTED!');
+        
+        // Show BONUS text
+        this.showBonusText();
+        
+        // TODO: Add bonus effect here (speed boost, extra ball, etc.)
+        // For now, just show the message
+    }
+    
+    triggerBonusLoss() {
+        console.log('💀 ENEMY HIT BONUS - ROUND LOST!');
+        
+        // Player loses the round
+        this.score.player2++; // Enemy scores
+        this.updateScore();
+        
+        // Reset the game
+        this.resetBall();
+    }
+    
+    showBonusText() {
+        const bonusText = document.createElement('div');
+        bonusText.textContent = 'BONUS';
+        bonusText.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            font-weight: bold;
+            color: #00FEFC;
+            text-shadow: 
+                0 0 40px #00FEFC,
+                0 0 80px #00FEFC,
+                0 0 120px #00FEFC;
+            font-family: 'Orbitron', monospace;
+            z-index: 1000;
+            pointer-events: none;
+            animation: bonusFlash 1.5s ease-out forwards;
+        `;
+        
+        document.body.appendChild(bonusText);
+        
+        // Remove after animation
+        setTimeout(() => {
+            document.body.removeChild(bonusText);
+        }, 1500);
+    }
+    
     updateParticles() {
         if (!this.particles || this.isPaused) return;
         
@@ -2965,6 +3089,9 @@ class TronPong {
             // Move ball (apply timeScale for slow motion effects!)
             ball.position.x += velocity.x * this.timeScale;
             ball.position.z += velocity.z * this.timeScale;
+            
+            // BONUS CUBE COLLISION CHECK
+            this.checkBonusCubeCollision();
         
         // Wall collisions - Simple boundary-based detection (NOT checking individual cubes)
             // This prevents ball from getting stuck in/between wall pillars
@@ -3084,6 +3211,13 @@ class TronPong {
                 
                 // Track successful hits for multi-ball
                 this.successfulHits++;
+                
+                // BONUS CUBE - spawn every 5th PLAYER hit!
+                this.playerHits++;
+                if (this.playerHits >= this.bonusCubeSpawnInterval && !this.bonusCubeActive) {
+                    this.spawnBonusCube();
+                    this.playerHits = 0; // Reset counter
+                }
                 
                 // Spawn additional ball every 2 hits (max 2 balls)
                 // SAFETY: Only spawn once per frame, even if multiple balls hit paddle
@@ -3579,6 +3713,14 @@ class TronPong {
         // Reset multi-ball system
         this.successfulHits = 0;
         this.nextBallThreshold = 4; // Changed from 2 to 4
+        
+        // Reset bonus cube system
+        this.playerHits = 0;
+        if (this.bonusCube) {
+            this.scene.remove(this.bonusCube);
+            this.bonusCube = null;
+            this.bonusCubeActive = false;
+        }
         
         // Reset paddle pushback
         this.paddle1Pushback = 0;
