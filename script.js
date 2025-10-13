@@ -958,13 +958,13 @@ class TronPong {
         
         // Paddle lights to illuminate environment!
         // Player paddle light (lime-yellow)
-        this.playerLight = new THREE.PointLight(0x00FEFC, 0.25, 35); // 75% reduced total (was 0.5)
+        this.playerLight = new THREE.PointLight(0x00FEFC, 0.05, 35); // 75% reduced total (was 0.5)
         this.playerLight.castShadow = false; // No shadows for performance
         this.playerLight.layers.set(0);
         this.scene.add(this.playerLight);
         
         // AI paddle light (magenta)
-        this.aiLight = new THREE.PointLight(0xff00ff, 0.25, 35); // 75% reduced total (was 0.5)
+        this.aiLight = new THREE.PointLight(0xff00ff, 0.0i 5, 35); // 75% reduced total (was 0.5)
         this.aiLight.castShadow = false; // No shadows for performance
         this.aiLight.layers.set(0);
         this.scene.add(this.aiLight);
@@ -2434,9 +2434,9 @@ class TronPong {
             // Fade emissive intensity back to original
             material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
             
-            // Also fade the light intensity (flash stays at 8.0, base is now 8.0)
+            // Also fade the light intensity (flash at 12.0, base is 0.25)
             if (this.playerLight) {
-                this.playerLight.intensity = 12.0 * fadeProgress + 8.0 * (1 - fadeProgress);
+                this.playerLight.intensity = 12.0 * fadeProgress + 0.25 * (1 - fadeProgress);
             }
         }
         
@@ -2462,9 +2462,9 @@ class TronPong {
             // Fade emissive intensity back to original
             material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
             
-            // Also fade the light intensity (flash stays at 12.0, base is now 8.0)
+            // Also fade the light intensity (flash at 12.0, base is 0.25)
             if (this.aiLight) {
-                this.aiLight.intensity = 12.0 * fadeProgress + 8.0 * (1 - fadeProgress);
+                this.aiLight.intensity = 12.0 * fadeProgress + 0.25 * (1 - fadeProgress);
             }
         }
         
