@@ -533,7 +533,7 @@ class TronPong {
         const bloomShader = {
             uniforms: {
                 tDiffuse: { value: null },
-                bloomStrength: { value: 0.8 },
+                bloomStrength: { value: 3.36 }, // +20% from 2.8
                 bloomRadius: { value: 1.7 } // 20% reduction from 2.125
             },
             vertexShader: `
@@ -561,7 +561,7 @@ class TronPong {
                     for(float x = -7.0; x <= 7.0; x += 0.7) {
                         for(float y = -7.0; y <= 7.0; y += 0.7) {
                             float distance = length(vec2(x, y));
-                            float weight = exp(-distance * 0.15); // Very gentle falloff
+                            float weight = exp(-distance * 0.1); // SUPER soft falloff
                             vec2 offset = vec2(x, y) * blurSize;
                             sum += texture2D(tDiffuse, vUv + offset) * weight;
                             totalWeight += weight;
