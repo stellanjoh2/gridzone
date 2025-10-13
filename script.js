@@ -938,7 +938,7 @@ class TronPong {
         
         // Magenta light behind enemy - MUCH weaker
         this.overheadLight2 = new THREE.PointLight(0xff00ff, 1.0, 120); // Was 4, now 1.0
-        this.overheadLight2.position.set(0, 60, -77);
+        this.overheadLight2.position.set(0, 60, -95); // Moved back from -77
         this.overheadLight2.castShadow = false;
         this.overheadLight2.layers.set(0);
         this.scene.add(this.overheadLight2);
