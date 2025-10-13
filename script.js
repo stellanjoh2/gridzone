@@ -1061,13 +1061,14 @@ class TronPong {
         }
         
         // Create grid of cubes at the front (behind player) - optimized shadows
+        // KEEP THESE SHORT so they don't block camera view!
         const frontGridRows = 6;
         const frontGridCols = 20;
         
         for (let row = 0; row < frontGridRows; row++) {
             for (let col = 0; col < frontGridCols; col++) {
                 const width = 1 + Math.random() * 3;
-                const height = 0.2 + Math.random() * 11.6; // Average height ~6 (wall height)
+                const height = 0.2 + Math.random() * 2.3; // SHORT! Max 2.5 units (was 11.6)
                 const depth = 1 + Math.random() * 3;
                 
                 const geometry = new THREE.BoxGeometry(width, height, depth);
@@ -1079,10 +1080,8 @@ class TronPong {
                 
                 cube.position.set(x, y, z);
                 
-                // Randomly make some cubes 2x larger
-                if (Math.random() < 0.3) {
-                    cube.scale.set(2, 2, 2);
-                }
+                // NO 2x scaling for front cubes - keep them low to not block view!
+                // (Removed the 2x scale that was here)
                 
                 // Only close cubes cast/receive shadows
                 const isClose = row < 2 && Math.abs(x) < 30;
