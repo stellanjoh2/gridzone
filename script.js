@@ -945,13 +945,13 @@ class TronPong {
         
         // Paddle lights to illuminate environment!
         // Player paddle light (lime-yellow)
-        this.playerLight = new THREE.PointLight(0xCCFF00, 2.5, 25); // Lime-yellow, medium intensity, 25 units range
+        this.playerLight = new THREE.PointLight(0xCCFF00, 8.0, 35); // Lime-yellow, BRIGHT, wider range
         this.playerLight.castShadow = false; // No shadows for performance
         this.playerLight.layers.set(0);
         this.scene.add(this.playerLight);
         
         // AI paddle light (magenta)
-        this.aiLight = new THREE.PointLight(0xff00ff, 2.5, 25); // Magenta, medium intensity, 25 units range
+        this.aiLight = new THREE.PointLight(0xff00ff, 8.0, 35); // Magenta, BRIGHT, wider range
         this.aiLight.castShadow = false; // No shadows for performance
         this.aiLight.layers.set(0);
         this.scene.add(this.aiLight);
@@ -2348,9 +2348,9 @@ class TronPong {
         
         // Boost the paddle's point light intensity when hit
         if (paddleName === 'paddle1' && this.playerLight) {
-            this.playerLight.intensity = 8.0; // Bright flash!
+            this.playerLight.intensity = 12.0; // SUPER bright flash!
         } else if (paddleName === 'paddle2' && this.aiLight) {
-            this.aiLight.intensity = 8.0; // Bright flash!
+            this.aiLight.intensity = 12.0; // SUPER bright flash!
         }
         
         // Set timer for fade back to original color (0.5 seconds - fast like walls)
@@ -2380,9 +2380,9 @@ class TronPong {
             // Fade emissive intensity back to original
             material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
             
-            // Also fade the light intensity
+            // Also fade the light intensity (flash stays at 8.0, base is now 8.0)
             if (this.playerLight) {
-                this.playerLight.intensity = 8.0 * fadeProgress + 2.5 * (1 - fadeProgress);
+                this.playerLight.intensity = 12.0 * fadeProgress + 8.0 * (1 - fadeProgress);
             }
         }
         
@@ -2408,9 +2408,9 @@ class TronPong {
             // Fade emissive intensity back to original
             material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
             
-            // Also fade the light intensity
+            // Also fade the light intensity (flash stays at 12.0, base is now 8.0)
             if (this.aiLight) {
-                this.aiLight.intensity = 8.0 * fadeProgress + 2.5 * (1 - fadeProgress);
+                this.aiLight.intensity = 12.0 * fadeProgress + 8.0 * (1 - fadeProgress);
             }
         }
         
@@ -3491,15 +3491,15 @@ class TronPong {
         // Update player light position to follow player paddle
         if (this.playerLight && this.paddle1) {
             this.playerLight.position.x = this.paddle1.position.x;
-            this.playerLight.position.y = 3; // Above paddle
-            this.playerLight.position.z = this.paddle1.position.z;
+            this.playerLight.position.y = 5; // Higher above paddle to avoid blocking
+            this.playerLight.position.z = this.paddle1.position.z - 3; // In front of paddle (toward center)
         }
         
         // Update AI light position to follow AI paddle
         if (this.aiLight && this.paddle2) {
             this.aiLight.position.x = this.paddle2.position.x;
-            this.aiLight.position.y = 3; // Above paddle
-            this.aiLight.position.z = this.paddle2.position.z;
+            this.aiLight.position.y = 5; // Higher above paddle to avoid blocking
+            this.aiLight.position.z = this.paddle2.position.z + 3; // In front of paddle (toward center)
         }
     }
     
