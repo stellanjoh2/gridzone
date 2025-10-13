@@ -533,8 +533,8 @@ class TronPong {
         const bloomShader = {
             uniforms: {
                 tDiffuse: { value: null },
-                bloomStrength: { value: 0.5 }, // +20% from 2.8
-                bloomRadius: { value: 1.7 } // 20% reduction from 2.125
+                bloomStrength: { value: 0.75 }, // +20% from 2.8
+                bloomRadius: { value: 0.5 } // 20% reduction from 2.125
             },
             vertexShader: `
                 varying vec2 vUv;
@@ -937,21 +937,21 @@ class TronPong {
         this.scene.add(this.overheadLight);
         
         // Magenta light behind enemy - MUCH weaker
-        this.overheadLight2 = new THREE.PointLight(0xff00ff, 1.0, 120); // Was 4, now 1.0
-        this.overheadLight2.position.set(0, 60, -95); // Moved back from -77
+        this.overheadLight2 = new THREE.PointLight(0xff00ff, 0.75, 100); // Was 4, now 1.0
+        this.overheadLight2.position.set(0, 80, -50); // Moved back from -77
         this.overheadLight2.castShadow = false;
         this.overheadLight2.layers.set(0);
         this.scene.add(this.overheadLight2);
         
         // Paddle lights to illuminate environment!
         // Player paddle light (lime-yellow)
-        this.playerLight = new THREE.PointLight(0x00FEFC, 8.0, 35); // Lime-yellow, BRIGHT, wider range
+        this.playerLight = new THREE.PointLight(0x00FEFC, 1.0, 35); // Lime-yellow, BRIGHT, wider range
         this.playerLight.castShadow = false; // No shadows for performance
         this.playerLight.layers.set(0);
         this.scene.add(this.playerLight);
         
         // AI paddle light (magenta)
-        this.aiLight = new THREE.PointLight(0xff00ff, 8.0, 35); // Magenta, BRIGHT, wider range
+        this.aiLight = new THREE.PointLight(0xff00ff, 1.0, 35); // Magenta, BRIGHT, wider range
         this.aiLight.castShadow = false; // No shadows for performance
         this.aiLight.layers.set(0);
         this.scene.add(this.aiLight);
@@ -3739,6 +3739,10 @@ class TronPong {
         goal.material.uniforms.emissiveIntensity.value = 6.0; // Extra bright!
         goal.material.uniforms.opacity.value = 0.8; // Much more visible!
         
+        // Change overhead lights to GREEN!
+        this.overheadLight.color.setHex(0x00ff00);
+        this.overheadLight2.color.setHex(0x00ff00);
+        
         // SLOW MOTION on win!
         this.timeScale = 0.3; // Slow down to 30% speed
         
@@ -3761,6 +3765,10 @@ class TronPong {
             goal.material.uniforms.baseColor.value.copy(goal.userData.originalColor);
             goal.material.uniforms.emissiveIntensity.value = 5.0; // Back to strong glow (was 3.0)
             goal.material.uniforms.opacity.value = 0.3; // Back to subtle
+            
+            // Return overhead lights to original colors
+            this.overheadLight.color.setHex(0x00FEFC); // Cyan
+            this.overheadLight2.color.setHex(0xff00ff); // Magenta
             
             // Return to normal speed
             this.timeScale = 1.0;
