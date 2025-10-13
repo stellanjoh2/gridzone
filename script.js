@@ -2630,8 +2630,19 @@ class TronPong {
             return;
         }
         
-        // Choose random floor tile
-        const randomTile = this.floorCubes[Math.floor(Math.random() * this.floorCubes.length)];
+        // Filter floor tiles to only playable arena area
+        // Exclude tiles near walls (X) and behind players (Z)
+        const validTiles = this.floorCubes.filter(cube => {
+            const x = cube.position.x;
+            const z = cube.position.z;
+            // Keep tiles in central play area only
+            // X: -10 to 10 (away from walls at ±11.5)
+            // Z: -12 to 12 (not behind players at ±15)
+            return Math.abs(x) < 10 && Math.abs(z) < 12;
+        });
+        
+        // Choose random valid tile
+        const randomTile = validTiles[Math.floor(Math.random() * validTiles.length)];
         
         // Create NEON GREEN cube - perfect color match to player
         const cubeGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
