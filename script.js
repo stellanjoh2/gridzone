@@ -3382,33 +3382,33 @@ class TronPong {
             return;
         }
         
-        // Subtle goal zoom - just push camera forward slightly
-        if (this.subtleGoalZoom.active) {
-            // Smoothly interpolate camera z position forward
-            const targetZ = 20 - this.subtleGoalZoom.targetZoom; // Default is 20, zoom to 17
-            this.camera.position.z += (targetZ - this.camera.position.z) * 0.05;
-        } else {
-            // Return to normal z position
-            this.camera.position.z += (20 - this.camera.position.z) * 0.05;
-        }
+        // Subtle goal zoom - DISABLED (camera stays on field during goals)
+        // if (this.subtleGoalZoom.active) {
+        //     // Smoothly interpolate camera z position forward
+        //     const targetZ = 20 - this.subtleGoalZoom.targetZoom; // Default is 20, zoom to 17
+        //     this.camera.position.z += (targetZ - this.camera.position.z) * 0.05;
+        // } else {
+        //     // Return to normal z position
+        //     this.camera.position.z += (20 - this.camera.position.z) * 0.05;
+        // }
         
-        // Win camera zoom override (zoom in on enemy goal!)
-        if (this.winCameraZoom && this.winCameraZoom.active) {
-            const elapsed = performance.now() - this.winCameraZoom.startTime;
-            const progress = Math.min(elapsed / this.winCameraZoom.duration, 1);
-            const eased = this.easeInOutCubic(progress);
-            
-            this.camera.position.x = this.winCameraZoom.startPos.x + 
-                (this.winCameraZoom.targetPos.x - this.winCameraZoom.startPos.x) * eased;
-            this.camera.position.y = this.winCameraZoom.startPos.y + 
-                (this.winCameraZoom.targetPos.y - this.winCameraZoom.startPos.y) * eased;
-            this.camera.position.z = this.winCameraZoom.startPos.z + 
-                (this.winCameraZoom.targetPos.z - this.winCameraZoom.startPos.z) * eased;
-            
-            // Look at the AI goal during win celebration
-            this.camera.lookAt(0, 1, -19);
-            return;
-        }
+        // Win camera zoom DISABLED - camera stays on field!
+        // if (this.winCameraZoom && this.winCameraZoom.active) {
+        //     const elapsed = performance.now() - this.winCameraZoom.startTime;
+        //     const progress = Math.min(elapsed / this.winCameraZoom.duration, 1);
+        //     const eased = this.easeInOutCubic(progress);
+        //     
+        //     this.camera.position.x = this.winCameraZoom.startPos.x + 
+        //         (this.winCameraZoom.targetPos.x - this.winCameraZoom.startPos.x) * eased;
+        //     this.camera.position.y = this.winCameraZoom.startPos.y + 
+        //         (this.winCameraZoom.targetPos.y - this.winCameraZoom.startPos.y) * eased;
+        //     this.camera.position.z = this.winCameraZoom.startPos.z + 
+        //         (this.winCameraZoom.targetPos.z - this.winCameraZoom.startPos.z) * eased;
+        //     
+        //     // Look at the AI goal during win celebration
+        //     this.camera.lookAt(0, 1, -19);
+        //     return;
+        // }
         
         // Death camera zoom override
         if (this.deathCameraZoom && this.deathCameraZoom.active) {
