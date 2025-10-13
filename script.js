@@ -2598,7 +2598,7 @@ class TronPong {
             // PURE LASER GREEN - same as winning goal walls! (no white!)
             pillar.userData.targetColor = 0x00ff00; // Bright green
             pillar.userData.targetEmissive = 0x00ff00; // Green emissive
-            pillar.userData.targetIntensity = 1.2; // Pure green, no bloom to white
+            pillar.userData.targetIntensity = 0.6; // Lower intensity - pure green, no white bloom
             
             // Wave duration - consistent across all pillars
             pillar.userData.blinkDuration = 1.5; // 1.5 second glow
@@ -3782,9 +3782,9 @@ class TronPong {
         this.goalBlinkTimer = 2.5; // Blink for 2.5 seconds
         this.goalBlinkTarget = goal; // Track which goal is blinking
         
-        // Subtle camera zoom - just push camera forward slightly
-        this.subtleGoalZoom.active = true;
-        this.subtleGoalZoom.targetZoom = 3; // Move forward 3 units
+        // NO camera zoom - keep camera on field
+        // this.subtleGoalZoom.active = true;
+        // this.subtleGoalZoom.targetZoom = 3; // Move forward 3 units
         
         // Play repeating alarm sound!
         if (this.sounds.goalAlarm) {
