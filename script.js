@@ -958,13 +958,13 @@ class TronPong {
         
         // Paddle lights to illuminate environment!
         // Player paddle light (lime-yellow)
-        this.playerLight = new THREE.PointLight(0x00FEFC, 0.05, 35); // 75% reduced total (was 0.5)
+        this.playerLight = new THREE.PointLight(0x00FEFC, 1.0, 75); // 75% reduced total (was 0.5)
         this.playerLight.castShadow = false; // No shadows for performance
         this.playerLight.layers.set(0);
         this.scene.add(this.playerLight);
         
         // AI paddle light (magenta)
-        this.aiLight = new THREE.PointLight(0xff00ff, 0.05, 35); // 95% reduced total (was 0.5)
+        this.aiLight = new THREE.PointLight(0xff00ff, 1.0, 75); // 95% reduced total (was 0.5)
         this.aiLight.castShadow = false; // No shadows for performance
         this.aiLight.layers.set(0);
         this.scene.add(this.aiLight);
@@ -973,7 +973,7 @@ class TronPong {
         this.ballLights = [];
         
         // Create first ball light - weaker for subtle floor illumination
-        const ballLight = new THREE.PointLight(0x00FEFC, 2.0, 45); // Was 3.75, now 2.0
+        const ballLight = new THREE.PointLight(0x00FEFC, 1.0, 75); // Was 3.75, now 2.0
         ballLight.castShadow = true;
         ballLight.shadow.mapSize.width = 512;
         ballLight.shadow.mapSize.height = 512;
