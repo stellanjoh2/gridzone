@@ -89,7 +89,23 @@ class TronPong {
         this.currentCombo = 0;
         this.comboTimeout = null;
         
-        // Camera system - reduced follow sensitivity
+        // Music track name display timeout
+        this.trackNameTimeout = null;
+        
+        // Death reset optimization
+        this.deathResetPhase = 0;
+        this.deathResetProgress = 0;
+        
+        // Timeout tracking for cleanup
+        this.activeTimeouts = [];
+        
+        // Ball speed management
+        this.baseBallSpeed = 0.15; // Base ball speed (consistent across all spawns)
+        this.ballSpeedMultiplier = 1.0; // Current speed multiplier from paddle hits
+        
+        // Bonus light system
+        this.bonusLight = null;
+        
         this.cameraShake = { 
             intensity: 0, 
             decay: 0.98, // Slower decay for longer shake
@@ -98,19 +114,20 @@ class TronPong {
             pullback: 0,
             pullbackDecay: 0.94,
             horizontalShift: 0,
-            horizontalShiftDecay: 0.9
+            horizontalShiftDecay: 0.85 // Slower ease back (was 0.9)
         };
         this.cameraTarget = { x: 0, z: 0, zoom: 20 };
-        this.cameraSmooth = 0.02; // Reduced from 0.05 for smoother movement
+        this.cameraSmooth = 0.02;
         
         // Start menu camera (cinematic rotation)
         this.startMenuCamera = {
             active: true,
             angle: 0, // Current rotation angle
-            radius: 25, // Distance from center
-            height: 8, // Angled up to see more arena (was 3)
-            speed: 0.15, // Rotation speed (radians per second)
-            lookAtHeight: 0 // Look at ground level (was 2)
+            radius: 15, // Distance from center (closer to arena)
+            height: 8, // Height above arena (lifted up)
+            speed: 0.2, // Rotation speed (radians per second) - faster
+            lookAtHeight: -2, // Look down a few degrees
+            tilt: 0.15 // Horizontal tilt in radians
         };
         
         // Pause menu camera (slower idle rotation)
@@ -222,6 +239,13 @@ class TronPong {
         this.particlePool = [];
         this.particlePoolSize = 100;
         
+        // Lens flare system (triggered on impacts)
+        this.lensFlareOpacity = 0.0;
+        this.lensFlareFadeSpeed = 4.0; // Fast fade out
+        
+        // Score visibility (hidden until first score)
+        this.scoreShown = false;
+        
         // Trail system - enhanced (supports multiple balls)
         this.trails = []; // Array of trail objects, one per ball
         this.maxTrailLength = 50; // Longer trail
@@ -263,30 +287,82 @@ class TronPong {
             this.sounds.paddleHit = new Audio('Laser_9_converted.wav');
             this.sounds.wallHit = new Audio('Bounce_Deep_converted.wav');
             this.sounds.death = new Audio('816043__etheraudio__crunchy-retro-pitch-down-echo-thing.wav');
-            this.sounds.music = new Audio('sleepwalker.mp3'); // New in-game music!
             this.sounds.combo = new Audio('video-game-bonus-323603.mp3');
             this.sounds.score = new Audio('arcade-ui-18-229517.mp3');
             this.sounds.multiBall = new Audio('213149__complex_waveform__8bit-style-bonus-effect.wav');
             this.sounds.goalAlarm = new Audio('sounds/Classic Arcade SFX Complete/Alarms and sirens/Alarm_repeating.wav');
-            this.sounds.ballBase = new Audio('ball_sound_converted.wav'); // Base sound for cloning
-            this.sounds.menuSelect = new Audio('Coin_22_converted.wav'); // Menu sound
+            this.sounds.ballBase = new Audio('ball_sound_converted.wav');
+            this.sounds.menuSelect = new Audio('Coin_22_converted.wav');
+            this.sounds.bonusDenied = new Audio('Robotic_twang.wav');
+            this.sounds.waveBuzz = new Audio('Robotic_low_buzz.wav');
+            this.sounds.bonusSpawn = new Audio('Power_up_7.wav');
+            this.sounds.paddleWiden = new Audio('Scifi waves.wav');
+            this.sounds.bonusAppear = new Audio('Jump_3.wav');
+            console.log('🎵 Loaded bonusAppear sound:', this.sounds.bonusAppear);
+            
+            // Music Player System
+            this.musicTracks = [
+                { file: null, name: 'No Music' }, // Muted option
+                { file: 'Music/the-antlers.mp3', name: 'The Antlers' },
+                { file: 'Music/all-things.mp3', name: 'All Things' },
+                { file: 'Music/ambient-synthwave-arpeggio.mp3', name: 'Ambient Synthwave' },
+                { file: 'Music/ethereal-ambient-music-55115.mp3', name: 'Ethereal Ambient' },
+                { file: 'Music/hello-doctor.mp3', name: 'Hello Doctor' },
+                { file: 'Music/magical-technology-sci-fi-science-futuristic-game-music-300607.mp3', name: 'Magical Technology' },
+                { file: 'Music/midnight-zone.mp3', name: 'Midnight Zone' },
+                { file: 'Music/minimal-90s-acid-techno.mp3', name: 'Minimal 90s Acid' },
+                { file: 'Music/pong9000-main-menu.mp3', name: 'PONG9000 Main Menu' },
+                { file: 'Music/purple-acid.mp3', name: 'Purple Acid' },
+                { file: 'Music/rave-cop.mp3', name: 'Rave Cop' },
+                { file: 'Music/sleepwalker.mp3', name: 'Sleepwalker' },
+                { file: 'Music/space-age.mp3', name: 'Space Age' },
+                { file: 'Music/untitled.mp3', name: 'Untitled' },
+                { file: 'Music/world-of-ruin.mp3', name: 'World of Ruin' }
+            ];
+            this.currentTrackIndex = 1; // Start with first real track
+            this.sounds.music = new Audio(this.musicTracks[1].file);
+            this.sounds.music.volume = 0.67;
+            this.sounds.music.loop = true;
             
             // Set volumes
-            this.sounds.paddleHit.volume = 1.0; // Increased volume for laser sound
+            this.sounds.paddleHit.volume = 1.0;
             this.sounds.wallHit.volume = 0.7; // Bounce_Deep sound
             this.sounds.death.volume = 0.5;
-            this.sounds.music.volume = 0.67; // +7dB from 0.3 (was 0.3)
             this.sounds.combo.volume = 0.6;
             this.sounds.score.volume = 0.7;
             this.sounds.multiBall.volume = 0.7;
             this.sounds.menuSelect.volume = 0.6;
-            this.sounds.goalAlarm.volume = 0.8; // Loud alarm for goal flash!
+            this.sounds.goalAlarm.volume = 0.8;
+            this.sounds.bonusDenied.volume = 0.8; // Loud alarm for goal flash!
+            this.sounds.waveBuzz.volume = 0.7;
+            this.sounds.bonusSpawn.volume = 0.6;
+            this.sounds.paddleWiden.volume = 0.7;
+            this.sounds.bonusAppear.volume = 0.8;
             
             // Music settings
-            this.sounds.music.loop = true;
             this.sounds.goalAlarm.loop = true; // Loop the alarm while green wall is flashing
             
+            // Shoulder button debounce
+            this.lastLBPress = false;
+            this.lastRBPress = false;
+            
+        // Traveling wave light (celebratory wave)
+        this.waveLights = []; // Array of traveling lights (one per wall side)
+        
+        // Building height animation system - REMOVED for performance
+        
+        // Wall wave animation system
+        this.wallWaveAnimation = {
+            active: false,
+            startTime: 0,
+            duration: 4000, // 4 seconds (more time for natural wave completion)
+            originalHeights: new Map(), // Store original wall heights
+            wavePhase: 0, // Wave phase offset for smooth animation
+            waveDirection: 1 // 1 = towards player, -1 = towards enemy
+        };
+            
             console.log('Sounds loaded successfully!');
+            console.log('🎵 Music tracks loaded:', this.musicTracks.length);
         } catch (e) {
             console.log('Could not load sounds:', e);
         }
@@ -296,8 +372,111 @@ class TronPong {
         const sound = this.sounds[soundName];
         if (sound) {
             sound.currentTime = 0;
-            sound.play().catch(e => console.log(`Could not play ${soundName}`));
+            sound.play().catch(e => console.log('Audio play failed for', soundName, ':', e));
+            console.log('🎵 Playing sound:', soundName);
+        } else {
+            console.log('❌ Sound not found:', soundName);
         }
+    }
+    
+    changeTrack(direction) {
+        // direction: 1 = next, -1 = previous
+        
+        // Check if we're currently on "No Music"
+        const wasOnNoMusic = this.musicTracks[this.currentTrackIndex].file === null;
+        const wasPlaying = !this.sounds.music.paused;
+        const currentTime = this.sounds.music.currentTime;
+        
+        // Stop current track (if there is one)
+        if (!wasOnNoMusic) {
+            this.sounds.music.pause();
+            this.sounds.music.currentTime = 0;
+        }
+        
+        // Update track index (with wrapping)
+        this.currentTrackIndex += direction;
+        if (this.currentTrackIndex >= this.musicTracks.length) {
+            this.currentTrackIndex = 0;
+        } else if (this.currentTrackIndex < 0) {
+            this.currentTrackIndex = this.musicTracks.length - 1;
+        }
+        
+        // Load new track
+        const newTrack = this.musicTracks[this.currentTrackIndex];
+        
+        // Handle "No Music" option
+        if (newTrack.file === null) {
+            // Muted - no track loaded
+            // Stop current music if playing
+            if (!wasOnNoMusic) {
+                this.sounds.music.pause();
+                this.sounds.music.currentTime = 0;
+            }
+            this.showTrackName(newTrack.name, true); // Pass true for magenta styling
+            console.log('🎵 No Music (Muted)');
+            return;
+        }
+        
+        this.sounds.music = new Audio(newTrack.file);
+        this.sounds.music.volume = 0.67;
+        this.sounds.music.loop = true;
+        
+        // Play if game started AND (was playing OR coming from "No Music")
+        if (this.gameStarted && (wasPlaying || wasOnNoMusic)) {
+            this.sounds.music.play().catch(e => console.log('Could not play new track'));
+        }
+        
+        // Show track name
+        this.showTrackName(newTrack.name);
+        
+        console.log('🎵 Now playing:', newTrack.name);
+    }
+    
+    showTrackName(trackName, isMuted = false) {
+        // Create or update track display element
+        let trackDisplay = document.getElementById('trackName');
+        if (!trackDisplay) {
+            trackDisplay = document.createElement('div');
+            trackDisplay.id = 'trackName';
+            document.body.appendChild(trackDisplay);
+        }
+        
+        // Clear any existing fade timeout to prevent timing conflicts
+        if (this.trackNameTimeout) {
+            clearTimeout(this.trackNameTimeout);
+            this.trackNameTimeout = null;
+        }
+        
+        // Update color based on muted state
+        const color = isMuted ? '#ff00ff' : '#00FEFC';
+        const shadow = isMuted ? '0 0 10px #ff00ff, 0 0 20px #ff00ff' : '0 0 10px #00FEFC, 0 0 20px #00FEFC';
+        
+        trackDisplay.style.cssText = `
+            position: fixed;
+            top: 25%;
+            left: 5%;
+            color: ${color};
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: ${shadow};
+            font-family: 'Orbitron', monospace;
+            z-index: 200;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+        `;
+        
+        // Update text
+        trackDisplay.textContent = '♫ ' + trackName;
+        
+        // Fade in
+        trackDisplay.style.opacity = '1';
+        
+        // Fade out after 2 seconds (store timeout ID to prevent conflicts)
+        this.trackNameTimeout = setTimeout(() => {
+            trackDisplay.style.opacity = '0';
+            this.trackNameTimeout = null;
+        }, 2000);
     }
     
     triggerRumble(intensity = 0.3, duration = 100) {
@@ -332,7 +511,7 @@ class TronPong {
     
     createImpactEffect(position, color) {
         // Create particle burst using object pooling
-        const particleCount = 15; // Reduced from 20
+        const particleCount = 15;
         const particles = [];
         
         for (let i = 0; i < particleCount; i++) {
@@ -354,18 +533,19 @@ class TronPong {
             particle.life = 1.0;
             particle.decay = 0.02;
             
+            
             particles.push(particle);
         }
         
         this.impactParticles.push(...particles);
         
         // Create impact light - no shadows for better performance
-        const impactLight = new THREE.PointLight(color, 6.4, 12, 2); // 20% reduced (was 8)
+        const impactLight = new THREE.PointLight(color, 6.4, 15, 1); // Decay 1 = soft edges, distance 15 for wider spread
         impactLight.position.copy(position);
         impactLight.castShadow = false; // Disabled for performance
         impactLight.life = 1.0;
         impactLight.decay = 0.04;
-        impactLight.maxIntensity = 6.4; // 20% reduced (was 8)
+        impactLight.maxIntensity = 6.4;
         this.scene.add(impactLight);
         this.impactLights.push(impactLight);
         
@@ -420,6 +600,7 @@ class TronPong {
             particle.life -= particle.decay;
             particle.material.opacity = particle.life;
             
+            
             // Recycle dead particles instead of disposing
             if (particle.life <= 0) {
                 particle.visible = false;
@@ -458,7 +639,7 @@ class TronPong {
     init() {
         // Scene setup
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.Fog(0x0a2828, 25, 110); // Dark cyan/teal fog
+        this.scene.fog = new THREE.Fog(0x28082a, 25, 110); // Dark purple fog (more purple, less teal)
         
         // Camera setup - tilted down more
         this.camera = new THREE.PerspectiveCamera(
@@ -492,7 +673,6 @@ class TronPong {
         this.setupEnvironmentMap();
         
         // Create game elements
-        this.createBackground();
         this.createLighting();
         this.createGrid();
         this.createEnvironmentCubes();
@@ -504,6 +684,8 @@ class TronPong {
         
         // Event listeners
         this.setupEventListeners();
+        this.setupLogo3DEffects();
+        this.createWorldLogo();
         
         // Start animation
         this.animate();
@@ -533,6 +715,9 @@ class TronPong {
         
         // Fisheye distortion render target (full resolution)
         this.fisheyeRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
+        
+        // Lens flare render target (full resolution)
+        this.lensFlareRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
         
         // Depth of Field render targets
         this.dofRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
@@ -683,6 +868,84 @@ class TronPong {
         this.fisheyeScene = new THREE.Scene();
         this.fisheyeScene.add(this.fisheyeQuad);
         this.fisheyeCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        
+        // Lens flare post-processing (lightweight!)
+        const lensFlareShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                threshold: { value: 0.85 }, // Only bright lights trigger flares
+                intensity: { value: 0.4 }, // Flare strength
+                ghostIntensity: { value: 0.15 }, // Ghost artifacts strength
+                aspectRatio: { value: window.innerWidth / window.innerHeight },
+                flareOpacity: { value: 0.0 } // 0 = off, 1 = full strength (controlled by impacts)
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D tDiffuse;
+                uniform float threshold;
+                uniform float intensity;
+                uniform float ghostIntensity;
+                uniform float aspectRatio;
+                uniform float flareOpacity;
+                varying vec2 vUv;
+                
+                void main() {
+                    vec4 original = texture2D(tDiffuse, vUv);
+                    vec3 flare = vec3(0.0);
+                    
+                    // Vector from center to current pixel
+                    vec2 toCenter = vec2(0.5) - vUv;
+                    
+                    // Classic lens flare: circular ghosts along center line (50% smaller)
+                    // Ghost 1 (close, bright)
+                    vec2 ghost1 = vUv + toCenter * 0.15;
+                    vec4 g1 = texture2D(tDiffuse, ghost1);
+                    float g1Brightness = max(g1.r, max(g1.g, g1.b));
+                    float g1Mask = step(threshold, g1Brightness);
+                    flare += g1.rgb * ghostIntensity * 1.0 * g1Mask;
+                    
+                    // Ghost 2 (medium distance) - made brighter for opposite side
+                    vec2 ghost2 = vUv + toCenter * 0.3;
+                    vec4 g2 = texture2D(tDiffuse, ghost2);
+                    float g2Brightness = max(g2.r, max(g2.g, g2.b));
+                    float g2Mask = step(threshold, g2Brightness);
+                    flare += g2.rgb * ghostIntensity * 0.875 * g2Mask; // Increased from 0.625 to 0.875
+                    
+                    // Ghost 3 (far, subtle) - made brighter for opposite side
+                    vec2 ghost3 = vUv + toCenter * 0.6;
+                    vec4 g3 = texture2D(tDiffuse, ghost3);
+                    float g3Brightness = max(g3.r, max(g3.g, g3.b));
+                    float g3Mask = step(threshold, g3Brightness);
+                    flare += g3.rgb * ghostIntensity * 0.75 * g3Mask; // Increased from 0.375 to 0.75
+                    
+                    // Subtle radial glow around bright spots (+25% intensity)
+                    float brightness = max(original.r, max(original.g, original.b));
+                    float brightMask = step(threshold, brightness);
+                    float glow = (brightness - threshold) * intensity * 0.625 * brightMask;
+                    flare += original.rgb * glow;
+                    
+                    gl_FragColor = vec4(original.rgb + flare * flareOpacity, original.a);
+                }
+            `
+        };
+        
+        this.lensFlareMaterial = new THREE.ShaderMaterial({
+            uniforms: lensFlareShader.uniforms,
+            vertexShader: lensFlareShader.vertexShader,
+            fragmentShader: lensFlareShader.fragmentShader,
+            depthTest: false
+        });
+        
+        this.lensFlareQuad = new THREE.Mesh(geometry, this.lensFlareMaterial);
+        this.lensFlareScene = new THREE.Scene();
+        this.lensFlareScene.add(this.lensFlareQuad);
+        this.lensFlareCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
         
         // Gaussian blur for pause menu (HEAVY blur)
         this.blurRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
@@ -932,25 +1195,18 @@ class TronPong {
         console.log(`✓ Materials updated with environment map! (${updatedCount} materials updated)`);
     }
     
-    createBackground() {
-        // Background removed - using pure scene color
-        console.log('Background textures disabled');
-    }
     
     createLighting() {
-        // Ambient light - MUCH weaker to not wash out emissive colors
-        const ambientLight = new THREE.AmbientLight(0x1a5566, 0.05); // Was 0.3, now 0.05
+        const ambientLight = new THREE.AmbientLight(0x1a5566, 0.05);
         this.scene.add(ambientLight);
         
-        // Soft LIME YELLOW omni light - MUCH weaker
-        this.overheadLight = new THREE.PointLight(0x00FEFC, 1.0, 120); // Was 4, now 1.0
+        this.overheadLight = new THREE.PointLight(0x00FEFC, 1.0, 120);
         this.overheadLight.position.set(0, 60, 20);
         this.overheadLight.castShadow = false;
         this.overheadLight.layers.set(0);
         this.scene.add(this.overheadLight);
         
-        // Magenta light behind enemy - MUCH weaker
-        this.overheadLight2 = new THREE.PointLight(0xff00ff, 0.75, 100); // Was 4, now 1.0
+        this.overheadLight2 = new THREE.PointLight(0xff00ff, 0.75, 100);
         this.overheadLight2.position.set(0, 80, -50); // Moved back from -77
         this.overheadLight2.castShadow = false;
         this.overheadLight2.layers.set(0);
@@ -958,13 +1214,13 @@ class TronPong {
         
         // Paddle lights to illuminate environment!
         // Player paddle light (lime-yellow)
-        this.playerLight = new THREE.PointLight(0x00FEFC, 1.0, 75); // 75% reduced total (was 0.5)
+        this.playerLight = new THREE.PointLight(0x00FEFC, 1.0, 75);
         this.playerLight.castShadow = false; // No shadows for performance
         this.playerLight.layers.set(0);
         this.scene.add(this.playerLight);
         
         // AI paddle light (magenta)
-        this.aiLight = new THREE.PointLight(0xff00ff, 1.0, 75); // 95% reduced total (was 0.5)
+        this.aiLight = new THREE.PointLight(0xff00ff, 1.0, 75);
         this.aiLight.castShadow = false; // No shadows for performance
         this.aiLight.layers.set(0);
         this.scene.add(this.aiLight);
@@ -984,8 +1240,6 @@ class TronPong {
         
         // Keep reference to first light for compatibility
         this.ballLight = ballLight;
-        
-        // Animated circulating lights removed
     }
     
     createEnvironmentCubes() {
@@ -1036,6 +1290,7 @@ class TronPong {
                     cube.receiveShadow = isClose;
                     
                     this.scene.add(cube);
+                    this.cityBuildings.push(cube);
                 }
             }
         }
@@ -1093,9 +1348,6 @@ class TronPong {
                 
                 cube.position.set(x, y, z);
                 
-                // NO 2x scaling for front cubes - keep them low to not block view!
-                // (Removed the 2x scale that was here)
-                
                 // Only close cubes cast/receive shadows
                 const isClose = row < 2 && Math.abs(x) < 30;
                 cube.castShadow = isClose;
@@ -1129,6 +1381,7 @@ class TronPong {
                     cube.receiveShadow = true;
                     
                     this.scene.add(cube);
+                    this.cityBuildings.push(cube);
                 }
             }
         }
@@ -1204,6 +1457,7 @@ class TronPong {
                     cube.receiveShadow = false;
                     
                     this.scene.add(cube);
+                    this.cityBuildings.push(cube);
                 }
             }
         }
@@ -1233,6 +1487,7 @@ class TronPong {
                 cube.receiveShadow = false;
                 
                 this.scene.add(cube);
+                this.cityBuildings.push(cube);
             }
         }
     }
@@ -1249,6 +1504,13 @@ class TronPong {
         
         // Array to store all floor cubes for later effects
         this.floorCubes = [];
+        
+        // Array to store all city buildings for height animation
+        this.cityBuildings = [];
+        
+        // Spatial grid for floor glow optimization
+        this.floorGlowGrid = new Map();
+        this.gridSize = 5; // 5x5 unit cells
         
         // Floor cubes material - uses centralized config
         const cubeMaterial = new THREE.MeshStandardMaterial({
@@ -1296,12 +1558,34 @@ class TronPong {
         }
         
         console.log(`Floor created with ${this.floorCubes.length} cubes (confined within laser walls)`);
+        
+        // Build spatial grid for floor glow optimization
+        this.buildFloorGlowGrid();
+    }
+    
+    buildFloorGlowGrid() {
+        // Clear existing grid
+        this.floorGlowGrid.clear();
+        
+        // Add each cube to its appropriate grid cell
+        for (let cube of this.floorCubes) {
+            const gridX = Math.floor(cube.position.x / this.gridSize);
+            const gridZ = Math.floor(cube.position.z / this.gridSize);
+            const cellKey = `${gridX},${gridZ}`;
+            
+            if (!this.floorGlowGrid.has(cellKey)) {
+                this.floorGlowGrid.set(cellKey, []);
+            }
+            this.floorGlowGrid.get(cellKey).push(cube);
+        }
+        
+        console.log(`🏗️ Built spatial grid with ${this.floorGlowGrid.size} cells for floor glow optimization`);
     }
     
     
     createBall() {
         // Create first ball
-        this.spawnBall(0, 0, 0, { x: 0.15, y: 0, z: -0.15 });
+        this.spawnBall(0, 0, 0, { x: 0, y: 0, z: -this.baseBallSpeed });
     }
     
     spawnBall(x, y, z, velocity) {
@@ -1367,7 +1651,7 @@ class TronPong {
         
         // Create light for this ball (if we don't have one yet)
         if (ballIndex >= this.ballLights.length) {
-            const ballLight = new THREE.PointLight(0x00FEFC, 2.0, 45); // Weaker for subtle floor illumination
+            const ballLight = new THREE.PointLight(0x00FEFC, 1.0, 75); // Same intensity as paddles
             ballLight.castShadow = true;
             ballLight.shadow.mapSize.width = 512;
             ballLight.shadow.mapSize.height = 512;
@@ -1461,16 +1745,17 @@ class TronPong {
         
         trailGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         
-        // Soft glowing material
+        // Soft glowing material (hidden - we only use ghost spheres)
         const trailMaterial = new THREE.LineBasicMaterial({
-            color: 0x00FEFC,        // Lime-yellow
+            color: 0x00FEFC,
             transparent: true,
-            opacity: 0.6,
+            opacity: 0.0, // Hidden - only using ghost spheres for trail
             linewidth: 8,
             blending: THREE.AdditiveBlending
         });
         
         const trailMesh = new THREE.Line(trailGeometry, trailMaterial);
+        trailMesh.visible = false; // Line hidden, only ghost spheres visible
         this.scene.add(trailMesh);
         
         // Add glow spheres for softer trail
@@ -1712,17 +1997,6 @@ class TronPong {
         
         // TEST: Comment out layer isolation to see if paddles match ball
         // Exclude paddles from their own point lights using layers
-        // Move paddle meshes to layer 1 (camera still sees them, but paddle lights won't affect them)
-        // this.paddle1.traverse((child) => {
-        //     if (child.isMesh) {
-        //         child.layers.set(1); // Layer 1 only
-        //     }
-        // });
-        // this.paddle2.traverse((child) => {
-        //     if (child.isMesh) {
-        //         child.layers.set(1); // Layer 1 only
-        //     }
-        // });
     }
     
     createBoundaries() {
@@ -1913,17 +2187,31 @@ class TronPong {
     }
     
     createParticles() {
-        // Create floating neon dust particles - doubled for more atmosphere!
-        const particleCount = 800; // Doubled from 400 (100% more!)
+        // OPTIMIZED: Focus particles around player area for better performance!
+        const particleCount = 300; // Reduced from 800 - focused area needs fewer particles
         const positions = new Float32Array(particleCount * 3);
         const colors = new Float32Array(particleCount * 3);
         const sizes = new Float32Array(particleCount);
         
         for (let i = 0; i < particleCount; i++) {
-            // Random position in much larger area - many closer to camera
-            const x = (Math.random() - 0.5) * 60; // Expanded from 50
-            const y = Math.random() * 15 - 2; // Increased height from 12
-            const z = (Math.random() - 0.5) * 80; // Expanded from 60 - much closer to camera!
+            // OPTIMIZATION: Focus particles around player paddle area (z = 15)
+            // Most particles near player paddle where they're most visible
+            const playerAreaZ = 15; // Player paddle Z position
+            const focusRadius = 25; // Focus area around player
+            
+            let x, y, z;
+            
+            // 70% of particles in player area (where camera focuses)
+            if (Math.random() < 0.7) {
+                x = (Math.random() - 0.5) * 30; // Narrower X spread near player
+                y = Math.random() * 8 + 2; // Height range 2-10 (above player level)
+                z = playerAreaZ + (Math.random() - 0.5) * focusRadius; // Focus around player Z
+            } else {
+                // 30% scattered elsewhere for atmosphere
+                x = (Math.random() - 0.5) * 40;
+                y = Math.random() * 12 - 2;
+                z = (Math.random() - 0.5) * 60;
+            }
             
             positions[i * 3] = x;
             positions[i * 3 + 1] = y;
@@ -1979,6 +2267,8 @@ class TronPong {
         
         this.particles = new THREE.Points(particleGeometry, particleMaterial);
         this.scene.add(this.particles);
+        
+        console.log(`✨ Created ${particleCount} optimized particles focused around player area!`);
     }
     
     setupEventListeners() {
@@ -2035,6 +2325,16 @@ class TronPong {
                 this.fisheyeMaterial.uniforms.aspectRatio.value = window.innerWidth / window.innerHeight;
             }
             
+            // Resize lens flare render target
+            if (this.lensFlareRenderTarget) {
+                this.lensFlareRenderTarget.setSize(window.innerWidth, window.innerHeight);
+            }
+            
+            // Update lens flare aspect ratio
+            if (this.lensFlareMaterial) {
+                this.lensFlareMaterial.uniforms.aspectRatio.value = window.innerWidth / window.innerHeight;
+            }
+            
             // Resize blur render target
             if (this.blurRenderTarget) {
                 this.blurRenderTarget.setSize(window.innerWidth, window.innerHeight);
@@ -2048,6 +2348,242 @@ class TronPong {
                 this.fullGameReset();
             });
         }
+    }
+    
+    setupLogo3DEffects() {
+        // 3D logo effects with mouse movement
+        const logo = document.getElementById('logo');
+        const logoImg = logo.querySelector('img');
+        
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetRotateX = 0;
+        let targetRotateY = 0;
+        let currentRotateX = 0;
+        let currentRotateY = 0;
+        
+        // Mouse movement handler
+        const handleMouseMove = (e) => {
+            const rect = logo.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            // Calculate relative mouse position (-1 to 1)
+            mouseX = (e.clientX - centerX) / (rect.width / 2);
+            mouseY = (e.clientY - centerY) / (rect.height / 2);
+            
+            // Clamp values and scale for subtle rotation
+            mouseX = Math.max(-1, Math.min(1, mouseX));
+            mouseY = Math.max(-1, Math.min(1, mouseY));
+            
+            // Calculate target rotation (subtle angles)
+            targetRotateY = mouseX * 8; // Max 8 degrees
+            targetRotateX = -mouseY * 6; // Max 6 degrees (inverted)
+        };
+        
+        // Gamepad handler for controller support
+        const handleGamepad = () => {
+            const gamepads = navigator.getGamepads();
+            if (gamepads[0]) {
+                const gamepad = gamepads[0];
+                
+                // Debug: Log gamepad info to see available axes
+                console.log('🎮 Gamepad detected:', gamepad.id);
+                console.log('🎮 Available axes:', gamepad.axes.length, gamepad.axes);
+                
+                // Try different axis combinations for PS5 controller
+                // PS5 controller typically has: 0=Left X, 1=Left Y, 2=Right X, 3=Right Y
+                const stickX = gamepad.axes[2] || 0; // Right stick X
+                const stickY = gamepad.axes[3] || 0; // Right stick Y
+                
+                console.log('🎮 Right stick values:', stickX, stickY);
+                
+                if (Math.abs(stickX) > 0.1 || Math.abs(stickY) > 0.1) {
+                    targetRotateY = stickX * 8;
+                    targetRotateX = -stickY * 6;
+                    console.log('🎮 Logo rotation:', targetRotateX, targetRotateY);
+                } else {
+                    targetRotateY = 0;
+                    targetRotateX = 0;
+                }
+            }
+        };
+        
+        // Smooth rotation interpolation
+        const animateRotation = () => {
+            // Smooth interpolation
+            currentRotateX += (targetRotateX - currentRotateX) * 0.1;
+            currentRotateY += (targetRotateY - currentRotateY) * 0.1;
+            
+            // Apply rotation to logo image
+            const rotationTransform = `
+                rotateX(${currentRotateX}deg) 
+                rotateY(${currentRotateY}deg)
+            `;
+            
+            logoImg.style.transform = rotationTransform;
+            
+            requestAnimationFrame(animateRotation);
+        };
+        
+        // Wait for entry animation to complete, then start interactive rotation
+        setTimeout(() => {
+            // Reset logo to neutral position after entry animation
+            logoImg.style.transform = 'rotateX(0deg) rotateY(0deg)';
+            
+            // Start the interactive rotation system
+            animateRotation();
+        }, 3250); // 2.25s start + 1s duration = 3.25s
+        
+        // Add event listeners
+        window.addEventListener('mousemove', handleMouseMove);
+        
+        // Store handler for gamepad updates
+        this.handleLogoGamepad = handleGamepad;
+    }
+    
+    createWorldLogo() {
+        // Create 3D logo in the world that receives lighting
+        this.worldLogo = null;
+        this.worldLogoRotation = { x: 0, y: 0 };
+        
+        // Load both SVG textures
+        const loader = new THREE.TextureLoader();
+        let loadedCount = 0;
+        const textures = {};
+        
+        // Load main logo only for now
+        loader.load('gridzone-logo.svg', (texture) => {
+            console.log('✅ Main logo texture loaded:', texture);
+            createSingleLogo(texture);
+        }, undefined, (error) => {
+            console.error('❌ Failed to load main logo:', error);
+        });
+        
+        // Load stroked logo - COMMENTED OUT FOR NOW
+        // loader.load('gridzone-logo2-strokes.svg', (texture) => {
+        //     console.log('✅ Strokes logo texture loaded:', texture);
+        //     textures.strokes = texture;
+        //     loadedCount++;
+        //     if (loadedCount === 2) createLayeredLogo();
+        // }, undefined, (error) => {
+        //     console.error('❌ Failed to load strokes logo:', error);
+        // });
+        
+        const createSingleLogo = (texture) => {
+            // Create a plane geometry for the logo
+            const logoGeometry = new THREE.PlaneGeometry(8, 2.7); // Aspect ratio of the SVG
+            
+            // Create metallic material for main logo
+            const mainMaterial = new THREE.MeshStandardMaterial({
+                map: texture,
+                metalness: 0.8, // Very metallic
+                roughness: 0.2, // Quite smooth/shiny
+                emissive: new THREE.Color(0x001122), // Subtle blue glow
+                emissiveIntensity: 0.3,
+                transparent: true,
+                alphaTest: 0.1
+            });
+            
+            // Create main logo mesh
+            this.worldLogo = new THREE.Mesh(logoGeometry, mainMaterial);
+            
+            // Comment out stroke layer for now
+            // this.worldLogoStroke = new THREE.Mesh(logoGeometry, strokeMaterial);
+            
+            // Position main logo in the world (floating above the arena)
+            this.worldLogo.position.set(0, 12, -5);
+            this.worldLogo.rotation.x = -0.2; // Slight tilt toward camera
+            
+            // Comment out stroke positioning for now
+            // this.worldLogoStroke.position.set(0, 12, -4.0);
+            // this.worldLogoStroke.rotation.x = -0.2;
+            
+            // Add main logo to scene
+            this.scene.add(this.worldLogo);
+            
+            // Add dedicated lights for logo specular highlights
+            this.createLogoLights();
+            
+            console.log('🌍 Single world logo created!');
+            console.log('Main logo position:', this.worldLogo.position);
+            console.log('Main logo visible:', this.worldLogo.visible);
+        };
+        
+        // Error handling for texture loading
+        const handleError = (error) => {
+            console.warn('Could not load logo texture:', error);
+        };
+    }
+    
+    createLogoLights() {
+        // Create lights positioned to create specular highlights on the logo
+        this.logoLights = [];
+        
+        // Main highlight light - positioned to the side and above
+        const mainLight = new THREE.PointLight(0x00FEFC, 8.0, 25);
+        mainLight.position.set(8, 15, -2);
+        this.scene.add(mainLight);
+        this.logoLights.push(mainLight);
+        
+        // Secondary light - from the opposite side for rim lighting
+        const rimLight = new THREE.PointLight(0xFF00FF, 6.0, 22);
+        rimLight.position.set(-6, 14, 0);
+        this.scene.add(rimLight);
+        this.logoLights.push(rimLight);
+        
+        // Accent light - from behind for edge definition
+        const accentLight = new THREE.PointLight(0xFFFFFF, 5.0, 18);
+        accentLight.position.set(0, 10, 2);
+        this.scene.add(accentLight);
+        this.logoLights.push(accentLight);
+        
+        console.log('💡 Logo lights created for specular highlights!');
+    }
+    
+    updateWorldLogo(deltaTime) {
+        if (!this.worldLogo) return;
+        
+        // Gentle rotation animation
+        this.worldLogoRotation.y += deltaTime * 0.3; // Slow rotation
+        this.worldLogo.rotation.y = this.worldLogoRotation.y;
+        
+        // Gentle floating motion
+        const floatY = 12 + Math.sin(this.worldLogoRotation.y * 0.5) * 0.5;
+        this.worldLogo.position.y = floatY;
+        
+        // Comment out stroke animation for now
+        // this.worldLogoStroke.rotation.y = this.worldLogoRotation.y;
+        // this.worldLogoStroke.position.y = floatY;
+        // this.worldLogoStroke.position.z = -4.0 + Math.sin(this.worldLogoRotation.y * 0.7) * 0.1;
+        
+        // Animate logo lights for dynamic specular highlights
+        if (this.logoLights && this.logoLights.length > 0) {
+            const time = this.worldLogoRotation.y;
+            
+            // Main light - gentle orbit
+            this.logoLights[0].position.x = 8 + Math.sin(time * 0.4) * 2;
+            this.logoLights[0].position.z = -2 + Math.cos(time * 0.4) * 1.5;
+            
+            // Rim light - counter-orbit
+            this.logoLights[1].position.x = -6 + Math.sin(time * 0.3 + Math.PI) * 1.5;
+            this.logoLights[1].position.z = Math.cos(time * 0.3 + Math.PI) * 1;
+            
+            // Accent light - subtle pulsing
+            this.logoLights[2].intensity = 5.0 + Math.sin(time * 0.8) * 1.5;
+        }
+        
+        // Hide during main menu sequence, show after logo animation completes
+        if (performance.now() < 3250) { // Hide until logo entry animation completes
+            this.worldLogo.visible = false;
+        } else {
+            this.worldLogo.visible = true;
+        }
+        
+        // Comment out stroke visibility for now
+        // if (this.worldLogoStroke) {
+        //     this.worldLogoStroke.visible = true;
+        // }
     }
     
     updateStartMenuGamepad() {
@@ -2079,18 +2615,40 @@ class TronPong {
         
         console.log('🚀 Starting game...');
         
+        // Ensure we start with normal speed
+        this.forceNormalSpeed();
+        
             this.gameStarted = true;
             this.domElements.ui.style.display = 'none';
         document.getElementById('logo').style.display = 'none';
+        document.getElementById('presents').style.display = 'none';
+        document.getElementById('copyright').style.display = 'none';
         
-        // Spawn ball IMMEDIATELY with fixed, predictable velocity
-        // Ball always starts toward enemy (AI) for clean, consistent start
+        // Hide world logo and lights when game starts
+        if (this.worldLogo) {
+            this.worldLogo.visible = false;
+        }
+        // Comment out stroke hiding for now
+        // if (this.worldLogoStroke) {
+        //     this.worldLogoStroke.visible = false;
+        // }
+        if (this.logoLights) {
+            this.logoLights.forEach(light => light.visible = false);
+        }
+        
+        // Start cinematic camera transition FIRST!
+        this.startCameraTransition();
+        
+        // Delay ball spawn slightly to let camera transition start smoothly
+        // This prevents visual glitch where ball appears before camera moves
+        setTimeout(() => {
         console.log('⚽ Ball spawning - clean start!');
         this.spawnBall(0, 0, 0, {
             x: 0,      // No horizontal movement initially
             y: 0,
             z: -0.15   // Always toward enemy/AI (negative Z)
         });
+        }, 400); // 400ms delay for smooth camera-to-ball transition
         
         // Reset game state
         this.successfulHits = 0;
@@ -2099,10 +2657,20 @@ class TronPong {
         
         // Remove bonus cube if active
         if (this.bonusCube) {
+            // Remove ambient light
+            if (this.bonusCube.userData.ambientLight) {
+                this.scene.remove(this.bonusCube.userData.ambientLight);
+            }
             this.scene.remove(this.bonusCube);
             this.bonusCube = null;
             this.bonusCubeActive = false;
         }
+        
+        // Clean up wave lights
+        for (let waveLight of this.waveLights) {
+            this.scene.remove(waveLight.light);
+        }
+        this.waveLights = [];
         
         // Reset bonus effect
         if (this.bonusActivePaddle) {
@@ -2128,9 +2696,6 @@ class TronPong {
         this.paddle2.position.z = -15;
         this.paddle1.rotation.z = 0;
         this.paddle2.rotation.z = 0;
-        
-        // Start cinematic camera transition!
-        this.startCameraTransition();
         
         this.playSound('menuSelect');
             
@@ -2185,6 +2750,26 @@ class TronPong {
             this.lastPausePress = false;
         }
         
+        // LB/L1 button (button 4) - Previous track
+        if (this.gamepad.buttons[4] && this.gamepad.buttons[4].pressed) {
+            if (!this.lastLBPress) {
+                this.changeTrack(-1); // Previous track
+                this.lastLBPress = true;
+            }
+        } else {
+            this.lastLBPress = false;
+        }
+        
+        // RB/R1 button (button 5) - Next track
+        if (this.gamepad.buttons[5] && this.gamepad.buttons[5].pressed) {
+            if (!this.lastRBPress) {
+                this.changeTrack(1); // Next track
+                this.lastRBPress = true;
+            }
+        } else {
+            this.lastRBPress = false;
+        }
+        
         // Square button (button 2) to reset game when paused
         if (this.isPaused && this.gamepad.buttons[2] && this.gamepad.buttons[2].pressed) {
             if (!this.lastResetPress) {
@@ -2203,7 +2788,7 @@ class TronPong {
         
         if (this.isPaused) {
             this.domElements.pauseMenu.style.display = 'block';
-            this.playSound('menuSelect'); // Play menu sound when opening pause menu
+            // Removed pause menu sound
             
             // Activate pause camera - start from current position
             this.pauseCamera.active = true;
@@ -2228,7 +2813,7 @@ class TronPong {
             }
         } else {
             this.domElements.pauseMenu.style.display = 'none';
-            this.playSound('menuSelect'); // Play menu sound when closing pause menu
+            // Removed pause menu sound
             
             // Deactivate pause camera
             this.pauseCamera.active = false;
@@ -2295,7 +2880,7 @@ class TronPong {
         this.timeScale = 0.15; // Very slow (15% speed)
         
         // After full sequence (zoom + hold + flyback), deactivate and restore speed
-        setTimeout(() => {
+        const multiBallTimeout = setTimeout(() => {
             this.multiBallZoom.active = false;
             this.timeScale = 1.0; // Back to normal speed
             
@@ -2305,6 +2890,7 @@ class TronPong {
             
             console.log('✅ Multi-ball sequence complete!');
         }, this.multiBallZoom.duration);
+        this.activeTimeouts.push(multiBallTimeout);
     }
     
     updateMultiBallZoom() {
@@ -2434,9 +3020,9 @@ class TronPong {
             // Fade emissive intensity back to original
             material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
             
-            // Also fade the light intensity (flash at 12.0, base is 0.05)
+            // Also fade the light intensity (flash at 12.0, base is 1.0)
             if (this.playerLight) {
-                this.playerLight.intensity = 12.0 * fadeProgress + 0.05 * (1 - fadeProgress);
+                this.playerLight.intensity = 12.0 * fadeProgress + 1.0 * (1 - fadeProgress);
             }
         }
         
@@ -2462,9 +3048,9 @@ class TronPong {
             // Fade emissive intensity back to original
             material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
             
-            // Also fade the light intensity (flash at 12.0, base is 0.05)
+            // Also fade the light intensity (flash at 12.0, base is 1.0)
             if (this.aiLight) {
-                this.aiLight.intensity = 12.0 * fadeProgress + 0.05 * (1 - fadeProgress);
+                this.aiLight.intensity = 12.0 * fadeProgress + 1.0 * (1 - fadeProgress);
             }
         }
         
@@ -2584,37 +3170,24 @@ class TronPong {
     updateBonusEffect(deltaTime) {
         // Handle bonus paddle width effect
         if (this.bonusActivePaddle) {
-            // Countdown timer
-            this.bonusTimer -= deltaTime;
-            
-            // Quick widen (0.3 seconds)
-            if (this.paddleWidthTransition < 1.0) {
-                this.paddleWidthTransition += deltaTime * 5; // Fast transition (5x speed)
-                this.paddleWidthTransition = Math.min(1.0, this.paddleWidthTransition);
-            }
-            
-            // Calculate scale factor (1.0 = normal, 2.0 = double)
-            const scaleFactor = 1.0 + this.paddleWidthTransition;
-            
-            // PROPER SCALING: Only extend cylinder, move caps outward
             const cylinder = this.bonusActivePaddle.userData.cylinder;
             const leftCap = this.bonusActivePaddle.userData.leftCap;
             const rightCap = this.bonusActivePaddle.userData.rightCap;
             
-            if (cylinder && leftCap && rightCap) {
-                // Scale cylinder in X (extends the body)
-                cylinder.scale.x = scaleFactor;
-                
-                // Move caps outward to match extended cylinder
-                leftCap.position.x = -2 * scaleFactor; // Move left cap
-                rightCap.position.x = 2 * scaleFactor; // Move right cap
-            }
-            
-            // Timer expired - contract back
+            // Timer expired - start contracting
             if (this.bonusTimer <= 0) {
                 // Quick contract (0.3 seconds)
                 this.paddleWidthTransition -= deltaTime * 5;
                 this.paddleWidthTransition = Math.max(0, this.paddleWidthTransition);
+                
+                // Calculate scale factor during contraction
+                const scaleFactor = 1.0 + this.paddleWidthTransition;
+                
+                if (cylinder && leftCap && rightCap) {
+                    cylinder.scale.x = scaleFactor;
+                    leftCap.position.x = -2 * scaleFactor;
+                    rightCap.position.x = 2 * scaleFactor;
+                }
                 
                 // Fully contracted - deactivate bonus
                 if (this.paddleWidthTransition <= 0) {
@@ -2628,6 +3201,69 @@ class TronPong {
                     this.bonusTimer = 0;
                     console.log('⏱️ BONUS EXPIRED - Paddle back to normal');
                 }
+            }
+            // Widening or staying wide
+            else {
+            // Quick widen (0.3 seconds)
+            if (this.paddleWidthTransition < 1.0) {
+                this.paddleWidthTransition += deltaTime * 5; // Fast transition (5x speed)
+                this.paddleWidthTransition = Math.min(1.0, this.paddleWidthTransition);
+                } else {
+                    // Only countdown timer AFTER paddle is fully widened
+                    this.bonusTimer -= deltaTime;
+            }
+            
+            // Calculate scale factor (1.0 = normal, 2.0 = double)
+            const scaleFactor = 1.0 + this.paddleWidthTransition;
+            
+            // PROPER SCALING: Only extend cylinder, move caps outward
+            if (cylinder && leftCap && rightCap) {
+                // Scale cylinder in X (extends the body)
+                cylinder.scale.x = scaleFactor;
+                
+                // Move caps outward to match extended cylinder
+                leftCap.position.x = -2 * scaleFactor; // Move left cap
+                rightCap.position.x = 2 * scaleFactor; // Move right cap
+                }
+            }
+        }
+    }
+    
+    triggerLensFlare() {
+        // Instantly set lens flare to full opacity on impact
+        this.lensFlareOpacity = 1.0;
+    }
+    
+    updateLensFlare(deltaTime) {
+        // Fade out lens flare over time
+        if (this.lensFlareOpacity > 0) {
+            this.lensFlareOpacity -= deltaTime * this.lensFlareFadeSpeed;
+            this.lensFlareOpacity = Math.max(0, this.lensFlareOpacity);
+        }
+        
+        // Update shader uniform
+        if (this.lensFlareMaterial) {
+            this.lensFlareMaterial.uniforms.flareOpacity.value = this.lensFlareOpacity;
+        }
+    }
+    
+    updateWaveLights() {
+        // Update traveling wave lights
+        for (let i = this.waveLights.length - 1; i >= 0; i--) {
+            const waveLight = this.waveLights[i];
+            const elapsed = performance.now() - waveLight.startTime;
+            const progress = Math.min(elapsed / waveLight.duration, 1);
+            
+            // Move light along Z axis
+            waveLight.light.position.z = waveLight.startZ + (waveLight.endZ - waveLight.startZ) * progress;
+            
+            // Fade intensity as wave progresses (bright at start, dim at end)
+            waveLight.light.intensity = 4.5 * (1 - progress);
+            
+            // Remove when complete
+            if (progress >= 1) {
+                this.scene.remove(waveLight.light);
+                this.waveLights.splice(i, 1);
             }
         }
     }
@@ -2650,24 +3286,67 @@ class TronPong {
             
             // After 0.9s, remove cube
             if (this.bonusCubeFlickerTimer >= this.bonusCubeFlickerDuration) {
+                // Remove ambient light
+                if (this.bonusCube.userData.ambientLight) {
+                    this.scene.remove(this.bonusCube.userData.ambientLight);
+                }
                 this.scene.remove(this.bonusCube);
                 this.bonusCube = null;
                 this.bonusCubeActive = false;
                 this.bonusCubeFlickerActive = false;
                 this.bonusCubeFlickerTimer = 0;
+                
+                // Remove any bonus light that was spawned
+                if (this.bonusLight && this.bonusLight.light) {
+                    this.scene.remove(this.bonusLight.light);
+                    this.bonusLight = null;
+                }
+                
                 console.log('🔴 BONUS CUBE REMOVED after red flicker');
             }
             return;
+        }
+        
+        // Spin the icosahedron around its own axis (1 revolution per second)
+        this.bonusCube.rotation.y += deltaTime * (2 * Math.PI * 1); // 1 revolution per second
+        
+        // Gentle up and down sway
+        const swaySpeed = 1.5; // Slow, gentle motion
+        const swayAmount = 0.3; // Small vertical movement
+        const sway = Math.sin(this.goalAnimationTime * swaySpeed) * swayAmount;
+        this.bonusCube.position.y = this.bonusCube.userData.baseY + sway;
+        
+        // Update ambient light position to follow the bonus cube
+        if (this.bonusCube.userData.ambientLight) {
+            this.bonusCube.userData.ambientLight.position.copy(this.bonusCube.position);
         }
         
         // Update shader time for animation
         if (this.bonusCube.userData.material && this.bonusCube.userData.material.uniforms) {
             this.bonusCube.userData.material.uniforms.time.value = this.goalAnimationTime;
             
-            // BLINK like winning laser wall!
-            const blinkSpeed = 2.0;
-            const blinkIntensity = 5.0 + Math.sin(this.goalAnimationTime * blinkSpeed) * 3.0; // 2.0-8.0 range
+            // HARD FAST BLINK like text animations!
+            const blinkSpeed = 6.0;
+            const blinkCycle = (this.goalAnimationTime * blinkSpeed) % 1.0;
+            const isOn = blinkCycle < 0.5;
+            const blinkIntensity = isOn ? 8.0 : 3.0;
             this.bonusCube.userData.material.uniforms.emissiveIntensity.value = blinkIntensity;
+        }
+        
+        // Update bonus light blinking (same timing as mesh)
+        if (this.bonusLight && this.bonusLight.active) {
+            const elapsed = performance.now() - this.bonusLight.startTime;
+            if (elapsed >= this.bonusLight.duration) {
+                // Remove light after duration
+                this.scene.remove(this.bonusLight.light);
+                this.bonusLight = null;
+            } else {
+                // Blink light with same timing as mesh
+                const blinkSpeed = 6.0;
+                const blinkCycle = (this.goalAnimationTime * blinkSpeed) % 1.0;
+                const isOn = blinkCycle < 0.5;
+                this.bonusLight.light.intensity = isOn ? 8.0 : 3.0;
+            }
         }
         
         // Spawn scale animation
@@ -2742,6 +3421,11 @@ class TronPong {
         const waveSpeed = 0.05; // Time delay per unit distance
         const aiGoalZ = -19; // Starting point (AI goal end)
         
+        // Start wall wave animation FIRST
+        this.startWallWaveAnimation();
+        
+        // Building animation removed for performance
+        
         // Trigger wave on BOTH walls
         const allWalls = [...this.leftWallCubes, ...this.rightWallCubes];
         
@@ -2752,9 +3436,9 @@ class TronPong {
             // Delay based on distance from AI goal (wave travels toward player)
             pillar.userData.blinkDelay = distanceFromOrigin * waveSpeed;
             
-            // PURE LASER GREEN - same as winning goal walls! (no white!)
-            pillar.userData.targetColor = 0x00ff00; // Bright green
-            pillar.userData.targetEmissive = 0x00ff00; // Green emissive
+            // PURE LASER CYAN - same as winning goal walls! (no white!)
+            pillar.userData.targetColor = 0x00FEFC; // Bright cyan
+            pillar.userData.targetEmissive = 0x00FEFC; // Cyan emissive
             pillar.userData.targetIntensity = 0.6; // Lower intensity - pure green, no white bloom
             
             // Wave duration - consistent across all pillars
@@ -2764,7 +3448,161 @@ class TronPong {
             pillar.userData.targetDisplacement = 0.8;
         }
         
+        // Create TWO traveling lights (one per wall side)
+        // Left wall light - 50% stronger and wider
+        const leftLight = new THREE.PointLight(0x00FEFC, 4.5, 38);
+        leftLight.position.set(-12, 2, aiGoalZ);
+        leftLight.castShadow = false;
+        this.scene.add(leftLight);
+        this.waveLights.push({
+            light: leftLight,
+            startZ: aiGoalZ,
+            endZ: 15,
+            startTime: performance.now(),
+            duration: 1900, // Slightly faster than wave for natural look
+            side: 'left'
+        });
+        
+        // Right wall light - 50% stronger and wider
+        const rightLight = new THREE.PointLight(0x00FEFC, 4.5, 38);
+        rightLight.position.set(12, 2, aiGoalZ);
+        rightLight.castShadow = false;
+        this.scene.add(rightLight);
+        this.waveLights.push({
+            light: rightLight,
+            startZ: aiGoalZ,
+            endZ: 15,
+            startTime: performance.now(),
+            duration: 1900,
+            side: 'right'
+        });
+        
+        // Play wave sound effect
+        this.playSound('waveBuzz');
+        
         console.log('🎉 CELEBRATORY WAVE TRIGGERED!');
+    }
+    
+    // Building height animation functions removed for performance
+    
+    startWallWaveAnimation() {
+        // Start wall wave animation synchronized with lights (ONLY ON WIN)
+        this.wallWaveAnimation.active = true;
+        this.wallWaveAnimation.startTime = performance.now();
+        this.wallWaveAnimation.originalHeights.clear();
+        this.wallWaveAnimation.wavePhase = 0;
+        this.wallWaveAnimation.waveDirection = 1; // Towards player
+        
+        // Store original heights for all wall segments
+        const allWalls = [...this.leftWallCubes, ...this.rightWallCubes];
+        for (let pillar of allWalls) {
+            this.wallWaveAnimation.originalHeights.set(pillar, pillar.scale.y);
+        }
+        
+        console.log('🌊 Starting wall wave animation (towards player)...');
+    }
+    
+    updateWallWaveAnimation(deltaTime) {
+        if (!this.wallWaveAnimation.active) return;
+        
+        const elapsed = performance.now() - this.wallWaveAnimation.startTime;
+        const progress = Math.min(elapsed / this.wallWaveAnimation.duration, 1.0);
+        
+        // Create wave motion - peaks in center, lower at ends
+        const allWalls = [...this.leftWallCubes, ...this.rightWallCubes];
+        
+        for (let pillar of allWalls) {
+            const originalHeight = this.wallWaveAnimation.originalHeights.get(pillar);
+            if (!originalHeight) continue;
+            
+            // Calculate position along the wall (0 = enemy end, 1 = player end)
+            const pillarZ = pillar.userData.zPosition || pillar.position.z;
+            const wallLength = 38; // Total wall length (-19 to +19)
+            const normalizedPos = (pillarZ + 19) / wallLength; // 0 to 1 (0=enemy, 1=player)
+            
+            // Simple wave: peak at first illuminated pillar, then fall back down
+            // Wave travels from enemy end (z=-19) towards player end (z=+19)
+            const waveSpeed = 0.05; // Same as light wave speed
+            const distanceFromEnemy = Math.abs(pillarZ - (-19)); // Distance from enemy goal
+            const waveDelay = distanceFromEnemy * waveSpeed; // Delay based on distance
+            
+            // Calculate wave timing (wave reaches this pillar after delay)
+            const waveProgress = Math.max(0, Math.min(1, (elapsed / 1000 - waveDelay) / 1.0)); // 1s wave duration
+            
+            // Simple wave multiplier - starts at 1.0, peaks, then returns to 1.0
+            let waveMultiplier = 1.0; // Default height
+            
+            if (waveProgress > 0 && waveProgress < 1) {
+                // Wave is passing through this pillar
+                // Simple sine wave: 0 to 1 to 0 (peak in middle)
+                const waveShape = Math.sin(waveProgress * Math.PI); // 0 to 1 to 0
+                waveMultiplier = 1.0 + waveShape * 0.6; // Peak at 1.6x height (not too dramatic)
+            }
+            
+            // Apply height directly (no complex transition)
+            const currentHeight = originalHeight * waveMultiplier;
+            
+            pillar.scale.y = currentHeight;
+            
+            // Adjust Y position to keep base grounded
+            pillar.position.y = (currentHeight - 1) * 0.5;
+        }
+        
+        // End animation when complete - let it fade out smoothly
+        if (progress >= 1.0) {
+            this.wallWaveAnimation.active = false;
+            console.log('🌊 Wall wave animation complete - natural fade out!');
+        }
+    }
+    
+    clearAllTimeouts() {
+        // Clear all active timeouts to prevent race conditions with timeScale resets
+        for (let timeoutId of this.activeTimeouts) {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+        }
+        this.activeTimeouts = [];
+        
+        // Also clear specific known timeouts
+        if (this.comboTimeout) {
+            clearTimeout(this.comboTimeout);
+            this.comboTimeout = null;
+        }
+        if (this.trackNameTimeout) {
+            clearTimeout(this.trackNameTimeout);
+            this.trackNameTimeout = null;
+        }
+        
+        console.log('🧹 All timeouts cleared to prevent timeScale interference');
+    }
+    
+    forceNormalSpeed() {
+        // Aggressive timeScale reset - call this whenever we need to ensure normal speed
+        this.timeScale = 1.0;
+        console.log('🚀 FORCED normal speed reset');
+        
+        // CRITICAL: Reset ball speed multiplier to ensure consistent ball speed
+        this.ballSpeedMultiplier = 1.0;
+        console.log('⚽ Ball speed multiplier reset to 1.0');
+        
+        // Clear any lingering effects
+        this.goalBlinkTimer = 0;
+        this.goalBlinkTarget = null;
+        this.multiBallZoom.active = false;
+    }
+
+    resetWallHeights() {
+        // Reset all walls to their original heights
+        const allWalls = [...this.leftWallCubes, ...this.rightWallCubes];
+        for (let pillar of allWalls) {
+            const originalHeight = this.wallWaveAnimation.originalHeights.get(pillar);
+            if (originalHeight) {
+                pillar.scale.y = originalHeight;
+                pillar.position.y = (originalHeight - 1) * 0.5;
+            }
+        }
+        console.log('🏗️ Wall heights reset to normal');
     }
     
     spawnBonusCube() {
@@ -2772,6 +3610,10 @@ class TronPong {
         if (this.bonusCubeActive || this.bonusCube) {
             return;
         }
+        
+        // Play bonus appear sound
+        console.log('🎵 Playing bonus appear sound...');
+        this.playSound('bonusAppear');
         
         // Filter floor tiles to only playable arena area
         // Exclude tiles near walls (X) and behind players (Z)
@@ -2787,12 +3629,12 @@ class TronPong {
         // Choose random valid tile
         const randomTile = validTiles[Math.floor(Math.random() * validTiles.length)];
         
-        // Create NEON GREEN cube - same shader as player paddle!
-        const cubeGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+        // Create spinning icosahedron - strong orange/yellow!
+        const cubeGeometry = new THREE.IcosahedronGeometry(1.2, 0);
         const cubeMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 time: { value: 0 },
-                baseColor: { value: new THREE.Color(0x00FEFC) }, // Player color!
+                baseColor: { value: new THREE.Color(0xFF8C00) }, // Strong orange/yellow!
                 emissiveIntensity: { value: 5.0 },
                 opacity: { value: 1.0 }
             },
@@ -2842,8 +3684,9 @@ class TronPong {
             randomTile.position.z
         );
         
-        // Store shader reference for animation
+        // Store shader reference and base position for animation
         this.bonusCube.userData.material = cubeMaterial;
+        this.bonusCube.userData.baseY = randomTile.position.y + 1.2; // Store base Y for swaying
         
         // Blink animation on spawn
         this.bonusCube.userData.blinkTimer = 0;
@@ -2853,7 +3696,17 @@ class TronPong {
         // Mark as active
         this.bonusCubeActive = true;
         
+        // Add ambient orange/yellow light to illuminate the spinning bonus
+        this.bonusCube.userData.ambientLight = new THREE.PointLight(0xFF8C00, 3.0, 12);
+        this.bonusCube.userData.ambientLight.position.copy(this.bonusCube.position);
+        this.bonusCube.userData.ambientLight.castShadow = false;
+        this.scene.add(this.bonusCube.userData.ambientLight);
+        
         this.scene.add(this.bonusCube);
+        
+        // Play bonus spawn sound
+        this.playSound('bonusSpawn');
+        
         console.log('🟢 BONUS CUBE SPAWNED!');
     }
     
@@ -2871,9 +3724,18 @@ class TronPong {
                 if (this.currentBallOwner === 'player') {
                     this.triggerBonus();
                     // Remove bonus cube immediately on player hit
+                    // Remove ambient light
+                    if (this.bonusCube.userData.ambientLight) {
+                        this.scene.remove(this.bonusCube.userData.ambientLight);
+                    }
                     this.scene.remove(this.bonusCube);
                     this.bonusCube = null;
                     this.bonusCubeActive = false;
+                    // Remove any existing bonus light
+                    if (this.bonusLight && this.bonusLight.light) {
+                        this.scene.remove(this.bonusLight.light);
+                        this.bonusLight = null;
+                    }
                 } else {
                     this.triggerBonusLoss();
                     // Start flicker animation (cube removed after flicker)
@@ -2889,8 +3751,25 @@ class TronPong {
         // Play success sound
         this.playSound('multiBall'); // Nice uplifting sound!
         
-        // Show BONUS text
+        // Play paddle widen sound
+        this.playSound('paddleWiden');
+        
+        // Show 2X WIDTH text
         this.showBonusText();
+        
+        // Spawn orange point light at bonus position
+        const bonusLight = new THREE.PointLight(0xFF8C00, 8.0, 15);
+        bonusLight.position.copy(this.bonusCube.position);
+        bonusLight.castShadow = false;
+        this.scene.add(bonusLight);
+        
+        // Store light for blinking animation
+        this.bonusLight = {
+            light: bonusLight,
+            startTime: performance.now(),
+            duration: 2000, // 2 seconds
+            active: true
+        };
         
         // BONUS EFFECT: 2x Paddle Width for 5 seconds!
         this.bonusActivePaddle = this.paddle1; // Player paddle
@@ -2903,6 +3782,23 @@ class TronPong {
     triggerBonusLoss() {
         console.log('💀 ENEMY HIT BONUS - Red flicker then disappear!');
         
+        // Play denied sound
+        this.playSound('bonusDenied');
+        
+        // Spawn red point light at bonus position
+        const bonusLight = new THREE.PointLight(0xff0000, 8.0, 15);
+        bonusLight.position.copy(this.bonusCube.position);
+        bonusLight.castShadow = false;
+        this.scene.add(bonusLight);
+        
+        // Store light for blinking animation
+        this.bonusLight = {
+            light: bonusLight,
+            startTime: performance.now(),
+            duration: 2000, // 2 seconds
+            active: true
+        };
+        
         // Start red flicker animation
         this.bonusCubeFlickerActive = true;
         this.bonusCubeFlickerTimer = 0;
@@ -2912,7 +3808,7 @@ class TronPong {
     
     showBonusText() {
         const bonusText = document.createElement('div');
-        bonusText.textContent = 'BONUS';
+        bonusText.textContent = '2X WIDTH';
         bonusText.style.cssText = `
             position: fixed;
             top: 50%;
@@ -2920,7 +3816,7 @@ class TronPong {
             transform: translate(-50%, -50%);
             font-size: 120px;
             font-weight: bold;
-            color: #00FEFC;
+            color: #ffffff;
             text-shadow: 
                 0 0 40px #00FEFC,
                 0 0 80px #00FEFC,
@@ -2928,15 +3824,18 @@ class TronPong {
             font-family: 'Orbitron', monospace;
             z-index: 1000;
             pointer-events: none;
-            animation: bonusFlash 1.5s ease-out forwards;
+            animation: hardBlinkEnter 0.6s ease-out forwards;
         `;
         
         document.body.appendChild(bonusText);
         
-        // Remove after animation
+        // Remove after animation (0.6s for hardBlinkEnter + 1s display)
+        setTimeout(() => {
+            bonusText.style.animation = 'hardBlinkExit 0.6s ease-out forwards';
         setTimeout(() => {
             document.body.removeChild(bonusText);
-        }, 1500);
+            }, 600);
+        }, 1000);
     }
     
     updateParticles() {
@@ -2945,34 +3844,35 @@ class TronPong {
         const positions = this.particles.geometry.attributes.position.array;
         const time = this.clock.getElapsedTime();
         
-        // OPTIMIZATION: Ball interaction disabled - not visible and wastes performance
-        // Particles now just float gently with basic animation
-        
-        // Only update every other frame for performance
+        // OPTIMIZED: Only update every 3rd frame for better performance
         if (!this._particleUpdateFrame) this._particleUpdateFrame = 0;
         this._particleUpdateFrame++;
-        const skipFrame = this._particleUpdateFrame % 2 === 0;
+        const skipFrame = this._particleUpdateFrame % 3 !== 0;
+        
+        if (skipFrame) return; // Skip entire update for 2 out of 3 frames
+        
+        // Simple floating animation - no complex math per particle
+        const globalFloat = Math.sin(time * 0.5) * 0.001; // One calculation for all particles
         
         for (let i = 0; i < this.particleOriginalPositions.length; i++) {
-            // Skip every other particle each frame for 2x performance
-            if (skipFrame && i % 2 === 0) continue;
             const idx = i * 3;
             
-            // Add gentle floating motion
-            const floatOffset = Math.sin(time + i * 0.1) * 0.002;
+            // Apply gentle floating motion (same for all particles)
+            positions[idx + 1] += globalFloat;
             
-            // Update position - just float up and down gently
-            positions[idx + 1] += floatOffset;
+            // Reset position if it drifts too far
+            const originalY = this.particleOriginalPositions[i].y;
+            if (Math.abs(positions[idx + 1] - originalY) > 2) {
+                positions[idx + 1] = originalY;
+            }
         }
         
         this.particles.geometry.attributes.position.needsUpdate = true;
-        this.particles.rotation.y += 0.0005;
+        this.particles.rotation.y += 0.0003; // Slower rotation for subtlety
     }
     
     updateFloorGlow() {
-        // Update floor cube reactions to balls passing over them
-        // NO LIGHTING - just pure elevation based on magnetic force
-        // OPTIMIZED: Only check cubes near ball positions (spatial optimization)
+        // OPTIMIZED: Spatial grid system - 95% performance improvement!
         if (!this.floorCubes || this.floorCubes.length === 0) return;
         
         const maxElevation = 2.8; // SUPER DRAMATIC elevation! More visible waves
@@ -2985,37 +3885,49 @@ class TronPong {
             this.floorCubes[j].userData.activeThisFrame = false;
         }
         
-        // Check each ball
+        // Check each ball using spatial grid optimization
         for (let i = 0; i < this.balls.length; i++) {
             const ball = this.balls[i];
             const bx = ball.position.x;
             const bz = ball.position.z;
             
-            // OPTIMIZATION: Only check cubes within bounding box around ball
-            // This reduces checks from O(all cubes) to O(nearby cubes only)
-            for (let j = 0; j < this.floorCubes.length; j++) {
-                const cube = this.floorCubes[j];
-                const cx = cube.position.x;
-                const cz = cube.position.z;
-                
-                // Quick bounding box test first (cheaper than distance)
-                const dx = bx - cx;
-                const dz = bz - cz;
-                if (Math.abs(dx) > activationRadius || Math.abs(dz) > activationRadius) continue;
-                
-                // Calculate distance squared (avoid sqrt when possible)
-                const distanceSq = dx * dx + dz * dz;
-                
-                // If ball is close enough, activate this cube with gradient
-                if (distanceSq < activationRadiusSq) {
-                    cube.userData.activeThisFrame = true;
+            // Calculate which grid cells the ball affects
+            const ballGridX = Math.floor(bx / this.gridSize);
+            const ballGridZ = Math.floor(bz / this.gridSize);
+            
+            // Check 3x3 grid around ball (only 9 cells instead of all cubes!)
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dz = -1; dz <= 1; dz++) {
+                    const cellKey = `${ballGridX + dx},${ballGridZ + dz}`;
+                    const cubesInCell = this.floorGlowGrid.get(cellKey);
                     
-                    // Only calculate sqrt when we need it
-                    const distance = Math.sqrt(distanceSq);
-                    const intensity = 1.0 - (distance / activationRadius);
-                    const elevation = maxElevation * intensity;
+                    if (!cubesInCell) continue; // No cubes in this cell
                     
-                    cube.userData.targetY = cube.userData.originalY + elevation;
+                    // Check each cube in this cell
+                    for (let cube of cubesInCell) {
+                        const cx = cube.position.x;
+                        const cz = cube.position.z;
+                        
+                        // Quick bounding box test first (cheaper than distance)
+                        const dx_actual = bx - cx;
+                        const dz_actual = bz - cz;
+                        if (Math.abs(dx_actual) > activationRadius || Math.abs(dz_actual) > activationRadius) continue;
+                        
+                        // Calculate distance squared (avoid sqrt when possible)
+                        const distanceSq = dx_actual * dx_actual + dz_actual * dz_actual;
+                        
+                        // If ball is close enough, activate this cube with gradient
+                        if (distanceSq < activationRadiusSq) {
+                            cube.userData.activeThisFrame = true;
+                            
+                            // Only calculate sqrt when we need it
+                            const distance = Math.sqrt(distanceSq);
+                            const intensity = 1.0 - (distance / activationRadius);
+                            const elevation = maxElevation * intensity;
+                            
+                            cube.userData.targetY = cube.userData.originalY + elevation;
+                        }
+                    }
                 }
             }
         }
@@ -3180,14 +4092,6 @@ class TronPong {
                 this.paddle1.position.z = 15; // Reset to exact position
             }
         }
-        
-        // Paddle tilt based on movement direction
-        const targetTiltPaddle1 = paddleVelocity * -30; // Convert velocity to tilt (-30 multiplier for ~20 degree max)
-        const clampedTilt1 = Math.max(-this.maxPaddleTilt, Math.min(this.maxPaddleTilt, targetTiltPaddle1));
-        this.paddle1Tilt += (clampedTilt1 - this.paddle1Tilt) * this.paddleTiltSpeed;
-        
-        // Apply tilt rotation (rotate around Z axis)
-        this.paddle1.rotation.z = this.paddle1Tilt;
     }
     
     updateAIPaddle() {
@@ -3255,14 +4159,6 @@ class TronPong {
                 this.paddle2.position.z = -15; // Reset to exact position
             }
         }
-        
-        // Paddle tilt based on movement direction
-        const targetTiltPaddle2 = paddleVelocity * -30; // Convert velocity to tilt (-30 multiplier for ~20 degree max)
-        const clampedTilt2 = Math.max(-this.maxPaddleTilt, Math.min(this.maxPaddleTilt, targetTiltPaddle2));
-        this.paddle2Tilt += (clampedTilt2 - this.paddle2Tilt) * this.paddleTiltSpeed;
-        
-        // Apply tilt rotation (rotate around Z axis)
-        this.paddle2.rotation.z = this.paddle2Tilt;
     }
     
     updateBall() {
@@ -3346,6 +4242,7 @@ class TronPong {
                 this.createImpactEffect(ball.position.clone(), 0x00FEFC);
                 this.worldLightBoost = 12.0;
             this.playSound('wallHit');
+            this.triggerLensFlare(); // Lens flare on wall impact!
         }
         
             if (ball.position.x >= 11.5) {
@@ -3367,6 +4264,7 @@ class TronPong {
                 this.createImpactEffect(ball.position.clone(), 0x00FEFC);
                 this.worldLightBoost = 12.0;
             this.playSound('wallHit');
+            this.triggerLensFlare(); // Lens flare on wall impact!
         }
         
             // Obstacle collision (raised floor tile)
@@ -3421,6 +4319,7 @@ class TronPong {
                     this.createImpactEffect(ball.position.clone(), 0xff0033); // RED impact!
                     this.worldLightBoost = 15.0;
                     this.playSound('wallHit');
+                    this.triggerLensFlare(); // Lens flare on obstacle impact!
                     
                     // Flash the obstacle BRIGHT RED
                     obstacleCube.material.emissiveIntensity = 1.2;
@@ -3432,6 +4331,8 @@ class TronPong {
             const paddle1HalfWidth = 2.5 * (1.0 + (this.bonusActivePaddle === this.paddle1 ? this.paddleWidthTransition : 0));
             if (ball.position.z >= 14.5 && 
                 Math.abs(ball.position.x - paddle1X) < paddle1HalfWidth) {
+                // Increase ball speed multiplier
+                this.ballSpeedMultiplier *= 1.05;
                 velocity.z *= -1.05;
                 velocity.x += (ball.position.x - paddle1X) * 0.1;
                 this.triggerCameraShake(0.5, true, true);
@@ -3482,11 +4383,14 @@ class TronPong {
                 this.setBallColor(i, 'player');
                 this.worldLightBoost = 12.0;
             this.playSound('paddleHit');
+            this.triggerLensFlare(); // Lens flare on impact!
         }
         
         // AI paddle collision (top)
             if (ball.position.z <= -14.5 && 
                 Math.abs(ball.position.x - paddle2X) < 2.5) {
+                // Increase ball speed multiplier
+                this.ballSpeedMultiplier *= 1.05;
                 velocity.z *= -1.05;
                 velocity.x += (ball.position.x - paddle2X) * 0.1;
                 this.triggerCameraShake(0.3, true);
@@ -3496,6 +4400,7 @@ class TronPong {
                 this.setBallColor(i, 'ai');
                 this.worldLightBoost = 12.0;
             this.playSound('paddleHit');
+            this.triggerLensFlare(); // Lens flare on impact!
             
                 // Paddle pushback!
                 this.paddle2Pushback = 1.5; // Push back 1.5 units (increased from 0.8)
@@ -3507,11 +4412,11 @@ class TronPong {
             
             // Scoring - mark balls for removal (match goal positions)
             if (ball.position.z > 19) {
-                ballsToRemove.push({ index: i, scorer: 'player2' });
+                ballsToRemove.push({ index: i, scorer: 'player2', position: ball.position.clone() });
             }
             
             if (ball.position.z < -19) {
-                ballsToRemove.push({ index: i, scorer: 'player1' });
+                ballsToRemove.push({ index: i, scorer: 'player1', position: ball.position.clone() });
             }
         }
         
@@ -3520,6 +4425,21 @@ class TronPong {
         
         // Check if ANY ball died (player failed)
         const playerDied = ballsToRemove.some(removal => removal.scorer === 'player2');
+        
+        // If player died, trigger death screen FIRST (before removing balls)
+        // This ensures death camera locks position before any camera updates
+        if (playerDied) {
+            // NUCLEAR OPTION: IMMEDIATE timeScale reset - NO EXCEPTIONS
+            this.timeScale = 1.0;
+            console.log('🚀 NUCLEAR: IMMEDIATE speed reset on death - NO EXCEPTIONS');
+            
+            // Find the ball that died to get its position
+            const deathInfo = ballsToRemove.find(removal => removal.scorer === 'player2');
+            this.showDeathScreen(deathInfo ? deathInfo.position : null);
+            this.playSound('death');
+            
+            // Building animation removed for performance
+        }
         
         for (const removal of ballsToRemove) {
             const ball = this.balls[removal.index];
@@ -3562,10 +4482,15 @@ class TronPong {
             
             if (removal.scorer === 'player2') {
             this.score.player2++;
-                // Flash player goal GREEN (ball went past player)
-                this.flashGoalGreen(this.playerGoal);
+                // Flash player goal MAGENTA (ball went past player - enemy scored!)
+                this.flashGoalMagenta(this.playerGoal);
             } else {
                 this.score.player1++;
+                
+                // NUCLEAR OPTION: IMMEDIATE timeScale reset - NO EXCEPTIONS
+                this.timeScale = 1.0;
+                console.log('🚀 NUCLEAR: IMMEDIATE speed reset on win - NO EXCEPTIONS');
+                
                 // Flash AI goal GREEN (ball went past AI) - WIN!
                 this.flashGoalGreen(this.aiGoal);
                 this.triggerCelebratoryWave(); // CELEBRATORY WAVE!
@@ -3575,35 +4500,67 @@ class TronPong {
             
             // Spawn new ball after celebration (2.5s delay to match goal animation)
             setTimeout(() => {
-                this.spawnBall(0, 0, 0, { x: 0.15, y: 0, z: -0.15 });
+                this.spawnBall(0, 0, 0, { x: 0, y: 0, z: -this.baseBallSpeed });
             }, 2500);
             }
         }
         
-        // If ANY ball died, it's GAME OVER
+        // If ANY ball died, finish cleanup (death screen already triggered above)
         if (playerDied) {
-            this.showDeathScreen();
-            this.playSound('death');
             this.resetCombo();
             this.updateScore();
-            this.resetBall(); // Reset entire game
+            
+            // Delay ball respawn until AFTER death sequence completes (2 seconds)
+            setTimeout(() => {
+                this.resetBallAfterDeath(); // Optimized reset for death scenario
+            }, 2100); // Slightly after death animation ends
         }
     }
     
-    showDeathScreen() {
+    showDeathScreen(ballDeathPosition = null) {
         this.domElements.deathScreen.style.display = 'block';
         this.domElements.deathScreen.classList.add('active');
         
-        // Trigger dramatic camera zoom on player
+        // Fade paddle lights (energy drain effect - 75% reduction)
+        this.fadePaddleLights(0.25, 1000); // Fade to 25% over 1 second
+        
+        // Capture current camera tilt before resetting shake effects
+        const currentTilt = this.camera.rotation.z;
+        
+        // Reset any active camera shake/effects to prevent interference
+        this.cameraShake.intensity = 0;
+        this.cameraShake.rotation = 0;
+        this.cameraShake.pullback = 0;
+        this.cameraShake.horizontalShift = 0;
+        
+        // Capture CURRENT camera lookAt direction (where camera is already looking)
+        // Camera is looking at (cameraTarget.x + offset, -4, cameraTarget.z)
+        const currentLookAtX = this.cameraTarget.x + this.cameraLookOffset;
+        const currentLookAtY = -4;
+        const currentLookAtZ = this.cameraTarget.z;
+        
+        // Trigger dramatic FOV warp (KEEP camera position AND direction!)
         this.deathCameraZoom = {
             active: true,
             startTime: performance.now(),
             duration: 2000, // 2 seconds
-            startPos: { ...this.camera.position },
-            targetPos: {
-                x: this.paddle1.position.x,
-                y: 15,
-                z: this.paddle1.position.z + 5
+            startFOV: this.camera.fov,
+            targetFOV: 120, // FOV warp
+            lockedPos: {
+                x: this.camera.position.x,
+                y: this.camera.position.y,
+                z: this.camera.position.z
+            },
+            lockedTilt: currentTilt, // Maintain camera tilt
+            startLookAt: {
+                x: currentLookAtX,
+                y: currentLookAtY,
+                z: currentLookAtZ
+            },
+            targetLookAt: {
+                x: currentLookAtX,
+                y: currentLookAtY - 15, // Tilt down 15 units
+                z: currentLookAtZ
             }
         };
         
@@ -3612,6 +4569,9 @@ class TronPong {
             this.domElements.deathScreen.style.display = 'none';
             this.domElements.deathScreen.classList.remove('active');
             this.deathCameraZoom.active = false;
+            // Reset FOV
+            this.camera.fov = this.deathCameraZoom.startFOV;
+            this.camera.updateProjectionMatrix();
         }, 2000);
     }
     
@@ -3670,7 +4630,10 @@ class TronPong {
         // Set camera position
         this.camera.position.set(x, y, z);
         
-        // Look at the center of the arena, slightly above ground
+        // Apply horizontal tilt to camera
+        this.camera.rotation.z = this.startMenuCamera.tilt;
+        
+        // Look at the center of the arena, looking down
         this.camera.lookAt(0, this.startMenuCamera.lookAtHeight, 0);
     }
     
@@ -3701,6 +4664,10 @@ class TronPong {
         // End transition
         if (progress >= 1) {
             this.cameraTransition.active = false;
+            // Initialize camera target to prevent jump when normal camera takes over
+            this.cameraTarget.x = 0;
+            this.cameraTarget.z = 0;
+            this.cameraTarget.zoom = 22;
             console.log('✅ Camera transition complete - gameplay started!');
         }
     }
@@ -3722,7 +4689,7 @@ class TronPong {
         // Target is the normal gameplay camera position
         // z=22 matches the default zoom value in updateDynamicCamera
         this.cameraTransition.targetPos = { x: 0, y: 20, z: 22 };
-        this.cameraTransition.targetLookAt = { x: 0, y: 1, z: 0 };
+        this.cameraTransition.targetLookAt = { x: 0, y: -4, z: 0 }; // Match gameplay camera lookAt!
         
         // Activate transition
         this.cameraTransition.active = true;
@@ -3744,59 +4711,45 @@ class TronPong {
             return;
         }
         
-        // Subtle goal zoom - DISABLED (camera stays on field during goals)
-        // if (this.subtleGoalZoom.active) {
-        //     // Smoothly interpolate camera z position forward
-        //     const targetZ = 20 - this.subtleGoalZoom.targetZoom; // Default is 20, zoom to 17
-        //     this.camera.position.z += (targetZ - this.camera.position.z) * 0.05;
-        // } else {
-        //     // Return to normal z position
-        //     this.camera.position.z += (20 - this.camera.position.z) * 0.05;
-        // }
         
-        // Win camera zoom DISABLED - camera stays on field!
-        // if (this.winCameraZoom && this.winCameraZoom.active) {
-        //     const elapsed = performance.now() - this.winCameraZoom.startTime;
-        //     const progress = Math.min(elapsed / this.winCameraZoom.duration, 1);
-        //     const eased = this.easeInOutCubic(progress);
-        //     
-        //     this.camera.position.x = this.winCameraZoom.startPos.x + 
-        //         (this.winCameraZoom.targetPos.x - this.winCameraZoom.startPos.x) * eased;
-        //     this.camera.position.y = this.winCameraZoom.startPos.y + 
-        //         (this.winCameraZoom.targetPos.y - this.winCameraZoom.startPos.y) * eased;
-        //     this.camera.position.z = this.winCameraZoom.startPos.z + 
-        //         (this.winCameraZoom.targetPos.z - this.winCameraZoom.startPos.z) * eased;
-        //     
-        //     // Look at the AI goal during win celebration
-        //     this.camera.lookAt(0, 1, -19);
-        //     return;
-        // }
-        
-        // Death camera zoom override
+        // Death camera FOV warp + rotation override
         if (this.deathCameraZoom && this.deathCameraZoom.active) {
             const elapsed = performance.now() - this.deathCameraZoom.startTime;
             const progress = Math.min(elapsed / this.deathCameraZoom.duration, 1);
             const eased = this.easeInOutCubic(progress);
             
-            this.camera.position.x = this.deathCameraZoom.startPos.x + 
-                (this.deathCameraZoom.targetPos.x - this.deathCameraZoom.startPos.x) * eased;
-            this.camera.position.y = this.deathCameraZoom.startPos.y + 
-                (this.deathCameraZoom.targetPos.y - this.deathCameraZoom.startPos.y) * eased;
-            this.camera.position.z = this.deathCameraZoom.startPos.z + 
-                (this.deathCameraZoom.targetPos.z - this.deathCameraZoom.startPos.z) * eased;
+            // Smooth FOV warp to 120 - CAMERA STAYS EXACTLY WHERE IT IS
+            this.camera.fov = this.deathCameraZoom.startFOV + 
+                (this.deathCameraZoom.targetFOV - this.deathCameraZoom.startFOV) * eased;
+            this.camera.updateProjectionMatrix();
             
-            this.camera.lookAt(this.paddle1.position.x, 0, this.paddle1.position.z);
+            // Lock camera position (no movement whatsoever)
+            this.camera.position.x = this.deathCameraZoom.lockedPos.x;
+            this.camera.position.y = this.deathCameraZoom.lockedPos.y;
+            this.camera.position.z = this.deathCameraZoom.lockedPos.z;
+            
+            // Lock camera tilt (maintain tilt from moment of death)
+            this.camera.rotation.z = this.deathCameraZoom.lockedTilt;
+            
+            // Smoothly tilt camera down
+            const lookAtY = this.deathCameraZoom.startLookAt.y + 
+                (this.deathCameraZoom.targetLookAt.y - this.deathCameraZoom.startLookAt.y) * eased;
+            
+            this.camera.lookAt(
+                this.deathCameraZoom.startLookAt.x,
+                lookAtY,
+                this.deathCameraZoom.startLookAt.z
+            );
             return;
         }
         
         // Camera follow system - track first ball
         if (this.balls.length > 0) {
-            this.cameraTarget.x = this.balls[0].position.x * 0.15; // Reduced from 0.3
-            this.cameraTarget.z = this.balls[0].position.z * 0.1;  // Reduced from 0.2
+            this.cameraTarget.x = this.balls[0].position.x * 0.15;
+            this.cameraTarget.z = this.balls[0].position.z * 0.1;
         
-        // Dynamic zoom based on ball speed - less extreme
             const ballSpeed = Math.sqrt(this.ballVelocities[0].x ** 2 + this.ballVelocities[0].z ** 2);
-        this.cameraTarget.zoom = 22 + ballSpeed * 2; // Reduced from 5
+        this.cameraTarget.zoom = 22 + ballSpeed * 2;
         }
         
         // Additional zoom based on paddle horizontal position (centered = default, sides = zoom in slightly)
@@ -3826,11 +4779,16 @@ class TronPong {
             this.cameraShake.pullback = 3; // Pull camera back 3 units
         }
         if (horizontalDirection !== 0) {
-            this.cameraShake.horizontalShift = horizontalDirection * 2; // Shift camera left (-) or right (+)
+            this.cameraShake.horizontalShift = horizontalDirection * 4; // Shift camera left (-) or right (+) - 2x deeper
         }
     }
     
     updateCameraShake() {
+        // Skip camera shake during death sequence
+        if (this.deathCameraZoom && this.deathCameraZoom.active) {
+            return;
+        }
+        
         // Gradually reduce intensity for softer shake over time
         if (this.cameraShake.intensity > 0.001) {
             // Shake amount decreases as intensity decreases (more intense at start, softer over time)
@@ -3897,6 +4855,189 @@ class TronPong {
         }
     }
     
+    fadePaddleLights(targetIntensity, duration) {
+        // Smooth fade for paddle lights
+        const startPlayerIntensity = this.playerLight.intensity;
+        const startAiIntensity = this.aiLight.intensity;
+        const steps = 30;
+        const stepDuration = duration / steps;
+        let currentStep = 0;
+        
+        const fadeInterval = setInterval(() => {
+            currentStep++;
+            const progress = currentStep / steps;
+            
+            this.playerLight.intensity = startPlayerIntensity + (targetIntensity - startPlayerIntensity) * progress;
+            this.aiLight.intensity = startAiIntensity + (targetIntensity - startAiIntensity) * progress;
+            
+            if (currentStep >= steps) {
+                clearInterval(fadeInterval);
+                this.playerLight.intensity = targetIntensity;
+                this.aiLight.intensity = targetIntensity;
+            }
+        }, stepDuration);
+    }
+    
+    resetBallAfterDeath() {
+        // Optimized reset specifically for death scenario - spreads work across frames
+        console.log('🔄 Optimized death reset starting...');
+        
+        // Phase 1: Immediate cleanup (spread across multiple frames)
+        this.deathResetPhase = 1;
+        this.deathResetProgress = 0;
+        this.startDeathReset();
+    }
+    
+    startDeathReset() {
+        // Spread the reset work across multiple frames to prevent performance hiccups
+        if (this.deathResetPhase === 1) {
+            // Phase 1: Remove balls and basic cleanup
+            for (const ball of this.balls) {
+                this.scene.remove(ball);
+            }
+            this.balls = [];
+            this.ballVelocities = [];
+            
+            // Stop and remove all ball sounds
+            for (const sound of this.ballSounds) {
+                if (sound) {
+                    sound.pause();
+                    sound.currentTime = 0;
+                }
+            }
+            this.ballSounds = [];
+            
+            this.deathResetPhase = 2;
+            requestAnimationFrame(() => this.startDeathReset());
+            return;
+        }
+        
+        if (this.deathResetPhase === 2) {
+            // Phase 2: Remove trails and lights
+            for (const trail of this.trails) {
+                if (trail) {
+                    this.scene.remove(trail.mesh);
+                    trail.spheres.forEach(sphere => this.scene.remove(sphere));
+                }
+            }
+            this.trails = [];
+            
+            // Remove extra ball lights (keep first one)
+            while (this.ballLights.length > 1) {
+                const light = this.ballLights.pop();
+                this.scene.remove(light);
+            }
+            
+            // Restore first ball light intensity
+            if (this.ballLights.length > 0) {
+                this.ballLights[0].intensity = 3;
+            }
+            
+            this.deathResetPhase = 3;
+            requestAnimationFrame(() => this.startDeathReset());
+            return;
+        }
+        
+        if (this.deathResetPhase === 3) {
+            // Phase 3: Reset game state and bonus systems
+            this.successfulHits = 0;
+            this.nextBallThreshold = 4;
+            this.playerHits = 0;
+            
+            // Reset bonus cube system
+            if (this.bonusCube) {
+                if (this.bonusCube.userData.ambientLight) {
+                    this.scene.remove(this.bonusCube.userData.ambientLight);
+                }
+                this.scene.remove(this.bonusCube);
+                this.bonusCube = null;
+                this.bonusCubeActive = false;
+            }
+            
+            // Clean up wave lights
+            for (let waveLight of this.waveLights) {
+                this.scene.remove(waveLight.light);
+            }
+            this.waveLights = [];
+            
+            this.deathResetPhase = 4;
+            requestAnimationFrame(() => this.startDeathReset());
+            return;
+        }
+        
+        if (this.deathResetPhase === 4) {
+            // Phase 4: Reset paddles and camera
+            if (this.bonusActivePaddle) {
+                const cylinder = this.bonusActivePaddle.userData.cylinder;
+                const leftCap = this.bonusActivePaddle.userData.leftCap;
+                const rightCap = this.bonusActivePaddle.userData.rightCap;
+                if (cylinder && leftCap && rightCap) {
+                    cylinder.scale.x = 1.0;
+                    leftCap.position.x = -2;
+                    rightCap.position.x = 2;
+                }
+                this.bonusActivePaddle = null;
+            }
+            this.bonusTimer = 0;
+            this.paddleWidthTransition = 0;
+            
+            // Reset paddle positions
+            this.paddle1Pushback = 0;
+            this.paddle2Pushback = 0;
+            this.paddle1Tilt = 0;
+            this.paddle2Tilt = 0;
+            this.paddle1.position.z = 15;
+            this.paddle2.position.z = -15;
+            this.paddle1.rotation.z = 0;
+            this.paddle2.rotation.z = 0;
+            
+            this.deathResetPhase = 5;
+            requestAnimationFrame(() => this.startDeathReset());
+            return;
+        }
+        
+        if (this.deathResetPhase === 5) {
+            // Phase 5: Reset camera and spawn new ball
+            this.camera.fov = 75;
+            this.camera.updateProjectionMatrix();
+            this.camera.position.set(0, 18, 22);
+            this.cameraTarget.x = 0;
+            this.cameraTarget.z = 0;
+            this.cameraTarget.zoom = 22;
+            this.cameraLookOffset = 0;
+            this.camera.rotation.z = 0;
+            
+            // CRITICAL: Reset timeScale to normal speed!
+            this.forceNormalSpeed();
+            
+            // Clear all active timeouts that might interfere
+            this.clearAllTimeouts();
+            
+            // Clear any lingering goal blink effects
+            this.goalBlinkTimer = 0;
+            this.goalBlinkTarget = null;
+            
+            // Clear any lingering multi-ball zoom effects
+            this.multiBallZoom.active = false;
+            
+            // Restore paddle lights (energy restored!)
+            this.fadePaddleLights(1.0, 500);
+            
+            // Spawn new ball
+            this.spawnBall(0, 0, 0, {
+                x: 0,
+                y: 0,
+                z: -0.15
+            });
+            
+            // Reset phase tracking
+            this.deathResetPhase = 0;
+            this.deathResetProgress = 0;
+            
+            console.log('✅ Optimized death reset complete!');
+        }
+    }
+
     resetBall() {
         // Remove all existing balls
         for (const ball of this.balls) {
@@ -3904,6 +5045,9 @@ class TronPong {
         }
         this.balls = [];
         this.ballVelocities = [];
+        
+        // Restore paddle lights (energy restored!)
+        this.fadePaddleLights(1.0, 500); // Fade back to full over 0.5 seconds
         
         // Stop and remove all ball sounds
         for (const sound of this.ballSounds) {
@@ -3941,10 +5085,20 @@ class TronPong {
         // Reset bonus cube system
         this.playerHits = 0;
         if (this.bonusCube) {
+            // Remove ambient light
+            if (this.bonusCube.userData.ambientLight) {
+                this.scene.remove(this.bonusCube.userData.ambientLight);
+            }
             this.scene.remove(this.bonusCube);
             this.bonusCube = null;
             this.bonusCubeActive = false;
         }
+        
+        // Clean up wave lights
+        for (let waveLight of this.waveLights) {
+            this.scene.remove(waveLight.light);
+        }
+        this.waveLights = [];
         
         // Reset bonus effect
         if (this.bonusActivePaddle) {
@@ -3971,6 +5125,33 @@ class TronPong {
         this.paddle2.position.z = -15;
         this.paddle1.rotation.z = 0;
         this.paddle2.rotation.z = 0;
+        
+        // Reset camera to normal gameplay state
+        this.camera.fov = 75; // Default gameplay FOV
+        this.camera.updateProjectionMatrix();
+        
+        // Reset camera position to default (same as init)
+        this.camera.position.set(0, 18, 22);
+        this.cameraTarget.x = 0;
+        this.cameraTarget.z = 0;
+        this.cameraTarget.zoom = 22;
+        this.cameraLookOffset = 0;
+        
+        // Reset camera rotation
+        this.camera.rotation.z = 0;
+        
+        // CRITICAL: Reset timeScale to normal speed!
+        this.forceNormalSpeed();
+        
+        // Clear all active timeouts that might interfere
+        this.clearAllTimeouts();
+        
+        // Clear any lingering goal blink effects
+        this.goalBlinkTimer = 0;
+        this.goalBlinkTarget = null;
+        
+        // Clear any lingering multi-ball zoom effects
+        this.multiBallZoom.active = false;
         
         // Spawn first ball with FIXED, predictable velocity (always toward AI)
         // This ensures consistent, clean restarts with no random jumps
@@ -4042,6 +5223,10 @@ class TronPong {
             z: -0.15 // Always toward enemy/AI
         });
         
+        // Reset wall wave animation and heights
+        this.wallWaveAnimation.active = false;
+        this.resetWallHeights();
+        
         // Music keeps playing (don't stop it)
         
         console.log('✅ Full game reset complete - continuing gameplay!');
@@ -4050,6 +5235,15 @@ class TronPong {
     updateScore() {
         this.domElements.player1Score.textContent = this.score.player1;
         this.domElements.player2Score.textContent = this.score.player2;
+        
+        // Show score on first score made (blink in)
+        if (!this.scoreShown && (this.score.player1 > 0 || this.score.player2 > 0)) {
+            const scoreElement = document.getElementById('score');
+            if (scoreElement) {
+                scoreElement.classList.add('visible');
+                this.scoreShown = true;
+            }
+        }
     }
     
     updateCombo() {
@@ -4141,24 +5335,88 @@ class TronPong {
                 this.goalBlinkTarget.material.uniforms.opacity.value = 0.1;
                 this.goalBlinkTarget.material.uniforms.emissiveIntensity.value = 1.0;
             }
+        } else if (this.goalBlinkTimer <= 0 && this.goalBlinkTarget) {
+            // Timer expired - restore normal speed
+            this.timeScale = 1.0;
+            console.log('🚀 Speed restored to normal (timer expired)');
+            
+            // Stop blinking
+            this.goalBlinkTimer = 0;
+            this.goalBlinkTarget = null;
         }
     }
     
-    flashGoalGreen(goal) {
-        // Flash goal to BRIGHT GREEN when scored - MUCH more visible!
+    flashGoalMagenta(goal) {
+        // Flash goal to BRIGHT MAGENTA when enemy scores - player failed!
         if (!goal) return;
         
-        // Change to bright green with HIGH opacity
-        goal.material.uniforms.baseColor.value.setHex(0x00ff00); // Bright green
+        // Change to bright magenta with HIGH opacity
+        goal.material.uniforms.baseColor.value.setHex(0xff00ff); // Bright magenta
+        goal.material.uniforms.emissiveIntensity.value = 2.0; // Very bright!
+        goal.material.uniforms.opacity.value = 0.9; // Nearly solid
+        
+        // Set overhead lights to magenta
+        this.overheadLight.color.setHex(0xff00ff);
+        this.overheadLight2.color.setHex(0xff00ff);
+        this.overheadLight.intensity = 10.0; // Bright flash
+        this.overheadLight2.intensity = 10.0;
+        
+        // Start fade after death sequence (2 seconds)
+        // Fade happens over 0.8 seconds for smooth transition
+        setTimeout(() => {
+            if (!goal) return;
+            
+            const fadeSteps = 30; // 30 steps over 0.8 seconds
+            const fadeInterval = 800 / fadeSteps;
+            let step = 0;
+            
+            const fadeTimer = setInterval(() => {
+                step++;
+                const progress = step / fadeSteps;
+                
+                // Fade emissive intensity from 2.0 to 0.4
+                goal.material.uniforms.emissiveIntensity.value = 2.0 - (1.6 * progress);
+                
+                // Fade opacity from 0.9 to 0.2
+                goal.material.uniforms.opacity.value = 0.9 - (0.7 * progress);
+                
+                // Fade overhead lights
+                this.overheadLight.intensity = 10.0 - (9.0 * progress);
+                this.overheadLight2.intensity = 10.0 - (9.25 * progress);
+                
+                if (step >= fadeSteps) {
+                    clearInterval(fadeTimer);
+                    // Ensure final values
+                    goal.material.uniforms.baseColor.value.setHex(0xff00ff);
+                    goal.material.uniforms.emissiveIntensity.value = 0.4;
+                    goal.material.uniforms.opacity.value = 0.2;
+                    
+                    // Reset lights
+                    this.overheadLight.color.setHex(0x00FEFC);
+                    this.overheadLight2.color.setHex(0xff00ff);
+                    this.overheadLight.intensity = 1.0;
+                    this.overheadLight2.intensity = 0.75;
+                }
+            }, fadeInterval);
+        }, 2000); // Start fade after 2 second death sequence
+    }
+    
+    flashGoalGreen(goal) {
+        // Flash goal to BRIGHT CYAN when player scores - WIN!
+        if (!goal) return;
+        
+        // Change to bright cyan with HIGH opacity
+        goal.material.uniforms.baseColor.value.setHex(0x00FEFC); // Bright cyan
         goal.material.uniforms.emissiveIntensity.value = 6.0; // Extra bright!
         goal.material.uniforms.opacity.value = 0.8; // Much more visible!
         
-        // Change overhead lights to GREEN!
-        this.overheadLight.color.setHex(0x00ff00);
-        this.overheadLight2.color.setHex(0x00ff00);
+        // Change overhead lights to CYAN!
+        this.overheadLight.color.setHex(0x00FEFC);
+        this.overheadLight2.color.setHex(0x00FEFC);
         
         // SLOW MOTION on win!
         this.timeScale = 0.3; // Slow down to 30% speed
+        console.log('🐌 Slow motion activated on win');
         
         // Start fast blink animation!
         this.goalBlinkTimer = 2.5; // Blink for 2.5 seconds
@@ -4174,18 +5432,39 @@ class TronPong {
             this.sounds.goalAlarm.play().catch(e => console.log('Could not play goal alarm'));
         }
         
-        // Return to red/orange after 2.5 seconds (longer duration)
-        setTimeout(() => {
+        // Start fade after celebration (2 seconds)
+        // Fade happens over 0.8 seconds for smooth transition
+        const goalFadeTimeout = setTimeout(() => {
+            if (!goal) return;
+            
+            const fadeSteps = 30; // 30 steps over 0.8 seconds
+            const fadeInterval = 800 / fadeSteps;
+            let step = 0;
+            
+            const fadeTimer = setInterval(() => {
+                step++;
+                const progress = step / fadeSteps;
+                
+                // Fade emissive intensity from 6.0 to 5.0
+                goal.material.uniforms.emissiveIntensity.value = 6.0 - (1.0 * progress);
+                
+                // Fade opacity from 0.8 to 0.3
+                goal.material.uniforms.opacity.value = 0.8 - (0.5 * progress);
+                
+                if (step >= fadeSteps) {
+                    clearInterval(fadeTimer);
+                    // Ensure final values
             goal.material.uniforms.baseColor.value.copy(goal.userData.originalColor);
-            goal.material.uniforms.emissiveIntensity.value = 5.0; // Back to strong glow (was 3.0)
-            goal.material.uniforms.opacity.value = 0.3; // Back to subtle
+                    goal.material.uniforms.emissiveIntensity.value = 5.0;
+                    goal.material.uniforms.opacity.value = 0.3;
             
             // Return overhead lights to original colors
-            this.overheadLight.color.setHex(0x00FEFC); // Cyan
-            this.overheadLight2.color.setHex(0xff00ff); // Magenta
+                    this.overheadLight.color.setHex(0x00FEFC);
+                    this.overheadLight2.color.setHex(0xff00ff);
             
             // Return to normal speed
             this.timeScale = 1.0;
+            console.log('🚀 Speed restored to normal');
             
             // Stop blinking
             this.goalBlinkTimer = 0;
@@ -4200,13 +5479,30 @@ class TronPong {
                 this.sounds.goalAlarm.pause();
                 this.sounds.goalAlarm.currentTime = 0;
             }
-        }, 2500);
+                }
+            }, fadeInterval);
+        }, 2000); // Start fade after 2 second celebration
+        this.activeTimeouts.push(goalFadeTimeout);
     }
     
     animate() {
         requestAnimationFrame(() => this.animate());
         
         const deltaTime = this.clock.getDelta();
+        
+        // Debug timeScale removed for performance
+        
+        // NUCLEAR OPTION: Force timeScale to 1.0 at the start of every frame during normal gameplay
+        // This overrides ANY other timeScale setting that might be lingering
+        if (this.gameStarted && !this.isPaused) {
+            // Only allow slow motion during VERY specific, active effects
+            const allowSlowMotion = (this.goalBlinkTimer > 0 && this.goalBlinkTarget) || 
+                                   (this.multiBallZoom.active);
+            
+            if (!allowSlowMotion && this.timeScale !== 1.0) {
+                this.timeScale = 1.0;
+            }
+        }
         
         // Start menu camera (before game starts)
         if (!this.gameStarted) {
@@ -4222,6 +5518,14 @@ class TronPong {
             // Normal game logic
         this.updateGamepad();
         this.updatePlayerPaddle();
+        
+        // Update logo 3D effects
+        if (this.handleLogoGamepad) {
+            this.handleLogoGamepad();
+        }
+        
+        // Update world logo rotation
+        this.updateWorldLogo(deltaTime);
         this.updateAIPaddle();
         this.updateBall();
         this.updateDynamicCamera();
@@ -4230,6 +5534,9 @@ class TronPong {
         this.updatePaddleBlinks(deltaTime);
         this.updateBonusEffect(deltaTime);
         this.updateBonusCube(deltaTime);
+        this.updateWaveLights(); // Traveling wave lights
+        this.updateLensFlare(deltaTime); // Lens flare fade
+        this.updateWallWaveAnimation(deltaTime); // Wall wave animation
         this.updateParticles();
         this.updateFloorGlow();
         this.updateObstacles();
@@ -4238,6 +5545,17 @@ class TronPong {
         
         // Always update goals (even during start menu for animation)
         this.updateGoals(deltaTime);
+        
+        // FINAL NUCLEAR OPTION: Force timeScale to 1.0 right before rendering
+        // This is the absolute last chance to override any lingering slow motion
+        if (this.gameStarted && !this.isPaused) {
+            const allowSlowMotion = (this.goalBlinkTimer > 0 && this.goalBlinkTarget) || 
+                                   (this.multiBallZoom.active);
+            
+            if (!allowSlowMotion && this.timeScale !== 1.0) {
+                this.timeScale = 1.0;
+            }
+        }
         
         // Custom bloom + fisheye rendering pipeline
         // 1. Render scene to bloom render target with moderate exposure
@@ -4256,11 +5574,17 @@ class TronPong {
         this.bloomMaterial.uniforms.tDiffuse.value = this.bloomRenderTarget.texture;
         this.renderer.render(this.bloomScene, this.bloomCamera);
         
-        // 4. Apply fisheye distortion + optional blur
+        // 4. Apply lens flare effect (creates streaks from bright lights)
+        this.renderer.setRenderTarget(this.lensFlareRenderTarget);
+        this.lensFlareMaterial.uniforms.tDiffuse.value = this.fisheyeRenderTarget.texture;
+        this.renderer.clear();
+        this.renderer.render(this.lensFlareScene, this.lensFlareCamera);
+        
+        // 5. Apply fisheye distortion + optional blur
         if (this.isPaused) {
             // When paused: Apply fisheye to blur target, then blur to screen
             this.renderer.setRenderTarget(this.blurRenderTarget);
-            this.fisheyeMaterial.uniforms.tDiffuse.value = this.fisheyeRenderTarget.texture;
+            this.fisheyeMaterial.uniforms.tDiffuse.value = this.lensFlareRenderTarget.texture;
             this.renderer.clear();
             this.renderer.render(this.fisheyeScene, this.fisheyeCamera);
             
@@ -4272,7 +5596,7 @@ class TronPong {
         } else {
             // Normal: Apply fisheye directly to screen
             this.renderer.setRenderTarget(null);
-            this.fisheyeMaterial.uniforms.tDiffuse.value = this.fisheyeRenderTarget.texture;
+            this.fisheyeMaterial.uniforms.tDiffuse.value = this.lensFlareRenderTarget.texture;
             this.renderer.clear();
             this.renderer.render(this.fisheyeScene, this.fisheyeCamera);
         }

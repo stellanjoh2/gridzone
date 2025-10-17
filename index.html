@@ -18,6 +18,7 @@
             background: #000;
             overflow: hidden;
             font-family: 'Orbitron', sans-serif;
+            animation: fadeInBackground 5.25s ease-out forwards;
         }
         
         canvas {
@@ -97,43 +98,151 @@
         }
         
         #logo {
-            position: absolute;
-            top: 40%;
+            position: fixed;
+            top: 45%;
             left: 50%;
             transform: translate(-50%, -50%);
-            text-align: center;
-            color: #00FEFC;
-            font-size: 180px;
-            font-weight: bold;
-            text-shadow: 0 0 40px #00FEFC, 0 0 80px #00FEFC, 0 0 120px #00FEFC;
-            letter-spacing: 15px;
             pointer-events: none;
-            z-index: 100;
-            animation: logoGlow 2s ease-in-out infinite;
+            z-index: 999999;
+            opacity: 0;
+            animation: fadeInLogo 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) 2.25s forwards;
+            transform-style: preserve-3d;
+            perspective: 1000px;
         }
         
-        @keyframes logoGlow {
-            0%, 100% {
-                text-shadow: 0 0 40px #00FEFC, 0 0 80px #00FEFC, 0 0 120px #00FEFC;
-                opacity: 1;
+        #logo img {
+            filter: drop-shadow(0 0 4px rgba(0, 254, 252, 0.05)) drop-shadow(0 0 8px rgba(0, 254, 252, 0.03)) drop-shadow(0 0 12px rgba(0, 254, 252, 0.02));
+            width: 70vw;
+            height: auto;
+            opacity: 1;
+            animation: fadeInGlow 0.8s ease-out 3s forwards;
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease-out;
+        }
+        
+        
+        @keyframes fadeInGlow {
+            from {
+                filter: drop-shadow(0 0 4px rgba(0, 254, 252, 0.05)) drop-shadow(0 0 8px rgba(0, 254, 252, 0.03)) drop-shadow(0 0 12px rgba(0, 254, 252, 0.02));
             }
-            50% {
-                text-shadow: 0 0 60px #00FEFC, 0 0 120px #00FEFC, 0 0 180px #00FEFC;
-                opacity: 0.9;
+            30% {
+                filter: drop-shadow(0 0 8px rgba(0, 254, 252, 0.15)) drop-shadow(0 0 16px rgba(0, 254, 252, 0.1)) drop-shadow(0 0 24px rgba(0, 254, 252, 0.08));
+            }
+            to {
+                filter: drop-shadow(0 0 12px rgba(0, 254, 252, 0.4)) drop-shadow(0 0 24px rgba(0, 254, 252, 0.3)) drop-shadow(0 0 36px rgba(0, 254, 252, 0.2));
             }
         }
+        
         
         #ui {
             position: absolute;
-            top: 68%;
+            top: 72.5%;
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
             color: #00FEFC;
-            font-size: 48px;
+            font-size: 36px;
             text-shadow: 0 0 20px #00FEFC;
             pointer-events: none;
             z-index: 100;
+            opacity: 0;
+            animation: fadeInUI 0.5s ease-out 4.25s forwards, uiBlink 1.5s ease-in-out infinite 4.75s;
+        }
+        
+        #presents {
+            position: fixed;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', monospace;
+            font-size: 16pt;
+            color: #00FEFC;
+            text-align: center;
+            line-height: 1.2;
+            max-width: 80%;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            animation: fadeInPresents 0.5s ease-out 1.75s forwards;
+        }
+        
+        #copyright {
+            position: fixed;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', monospace;
+            font-size: 8pt;
+            color: #00FEFC;
+            text-align: center;
+            line-height: 1.2;
+            max-width: 80%;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            animation: fadeInCopyright 0.5s ease-out 4.75s forwards;
+        }
+        
+        @keyframes uiBlink {
+            0%, 49% {
+                opacity: 1;
+            }
+            50%, 100% {
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fadeInPresents {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        @keyframes fadeInLogo {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.7) rotateX(15deg) rotateY(-60deg) translateZ(-100px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1) rotateX(0deg) rotateY(0deg) translateZ(0px);
+            }
+        }
+        
+        @keyframes fadeInUI {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) translateY(0);
+            }
+        }
+        
+        @keyframes fadeInCopyright {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        @keyframes fadeInBackground {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
         
         #deathScreen {
@@ -197,15 +306,34 @@
         }
         
         #score {
-            position: absolute;
-            top: 20px;
-            width: 100%;
-            text-align: center;
-            color: #00FEFC;
+            position: fixed;
+            top: 45px;
+            left: 50%;
+            transform: translateX(-50%);
             font-size: 36px;
-            text-shadow: 0 0 10px #00FEFC;
             pointer-events: none;
             z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+            white-space: nowrap;
+        }
+        
+        #score.visible {
+            animation: hardBlinkEnter 0.6s ease-out forwards;
+        }
+        
+        #score > span:first-child {
+            color: #00FEFC;
+            text-shadow: 0 0 10px #00FEFC, 0 0 20px #00FEFC;
+        }
+        
+        #score > span:last-child {
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
+        }
+        
+        .score-dash {
+            color: #00FEFC;
         }
         
         #combo {
@@ -331,7 +459,7 @@
             color: #ffffff;
             font-size: 120px;
             font-weight: bold;
-            text-shadow: 0 0 40px #ff00ff, 0 0 80px #ff00ff, 0 0 120px #ff00ff;
+            text-shadow: 0 0 40px #00FEFC, 0 0 80px #00FEFC, 0 0 120px #00FEFC;
             pointer-events: none;
             z-index: 150;
             opacity: 0;
@@ -357,6 +485,10 @@
             text-shadow: 0 0 40px #ff0000, 0 0 80px #ff0000, 0 0 120px #ff0000;
             letter-spacing: 10px;
             white-space: nowrap;
+        }
+        
+        #deathScreen.active #deathText {
+            animation: hardBlinkEnter 0.6s ease-out forwards;
         }
         
         /* Hard blink animations (3 quick blinks) */
@@ -433,13 +565,15 @@
 </head>
 <body>
     <div id="score">
-        <span style="color: #00FEFC;">YOU <span id="player1Score">0</span></span> - <span style="color: #ff00ff;">AI <span id="player2Score">0</span></span>
+        <span>YOU <span id="player1Score">0</span></span> <span class="score-dash">-</span> <span>AI <span id="player2Score">0</span></span>
     </div>
     <div id="combo"></div>
     <div id="awesomeText">AWESOME</div>
     <div id="multiBallText">MULTI-BALL!!!</div>
-    <div id="logo">PONG9000</div>
+    <div id="logo"><img src="gridzone-logo.svg" alt="GridZone" style="fill: #00FEFC;"></div>
     <div id="ui" style="display: none;">PRESS SPACE TO START</div>
+    <div id="presents">Stellar Corp. Publishing Presents</div>
+    <div id="copyright">© 2025 Stellar Corp. All rights reserved. GRIDZONE™ is a synthetic entertainment simulation — unauthorized duplication may destabilize reality. By continuing, you consent to full immersion and potential data resonance within The Zone.</div>
     
     <div id="deathScreen">
         <div id="deathText">YOU DIED</div>
