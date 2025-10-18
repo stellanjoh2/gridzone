@@ -409,33 +409,41 @@ class TronPong {
     }
 
     playStereoWallHit(side) {
-        // Create stereo effect using multiple audio elements
+        // Create stereo effect using Web Audio API StereoPannerNode
         try {
+            // Create new audio element
+            const audio = new Audio('SoundEffects/jump-5.wav');
+            
+            // Create audio context and nodes
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioContext.createMediaElementSource(audio);
+            const stereoPanner = audioContext.createStereoPanner();
+            const gainNode = audioContext.createGain();
+            
+            // Set pan position: -1 = full left, 1 = full right
             if (side === 'left') {
-                // Left wall - play louder on left, quieter on right
-                const leftAudio = new Audio('SoundEffects/jump-5.wav');
-                leftAudio.volume = 0.8; // Loud
-                leftAudio.play().catch(e => console.log('Left audio error:', e));
-                
-                const rightAudio = new Audio('SoundEffects/jump-5.wav');
-                rightAudio.volume = 0.1; // Very quiet
-                rightAudio.play().catch(e => console.log('Right audio error:', e));
-                
-                console.log('🎵 Left wall - stereo left');
+                stereoPanner.pan.value = -1.0; // Hard left
+                console.log('🎵 Left wall - panning hard left');
             } else if (side === 'right') {
-                // Right wall - play quieter on left, louder on right
-                const leftAudio = new Audio('SoundEffects/jump-5.wav');
-                leftAudio.volume = 0.1; // Very quiet
-                leftAudio.play().catch(e => console.log('Left audio error:', e));
-                
-                const rightAudio = new Audio('SoundEffects/jump-5.wav');
-                rightAudio.volume = 0.8; // Loud
-                rightAudio.play().catch(e => console.log('Right audio error:', e));
-                
-                console.log('🎵 Right wall - stereo right');
+                stereoPanner.pan.value = 1.0; // Hard right
+                console.log('🎵 Right wall - panning hard right');
             }
+            
+            // Set volume
+            gainNode.gain.value = 0.7;
+            
+            // Connect nodes: source -> stereoPanner -> gain -> destination
+            source.connect(stereoPanner);
+            stereoPanner.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Play the audio
+            audio.play().catch(e => console.log('Stereo wall hit audio error:', e));
+            
         } catch (e) {
             console.log('Stereo wall hit error:', e);
+            // Fallback to regular sound
+            this.playSound('wallHit');
         }
     }
 
