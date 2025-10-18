@@ -4887,7 +4887,7 @@ class TronPong {
                 
                 // ENHANCED ANTI-STUCK: Add randomness to break shallow angles
                 velocity.x += (Math.random() - 0.5) * 0.06;
-                this.triggerCameraShake(0.5, true, true);
+                this.triggerCameraShake(0.8, true, true);
             this.triggerPaddleBlink(this.paddle1, 'paddle1');
                 this.triggerRumble(0.4, 120);
                 this.createImpactEffect(ball.position.clone(), 0x00FEFC); // Lime green
@@ -5335,8 +5335,7 @@ class TronPong {
             this.cameraShake.rotation = (Math.random() - 0.5) * 0.08; // Random tilt -0.04 to 0.04 radians (~2 degrees)
         }
         if (withPullback) {
-            // DISABLED: Never allow camera pullback
-            // this.cameraShake.pullback = 3; // Pull camera back 3 units
+            this.cameraShake.pullback = 3; // Pull camera back 3 units
         }
         if (horizontalDirection !== 0) {
             this.cameraShake.horizontalShift = horizontalDirection * 4; // Shift camera left (-) or right (+) - 2x deeper
@@ -5367,11 +5366,11 @@ class TronPong {
             this.camera.rotation.z = this.cameraTilt;
         }
         
-        // Handle camera pullback (DISABLED - never allow camera to pull back)
-        // if (Math.abs(this.cameraShake.pullback) > 0.01) {
-        //     this.camera.position.z += this.cameraShake.pullback * 0.1;
-        //     this.cameraShake.pullback *= this.cameraShake.pullbackDecay;
-        // }
+        // Handle camera pullback (re-enabled for player paddle impact)
+        if (Math.abs(this.cameraShake.pullback) > 0.01) {
+            this.camera.position.z += this.cameraShake.pullback * 0.1;
+            this.cameraShake.pullback *= this.cameraShake.pullbackDecay;
+        }
         
         // Handle horizontal shift (moves camera left/right then returns)
         if (Math.abs(this.cameraShake.horizontalShift) > 0.01) {
