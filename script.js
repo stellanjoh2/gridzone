@@ -5524,7 +5524,7 @@ class TronPong {
             // Phase 5: Reset camera and spawn new ball
             this.camera.fov = 75;
             this.camera.updateProjectionMatrix();
-            this.camera.position.set(0, 18, 22);
+            // Keep camera at current position - don't reset it on death
             this.cameraTarget.x = 0;
             this.cameraTarget.z = 0;
             this.cameraTarget.zoom = 22;
