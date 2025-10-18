@@ -1778,7 +1778,7 @@ class TronPong {
         const ballSound = new Audio('SoundEffects/hit-6.wav');
         ballSound.loop = true;
         ballSound.volume = 0; // Start at 0, will be updated based on distance
-        // ballSound.play().catch(e => console.log('Ball sound autoplay blocked')); // DISABLED - causing spam
+        ballSound.play().catch(e => console.log('Ball sound autoplay blocked'));
         this.ballSounds.push(ballSound);
         
         console.log(`Ball spawned! Total balls: ${this.balls.length}`);
@@ -2521,8 +2521,6 @@ class TronPong {
                 // PS5 controller typically has: 0=Left X, 1=Left Y, 2=Right X, 3=Right Y
                 const stickX = gamepad.axes[2] || 0; // Right stick X
                 const stickY = gamepad.axes[3] || 0; // Right stick Y
-                
-                // console.log('🎮 Right stick values:', stickX, stickY); // DISABLED - too spammy
                 
                 if (Math.abs(stickX) > 0.1 || Math.abs(stickY) > 0.1) {
                     targetRotateY = stickX * 8;
@@ -3601,36 +3599,6 @@ class TronPong {
             pillar.userData.targetDisplacement = 0.8;
         }
         
-        // DISABLED: Complex traveling lights system - too complex
-        // Create TWO traveling lights (one per wall side)
-        // Left wall light - MUCH stronger and wider for visibility
-        // const leftLight = new THREE.PointLight(0x00FEFC, 8.0, 50);
-        // leftLight.position.set(-12, 2, aiGoalZ);
-        // leftLight.castShadow = false;
-        // this.scene.add(leftLight);
-        // this.waveLights.push({
-        //     light: leftLight,
-        //     startZ: aiGoalZ,
-        //     endZ: 15,
-        //     startTime: performance.now(),
-        //     duration: 1900, // Slightly faster than wave for natural look
-        //     side: 'left'
-        // });
-        
-        // Right wall light - MUCH stronger and wider for visibility
-        // const rightLight = new THREE.PointLight(0x00FEFC, 8.0, 50);
-        // rightLight.position.set(12, 2, aiGoalZ);
-        // rightLight.castShadow = false;
-        // this.scene.add(rightLight);
-        // this.waveLights.push({
-        //     light: rightLight,
-        //     startZ: aiGoalZ,
-        //     endZ: 15,
-        //     startTime: performance.now(),
-        //     duration: 1900,
-        //     side: 'right'
-        // });
-        
         // Start celebration - begin smooth transition to cyan
         this.isCelebrating = true;
         this.celebrationTimer = 3000; // 3 seconds celebration
@@ -4216,7 +4184,6 @@ class TronPong {
     }
     
     checkMemoryManagement(currentTime) {
-        // DISABLED - was causing crashes and freezes
         if (!this.memoryManagement.enabled) return;
         
         // Check if FPS is low
@@ -5089,7 +5056,7 @@ class TronPong {
             
                 this.setBallColor(i, 'player');
                 this.worldLightBoost = 12.0;
-                // this.playSound('paddleHit'); // DISABLED - causing spam on startup
+                this.playSound('paddleHit');
                 this.triggerLensFlare(); // Lens flare on impact!
             }
         
@@ -5114,7 +5081,7 @@ class TronPong {
                 this.createImpactEffect(ball.position.clone(), 0xff00ff);
                 this.setBallColor(i, 'ai');
                 this.worldLightBoost = 12.0;
-                // this.playSound('paddleHit'); // DISABLED - causing spam on startup
+                this.playSound('paddleHit');
                 this.triggerLensFlare(); // Lens flare on impact!
             
                 // Paddle pushback!
