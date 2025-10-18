@@ -429,6 +429,11 @@ class TronPong {
         // Traveling wave light (celebratory wave)
         this.waveLights = []; // Array of traveling lights (one per wall side)
         
+        // Celebration state
+        this.isCelebrating = false;
+        this.celebrationTimer = 0;
+        this.waveSoundPlayed = false; // Prevent multiple wave sounds
+        
         // Building height animation system - REMOVED for performance
         
         // Wall wave animation system
@@ -3579,40 +3584,62 @@ class TronPong {
             pillar.userData.targetDisplacement = 0.8;
         }
         
+        // DISABLED: Complex traveling lights system - too complex
         // Create TWO traveling lights (one per wall side)
         // Left wall light - MUCH stronger and wider for visibility
-        const leftLight = new THREE.PointLight(0x00FEFC, 8.0, 50);
-        leftLight.position.set(-12, 2, aiGoalZ);
-        leftLight.castShadow = false;
-        this.scene.add(leftLight);
-        this.waveLights.push({
-            light: leftLight,
-            startZ: aiGoalZ,
-            endZ: 15,
-            startTime: performance.now(),
-            duration: 1900, // Slightly faster than wave for natural look
-            side: 'left'
-        });
+        // const leftLight = new THREE.PointLight(0x00FEFC, 8.0, 50);
+        // leftLight.position.set(-12, 2, aiGoalZ);
+        // leftLight.castShadow = false;
+        // this.scene.add(leftLight);
+        // this.waveLights.push({
+        //     light: leftLight,
+        //     startZ: aiGoalZ,
+        //     endZ: 15,
+        //     startTime: performance.now(),
+        //     duration: 1900, // Slightly faster than wave for natural look
+        //     side: 'left'
+        // });
         
         // Right wall light - MUCH stronger and wider for visibility
-        const rightLight = new THREE.PointLight(0x00FEFC, 8.0, 50);
-        rightLight.position.set(12, 2, aiGoalZ);
-        rightLight.castShadow = false;
-        this.scene.add(rightLight);
-        this.waveLights.push({
-            light: rightLight,
-            startZ: aiGoalZ,
-            endZ: 15,
-            startTime: performance.now(),
-            duration: 1900,
-            side: 'right'
-        });
+        // const rightLight = new THREE.PointLight(0x00FEFC, 8.0, 50);
+        // rightLight.position.set(12, 2, aiGoalZ);
+        // rightLight.castShadow = false;
+        // this.scene.add(rightLight);
+        // this.waveLights.push({
+        //     light: rightLight,
+        //     startZ: aiGoalZ,
+        //     endZ: 15,
+        //     startTime: performance.now(),
+        //     duration: 1900,
+        //     side: 'right'
+        // });
         
-        // Play wave sound effect
-        this.playSound('waveBuzz');
+        // Start celebration - change underground light to cyan
+        this.isCelebrating = true;
+        this.celebrationTimer = 3000; // 3 seconds celebration
+        this.undergroundLight.color.setHex(0x00FEFC); // Change to cyan
+        
+        // Play wave sound effect (only once)
+        if (!this.waveSoundPlayed) {
+            this.playSound('waveBuzz');
+            this.waveSoundPlayed = true;
+        }
         
         console.log('🎉 CELEBRATORY WAVE TRIGGERED!');
-        console.log('💡 Created', this.waveLights.length, 'traveling lights');
+    }
+    
+    updateCelebration(deltaTime) {
+        if (this.isCelebrating) {
+            this.celebrationTimer -= deltaTime * 1000; // Convert to milliseconds
+            
+            if (this.celebrationTimer <= 0) {
+                // Celebration ended - return underground light to purple
+                this.isCelebrating = false;
+                this.waveSoundPlayed = false; // Reset sound flag for next celebration
+                this.undergroundLight.color.setHex(0x6600cc); // Back to purple
+                console.log('🎉 Celebration ended - underground light back to purple');
+            }
+        }
     }
     
     // Building height animation functions removed for performance
@@ -6196,6 +6223,7 @@ class TronPong {
                 this.updateLensFlare(deltaTime); // Lens flare fade
                 this.updateWallWaveAnimation(deltaTime); // Wall wave animation
                 this.updateWaveLights(); // Traveling wave lights (win sequence)
+                this.updateCelebration(deltaTime); // Celebration system
                 this.updateParticles();
                 this.updateFloorGlow();
                 this.updateObstacles();
