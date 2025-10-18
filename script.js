@@ -61,7 +61,7 @@ class TronPong {
         // RED FLICKER on enemy hit
         this.bonusCubeFlickerActive = false;
         this.bonusCubeFlickerTimer = 0;
-        this.bonusCubeFlickerDuration = 0.9; // 3 flickers @ 0.3s each
+        this.bonusCubeFlickerDuration = 1.0; // Full yellow (0.5s) + 4 fast red blinks (0.5s) = 1.0s total
         
         // Cache DOM elements for better performance
         this.domElements = {
@@ -317,7 +317,7 @@ class TronPong {
         this.trails = []; // Array of trail objects, one per ball
         this.maxTrailLength = 50; // Longer trail
         this.performanceTrailLength = 25; // Shorter trail in performance mode
-        this.currentBallOwner = null; // Track who last hit the ball
+        this.ballOwners = []; // Track who last hit each ball (array for multi-ball support)
         
         // Audio
         this.sounds = {
@@ -329,7 +329,8 @@ class TronPong {
             score: null,
             multiBall: null,
             goalAlarm: null,
-            menuSelect: null  // Missing!
+            menuSelect: null,
+            pause: null  // New pause sound
         };
         
         this.cacheDOMElements(); // Cache DOM first!
@@ -351,21 +352,23 @@ class TronPong {
     loadSounds() {
         // Load sound files
         try {
-            this.sounds.paddleHit = new Audio('assets/sounds/Laser_9_converted.wav');
-            this.sounds.wallHit = new Audio('assets/sounds/Bounce_Deep_converted.wav');
-            this.sounds.death = new Audio('assets/sounds/816043__etheraudio__crunchy-retro-pitch-down-echo-thing.wav');
-            this.sounds.combo = new Audio('assets/music/video-game-bonus-323603.mp3');
-            this.sounds.score = new Audio('assets/music/arcade-ui-18-229517.mp3');
-            this.sounds.multiBall = new Audio('assets/sounds/213149__complex_waveform__8bit-style-bonus-effect.wav');
-            this.sounds.goalAlarm = new Audio('assets/sounds/Robotic_low_buzz.wav'); // Use existing file
-            this.sounds.ballBase = new Audio('assets/sounds/ball_sound_converted.wav');
-            this.sounds.menuSelect = new Audio('assets/sounds/Coin_22_converted.wav');
-            this.sounds.bonusDenied = new Audio('assets/sounds/Robotic_twang.wav');
-            this.sounds.waveBuzz = new Audio('assets/sounds/Robotic_low_buzz.wav');
-            this.sounds.bonusSpawn = new Audio('assets/sounds/Power_up_7.wav');
-            this.sounds.paddleWiden = new Audio('assets/sounds/Robotic_twang.wav'); // Use existing file
-            this.sounds.bonusAppear = new Audio('assets/sounds/Jump_3.wav');
+            this.sounds.paddleHit = new Audio('SoundEffects/hit-6.wav');
+            this.sounds.wallHit = new Audio('SoundEffects/jump-5.wav');
+            this.sounds.death = new Audio('SoundEffects/lose-10.wav');
+            this.sounds.combo = new Audio('SoundEffects/video-game-bonus-323603.mp3');
+            this.sounds.score = new Audio('SoundEffects/win-1.wav');
+            this.sounds.multiBall = new Audio('SoundEffects/win-9.wav');
+            this.sounds.goalAlarm = new Audio('SoundEffects/going-up.wav'); // Wall lighting sound after win
+            this.sounds.ballBase = new Audio('SoundEffects/ball_sound_converted.wav');
+            this.sounds.menuSelect = new Audio('SoundEffects/Coin_22_converted.wav');
+            this.sounds.bonusDenied = new Audio('SoundEffects/bonk-5.wav');
+            this.sounds.waveBuzz = new Audio('SoundEffects/Robotic_low_buzz.wav');
+            this.sounds.bonusSpawn = new Audio('SoundEffects/coin-6.wav');
+            this.sounds.paddleWiden = new Audio('SoundEffects/Robotic_twang.wav'); // Use existing file
+            this.sounds.bonusAppear = new Audio('SoundEffects/coin-6.wav');
+            this.sounds.pause = new Audio('SoundEffects/collect-2.wav');
             console.log('🎵 Loaded bonusAppear sound:', this.sounds.bonusAppear);
+            console.log('🎵 Loaded pause sound:', this.sounds.pause);
             
             // Music Player System
             this.musicTracks = [
@@ -405,6 +408,7 @@ class TronPong {
             this.sounds.bonusSpawn.volume = 0.6;
             this.sounds.paddleWiden.volume = 0.7;
             this.sounds.bonusAppear.volume = 0.8;
+            this.sounds.pause.volume = 0.6;
             
             // Music settings
             this.sounds.goalAlarm.loop = true; // Loop the alarm while green wall is flashing
@@ -763,6 +767,7 @@ class TronPong {
         this.renderer.outputEncoding = THREE.sRGBEncoding; // Important for proper reflection rendering
         this.renderer.autoClear = false; // Important for bloom effect
         document.body.appendChild(this.renderer.domElement);
+        
         
         // Custom bloom setup using render targets
         this.setupCustomBloom();
@@ -1301,13 +1306,13 @@ class TronPong {
         
         // Paddle lights to illuminate environment!
         // Player paddle light (lime-yellow)
-        this.playerLight = new THREE.PointLight(0x00FEFC, 1.5, 75); // 25% reduction from 2.0 to 1.5
+        this.playerLight = new THREE.PointLight(0x00FEFC, 0.75, 75); // Restored to reasonable paddle light intensity
         this.playerLight.castShadow = false; // No shadows for performance
         this.playerLight.layers.set(0);
         this.scene.add(this.playerLight);
         
         // AI paddle light (magenta)
-        this.aiLight = new THREE.PointLight(0xff00ff, 1.5, 75); // 25% reduction from 2.0 to 1.5
+        this.aiLight = new THREE.PointLight(0xff00ff, 0.75, 75); // Restored to reasonable paddle light intensity
         this.aiLight.castShadow = false; // No shadows for performance
         this.aiLight.layers.set(0);
         this.scene.add(this.aiLight);
@@ -1316,7 +1321,7 @@ class TronPong {
         this.ballLights = [];
         
         // Create first ball light - boosted for better illumination
-        const ballLight = new THREE.PointLight(0x00FEFC, 1.875, 75); // 25% reduction from 2.5 to 1.875
+        const ballLight = new THREE.PointLight(0x00FEFC, 0.15, 75); // 2% intensity for very subtle effect
         ballLight.castShadow = true;
         ballLight.shadow.mapSize.width = 256; // 50% reduction from 512 to 256
         ballLight.shadow.mapSize.height = 256; // 50% reduction from 512 to 256
@@ -1713,6 +1718,9 @@ class TronPong {
         this.balls.push(ball);
         this.ballVelocities.push({ ...velocity });
         
+        // Initialize ball ownership (default to AI since balls start toward AI)
+        this.ballOwners[ballIndex] = 'ai';
+        
         // Initialize anti-stuck system for this ball
         this.initializeBallAntiStuck(ballIndex);
         
@@ -1721,7 +1729,7 @@ class TronPong {
         
         // Create light for this ball (if we don't have one yet)
         if (ballIndex >= this.ballLights.length) {
-            const ballLight = new THREE.PointLight(0x00FEFC, 1.875, 75); // 25% reduction from 2.5 to 1.875
+            const ballLight = new THREE.PointLight(0x00FEFC, 0.15, 75); // 2% intensity for very subtle effect
             ballLight.castShadow = true;
             ballLight.shadow.mapSize.width = 256; // 50% reduction from 512 to 256
             ballLight.shadow.mapSize.height = 256; // 50% reduction from 512 to 256
@@ -1730,10 +1738,15 @@ class TronPong {
             this.scene.add(ballLight);
             this.ballLights.push(ballLight);
             console.log(`Created light for ball ${ballIndex + 1}`);
+        } else {
+            // Restore intensity for existing light (in case it was turned off)
+            if (this.ballLights[ballIndex]) {
+                this.ballLights[ballIndex].intensity = 0.15;
+            }
         }
         
         // Create spatial audio for this ball
-        const ballSound = new Audio('assets/sounds/ball_sound_converted.wav');
+        const ballSound = new Audio('SoundEffects/ball_sound_converted.wav');
         ballSound.loop = true;
         ballSound.volume = 0; // Start at 0, will be updated based on distance
         ballSound.play().catch(e => console.log('Ball sound autoplay blocked'));
@@ -1791,9 +1804,8 @@ class TronPong {
         }
         }
         
-        if (ballIndex === 0) {
-        this.currentBallOwner = owner;
-        }
+        // Track ownership for this specific ball
+        this.ballOwners[ballIndex] = owner;
     }
     
     createTrail() {
@@ -2474,9 +2486,7 @@ class TronPong {
             if (gamepads[0]) {
                 const gamepad = gamepads[0];
                 
-                // Debug: Log gamepad info to see available axes
-                console.log('🎮 Gamepad detected:', gamepad.id);
-                console.log('🎮 Available axes:', gamepad.axes.length, gamepad.axes);
+                // Gamepad detected and ready
                 
                 // Try different axis combinations for PS5 controller
                 // PS5 controller typically has: 0=Left X, 1=Left Y, 2=Right X, 3=Right Y
@@ -2799,6 +2809,7 @@ class TronPong {
         // Options button (button 9) to pause
         if (this.gamepad.buttons[9] && this.gamepad.buttons[9].pressed) {
             if (!this.lastPausePress) {
+                console.log('⏸️ Gamepad pause button pressed');
                 this.togglePause();
                 this.lastPausePress = true;
             }
@@ -2847,24 +2858,35 @@ class TronPong {
         }
         
         // Square button (button 2) to reset game when paused
-        if (this.isPaused && this.gamepad.buttons[2] && this.gamepad.buttons[2].pressed) {
-            if (!this.lastResetPress) {
-                this.fullGameReset();
-                this.lastResetPress = true;
-            }
-        } else {
-            this.lastResetPress = false;
-        }
+        // TEMPORARILY DISABLED TO DEBUG RANDOM RESTARTS
+        // if (this.isPaused && this.gamepad.buttons[2] && this.gamepad.buttons[2].pressed) {
+        //     if (!this.lastResetPress) {
+        //         console.log('🔄 Gamepad reset button pressed - intentional reset');
+        //         console.log('🔄 Gamepad button 2 state:', this.gamepad.buttons[2]);
+        //         console.log('🔄 Game is paused:', this.isPaused);
+        //         this.fullGameReset();
+        //         this.lastResetPress = true;
+        //     }
+        // } else {
+        //     this.lastResetPress = false;
+        // }
+        
+        // Gamepad button 2 (Square) monitoring disabled
     }
     
     togglePause() {
         if (!this.gameStarted) return;
         
         this.isPaused = !this.isPaused;
+        console.log('⏸️ Game paused:', this.isPaused);
         
         if (this.isPaused) {
             this.domElements.pauseMenu.style.display = 'block';
-            // Removed pause menu sound
+            // Play pause sound
+            if (this.sounds.pause) {
+                this.sounds.pause.currentTime = 0;
+                this.sounds.pause.play().catch(e => console.log('Could not play pause sound'));
+            }
             
             // Activate pause camera - start from current position
             this.pauseCamera.active = true;
@@ -2889,13 +2911,17 @@ class TronPong {
             }
         } else {
             this.domElements.pauseMenu.style.display = 'none';
-            // Removed pause menu sound
+            // Play unpause sound (same sound for consistency)
+            if (this.sounds.pause) {
+                this.sounds.pause.currentTime = 0;
+                this.sounds.pause.play().catch(e => console.log('Could not play unpause sound'));
+            }
             
             // Deactivate pause camera
             this.pauseCamera.active = false;
             
-            // Resume music when unpaused
-            if (this.sounds.music) {
+            // Resume music when unpaused (only if not "No Music")
+            if (this.sounds.music && this.musicTracks[this.currentTrackIndex].file !== null) {
                 this.sounds.music.play().catch(e => console.log('Could not resume music'));
             }
         }
@@ -3069,8 +3095,8 @@ class TronPong {
             this.aiLight.intensity = 12.0; // SUPER bright flash!
         }
         
-        // Set timer for fade back to original color (0.5 seconds - fast like walls)
-        this.paddleBlinkTimers[paddleName] = 0.5;
+        // Set timer for fade back to original color (0.3 seconds - sharp triangle curve)
+        this.paddleBlinkTimers[paddleName] = 0.3;
     }
     
     updatePaddleBlinks(deltaTime) {
@@ -3079,7 +3105,7 @@ class TronPong {
             this.paddleBlinkTimers.paddle1 -= deltaTime;
             
             // Calculate fade progress (0 = fully faded back to original, 1 = white)
-            const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle1 / 0.5);
+            const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle1 / 0.3);
             
             const material = this.paddle1.userData.material;
             const originalColor = 0x00FEFC; // Lime-yellow
@@ -3096,9 +3122,9 @@ class TronPong {
             // Fade emissive intensity back to original
             material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
             
-            // Also fade the light intensity (flash at 12.0, base is 1.0)
+            // Also fade the light intensity (flash at 12.0, base is 0.75)
             if (this.playerLight) {
-                this.playerLight.intensity = 12.0 * fadeProgress + 1.0 * (1 - fadeProgress);
+                this.playerLight.intensity = 12.0 * fadeProgress + 0.75 * (1 - fadeProgress);
             }
         }
         
@@ -3107,7 +3133,7 @@ class TronPong {
             this.paddleBlinkTimers.paddle2 -= deltaTime;
             
             // Calculate fade progress (0 = fully faded back to original, 1 = white)
-            const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle2 / 0.5);
+            const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle2 / 0.3);
             
             const material = this.paddle2.userData.material;
             const originalColor = 0xff00ff; // Magenta
@@ -3124,9 +3150,9 @@ class TronPong {
             // Fade emissive intensity back to original
             material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
             
-            // Also fade the light intensity (flash at 12.0, base is 1.0)
+            // Also fade the light intensity (flash at 12.0, base is 0.75)
             if (this.aiLight) {
-                this.aiLight.intensity = 12.0 * fadeProgress + 1.0 * (1 - fadeProgress);
+                this.aiLight.intensity = 12.0 * fadeProgress + 0.75 * (1 - fadeProgress);
             }
         }
         
@@ -3347,20 +3373,37 @@ class TronPong {
     updateBonusCube(deltaTime) {
         if (!this.bonusCube) return;
         
-        // RED FLICKER ANIMATION (enemy hit)
+        // RED FLICKER ANIMATION (enemy hit) - matches AWESOME text timing
         if (this.bonusCubeFlickerActive) {
             this.bonusCubeFlickerTimer += deltaTime;
             
-            // 3 flickers @ 0.3s each = 0.9s total
-            const flickerCycle = (this.bonusCubeFlickerTimer % 0.3) / 0.3; // 0-1 per flicker
-            const isRed = flickerCycle < 0.5; // Red for first half, cyan for second half
+            // Timeline: Full yellow visibility, then 3 fast red blinks
+            let color = 0x000000;
+            let intensity = 0.0;
             
-            if (this.bonusCube.userData.material && this.bonusCube.userData.material.uniforms) {
-                this.bonusCube.userData.material.uniforms.baseColor.value.setHex(isRed ? 0xff0000 : 0x00FEFC);
-                this.bonusCube.userData.material.uniforms.emissiveIntensity.value = isRed ? 8.0 : 3.0;
+            if (this.bonusCubeFlickerTimer < 0.5) {
+                // Phase 1: Full yellow visibility (0.5 seconds)
+                color = 0xffff00; // Bright yellow
+                intensity = 8.0;
+            } else if (this.bonusCubeFlickerTimer < 1.0) {
+                // Phase 2: 4 fast red blinks (0.5 seconds total)
+                const blinkTime = this.bonusCubeFlickerTimer - 0.5; // Time into blink phase
+                const blinkCycle = (blinkTime % 0.125) / 0.125; // 0-1 per blink (faster)
+                if (blinkCycle < 0.5) {
+                    color = 0xff0000; // Red
+                    intensity = 8.0;
+                } else {
+                    color = 0x000000; // Off
+                    intensity = 0.0;
+                }
             }
             
-            // After 0.9s, remove cube
+            if (this.bonusCube.userData.material && this.bonusCube.userData.material.uniforms) {
+                this.bonusCube.userData.material.uniforms.baseColor.value.setHex(color);
+                this.bonusCube.userData.material.uniforms.emissiveIntensity.value = intensity;
+            }
+            
+            // After 1.4s total (0.6s blinks + 0.8s hold), remove cube
             if (this.bonusCubeFlickerTimer >= this.bonusCubeFlickerDuration) {
                 // Remove ambient light
                 if (this.bonusCube.userData.ambientLight) {
@@ -4165,8 +4208,10 @@ class TronPong {
             
             // Collision detected!
             if (distance < 1.5) {
-                // Check who hit it based on ball color/ownership
-                if (this.currentBallOwner === 'player') {
+                // Check who hit it based on this specific ball's ownership
+                console.log(`🎯 Bonus collision: Ball ${i} owner = ${this.ballOwners[i]}`);
+                if (this.ballOwners[i] === 'player') {
+                    console.log('✅ Player gets bonus!');
                     this.triggerBonus();
                     // Remove bonus cube immediately on player hit
                     // Remove ambient light
@@ -4182,6 +4227,7 @@ class TronPong {
                         this.bonusLight = null;
                     }
                 } else {
+                    console.log('❌ AI gets bonus denied!');
                     this.triggerBonusLoss();
                     // Start flicker animation (cube removed after flicker)
                 }
@@ -4195,9 +4241,6 @@ class TronPong {
         
         // Play success sound
         this.playSound('multiBall'); // Nice uplifting sound!
-        
-        // Play paddle widen sound
-        this.playSound('paddleWiden');
         
         // Show 2X WIDTH text
         this.showBonusText();
@@ -4244,9 +4287,12 @@ class TronPong {
             active: true
         };
         
-        // Start red flicker animation
+        // Start red flicker animation immediately
         this.bonusCubeFlickerActive = true;
         this.bonusCubeFlickerTimer = 0;
+        
+        // Force immediate first frame of flicker animation
+        this.updateBonusCube(0);
         
         // Enemy gets nothing - cube just flickers and disappears
     }
@@ -4872,7 +4918,7 @@ class TronPong {
                 }
                 
                 // Combo system
-                if (i === 0 && this.currentBallOwner === 'ai') {
+                if (i === 0 && this.ballOwners[i] === 'ai') {
                 this.consecutiveHits++;
                 this.updateCombo();
                 this.resetComboTimeout();
@@ -5258,13 +5304,15 @@ class TronPong {
     updateAnimatedLights() {
         if (this.isPaused) return;
         
-        // Update world light boost (both lights flash on any hit)
+        // Update world light boost (both lights flash on any hit) - sharp triangle curve
         if (this.worldLightBoost > 0) {
             this.overheadLight.intensity = 7.5 + this.worldLightBoost; // Your light base intensity
             this.overheadLight2.intensity = 16.875 + this.worldLightBoost; // Enemy light base intensity (50% increase from 11.25)
-            this.worldLightBoost *= 0.92; // Smooth decay
             
-            if (this.worldLightBoost < 0.01) {
+            // Sharp triangle curve: immediate linear decay (no plateau)
+            this.worldLightBoost -= 0.8; // Linear decay for sharp triangle effect
+            
+            if (this.worldLightBoost <= 0) {
                 this.worldLightBoost = 0;
                 this.overheadLight.intensity = 7.5; // Reset to your light base intensity
                 this.overheadLight2.intensity = 16.875; // Reset to enemy light base intensity (50% increase from 11.25)
@@ -5375,7 +5423,7 @@ class TronPong {
             
             // Restore first ball light intensity
             if (this.ballLights.length > 0) {
-                this.ballLights[0].intensity = 3;
+                this.ballLights[0].intensity = 0.15;
             }
             
             this.deathResetPhase = 3;
@@ -5627,6 +5675,7 @@ class TronPong {
     
     fullGameReset() {
         console.log('🔄 Full game reset initiated...');
+        console.log('🔄 Reset called from:', new Error().stack);
         
         this.playSound('menuSelect'); // Play menu sound on reset
         
@@ -5780,31 +5829,51 @@ class TronPong {
             }
         }
         
-        // Fast blink animation when green (goal scored!)
+        // Smooth goal animation: 4 blinks → 100% opacity → fade out → fade in orange default
         if (this.goalBlinkTimer > 0 && this.goalBlinkTarget) {
             // CRITICAL FIX: Use real time for timer, not scaled time!
-            // When timeScale = 0.3, deltaTime is also 0.3x, making timer count down slower!
             const realElapsed = (performance.now() - this.goalBlinkStartTime) / 1000; // Convert to seconds
-            this.goalBlinkTimer = Math.max(0, 2.5 - realElapsed); // Count down from 2.5 seconds
+            this.goalBlinkTimer = Math.max(0, 5.0 - realElapsed); // Count down from 5.0 seconds
             
-            // Very fast blink - 10 Hz (10 times per second)
-            const blinkFrequency = 10;
-            const blinkPhase = (this.goalAnimationTime * blinkFrequency) % 1;
+            const totalDuration = 5.0; // Extended to 5 seconds total to ensure full fade
+            const blinkDuration = 0.8; // 4 blinks in 0.8 seconds
+            const solidDuration = 1.2; // 100% opacity for 1.2 seconds (was 0.2s + 1s)
+            const fadeOutDuration = 3.0; // Extended fade out over 3.0 seconds for smooth transition
+            const fadeInDuration = 0.0; // No separate fade in - just fade out to neutral
             
-            // Hard on/off - no fade
-            if (blinkPhase < 0.5) {
-                // ON - full opacity
-                this.goalBlinkTarget.material.uniforms.opacity.value = 0.8;
-                this.goalBlinkTarget.material.uniforms.emissiveIntensity.value = 6.0;
-            } else {
-                // OFF - very low opacity
-                this.goalBlinkTarget.material.uniforms.opacity.value = 0.1;
-                this.goalBlinkTarget.material.uniforms.emissiveIntensity.value = 1.0;
+            if (realElapsed < blinkDuration) {
+                // Phase 1: 4 fast blinks (like denied bonus)
+                const blinkSpeed = 5.0; // 4 blinks in 0.8 seconds
+                const blinkPhase = (realElapsed * blinkSpeed) % 1;
+                const isOn = blinkPhase < 0.5;
+                
+                if (isOn) {
+                    // ON - full opacity
+                    this.goalBlinkTarget.material.uniforms.opacity.value = 0.8;
+                    this.goalBlinkTarget.material.uniforms.emissiveIntensity.value = 6.0;
+                } else {
+                    // OFF - very low opacity
+                    this.goalBlinkTarget.material.uniforms.opacity.value = 0.1;
+                    this.goalBlinkTarget.material.uniforms.emissiveIntensity.value = 1.0;
+                }
+            } else if (realElapsed < blinkDuration + solidDuration) {
+                // Phase 2: 100% opacity (solid)
+                this.goalBlinkTarget.material.uniforms.opacity.value = 1.0;
+                this.goalBlinkTarget.material.uniforms.emissiveIntensity.value = 8.0;
+            } else if (realElapsed < totalDuration) {
+                // Phase 3: Slow fade out from fully lit orange to neutral
+                const fadeProgress = Math.min(1.0, (realElapsed - blinkDuration - solidDuration) / fadeOutDuration);
+                this.goalBlinkTarget.material.uniforms.baseColor.value.setHex(0xff3300); // Keep orange color
+                this.goalBlinkTarget.material.uniforms.opacity.value = 1.0 - (fadeProgress * 0.7); // Fade from 1.0 to 0.3
+                this.goalBlinkTarget.material.uniforms.emissiveIntensity.value = 8.0 - (fadeProgress * (8.0 - 7.8125)); // Fade from 8.0 to 7.8125
             }
         } else if (this.goalBlinkTimer <= 0 && this.goalBlinkTarget) {
             // Timer expired - restore normal speed
             this.timeScale = 1.0;
             console.log('🚀 Speed restored to normal (timer expired)');
+            
+            // Don't hard reset - let the fade complete naturally
+            // The fade should have already reached neutral values
             
             // Stop blinking
             this.goalBlinkTimer = 0;
@@ -6121,7 +6190,9 @@ class TronPong {
 // Initialize game when page loads
 let game;
 window.addEventListener('load', () => {
+    console.log('🚀 Starting Tron Pong game...');
     game = new TronPong();
+    console.log('✅ Game initialized successfully');
     
     // Debug function - call from console: forceUpdateEnvMap()
     window.forceUpdateEnvMap = () => {
