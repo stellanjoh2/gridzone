@@ -5133,17 +5133,27 @@ class TronPong {
     }
     
     showDeathScreen() {
-        // Show death screen
+        // Show death screen (transparent background, just for positioning)
         this.domElements.deathScreen.style.display = 'block';
-        this.domElements.deathScreen.classList.add('active');
         
-        // Hide death screen after 2 seconds
+        // Use same animation style as "AWESOME" text
+        this.domElements.deathText.classList.remove('active', 'exit');
+        void this.domElements.deathText.offsetWidth; // Force reflow
+        
+        // Enter with 3 hard blinks
+        this.domElements.deathText.classList.add('active');
+        
+        // Start exit animation after display time
         setTimeout(() => {
-            this.domElements.deathScreen.classList.remove('active');
+            this.domElements.deathText.classList.remove('active');
+            this.domElements.deathText.classList.add('exit');
+            
+            // Fully hide after exit animation
             setTimeout(() => {
+                this.domElements.deathText.classList.remove('exit');
                 this.domElements.deathScreen.style.display = 'none';
-            }, 2000); // Wait for animation to complete
-        }, 2000);
+            }, 600);
+        }, 1400); // Show for 1.4s before starting exit
     }
     
     updateStartMenuCamera(deltaTime) {
