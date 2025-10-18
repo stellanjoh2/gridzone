@@ -327,7 +327,6 @@ class TronPong {
         
         // Audio
         this.sounds = {
-            paddleHit: null,
             wallHit: null,
             death: null,
             music: null,
@@ -360,14 +359,12 @@ class TronPong {
     loadSounds() {
         // Load sound files
         try {
-            this.sounds.paddleHit = new Audio('SoundEffects/hit-6.wav');
             this.sounds.wallHit = new Audio('SoundEffects/jump-5.wav');
             this.sounds.death = new Audio('SoundEffects/lose-10.wav');
             this.sounds.combo = new Audio('SoundEffects/video-game-bonus-323603.mp3');
             this.sounds.score = new Audio('SoundEffects/win-1.wav');
             this.sounds.multiBall = new Audio('SoundEffects/win-9.wav');
             this.sounds.goalAlarm = new Audio('SoundEffects/going-up.wav'); // Wall lighting sound after win
-            this.sounds.ballBase = new Audio('SoundEffects/hit-6.wav');
             this.sounds.menuSelect = new Audio('SoundEffects/Coin_22_converted.wav');
             this.sounds.bonusDenied = new Audio('SoundEffects/bonk-5.wav');
             this.sounds.waveBuzz = new Audio('SoundEffects/Robotic_low_buzz.wav');
@@ -403,7 +400,6 @@ class TronPong {
             this.sounds.music.loop = true;
             
             // Set volumes
-            this.sounds.paddleHit.volume = 1.0;
             this.sounds.wallHit.volume = 0.7; // Bounce_Deep sound
             this.sounds.death.volume = 0.5;
             this.sounds.combo.volume = 0.6;
@@ -1775,7 +1771,7 @@ class TronPong {
         }
         
         // Create spatial audio for this ball
-        const ballSound = new Audio('SoundEffects/hit-6.wav');
+        const ballSound = new Audio('SoundEffects/jump-5.wav');
         ballSound.loop = true;
         ballSound.volume = 0; // Start at 0, will be updated based on distance
         ballSound.play().catch(e => console.log('Ball sound autoplay blocked'));
@@ -5013,7 +5009,6 @@ class TronPong {
             this.triggerPaddleBlink(this.paddle1, 'paddle1');
                 this.triggerRumble(0.4, 120);
                 this.createImpactEffect(ball.position.clone(), 0x00FEFC); // Lime green
-                this.playSound('paddleHit');
                 
                 // Paddle pushback!
                 this.paddle1Pushback = 1.5; // Push back 1.5 units (increased from 0.8)
@@ -5081,7 +5076,6 @@ class TronPong {
                 this.createImpactEffect(ball.position.clone(), 0xff00ff);
                 this.setBallColor(i, 'ai');
                 this.worldLightBoost = 12.0;
-                this.playSound('paddleHit');
                 this.triggerLensFlare(); // Lens flare on impact!
             
                 // Paddle pushback!
