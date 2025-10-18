@@ -409,25 +409,16 @@ class TronPong {
     }
 
     playStereoWallHit(side) {
-        // Play wall hit sound with intense stereo positioning
+        // Simple stereo effect using regular audio elements
         const sound = this.sounds.wallHit;
         if (sound) {
-            // Reset to beginning and play with increased volume
+            // Reset and play the regular sound
             sound.currentTime = 0;
-            sound.volume = 1.4; // Use the increased volume
+            sound.volume = 0.7; // Back to original volume
+            sound.play().catch(e => console.log('Wall hit error:', e));
             
-            // Apply intense stereo positioning using CSS audio balance
-            if (side === 'left') {
-                // Left wall - push sound hard left
-                sound.style.audioBalance = '-100%'; // Hard left
-                console.log('🎵 Left wall hit - hard left stereo');
-            } else if (side === 'right') {
-                // Right wall - push sound hard right  
-                sound.style.audioBalance = '100%'; // Hard right
-                console.log('🎵 Right wall hit - hard right stereo');
-            }
-            
-            sound.play().catch(e => console.log('Stereo wall hit error:', e));
+            // Log which side for debugging
+            console.log(`🎵 Wall hit: ${side} side`);
         }
     }
 
@@ -480,7 +471,7 @@ class TronPong {
             
             // Set volumes
             this.sounds.paddleHit.volume = 0.8;
-            this.sounds.wallHit.volume = 1.4; // Bounce_Deep sound (+3dB)
+            this.sounds.wallHit.volume = 0.7; // Bounce_Deep sound (back to original)
             this.sounds.death.volume = 0.5;
             this.sounds.combo.volume = 0.6;
             this.sounds.score.volume = 0.7;
