@@ -6380,6 +6380,29 @@ class TronPong {
             }
         }
         
+        // SAFETY CHECK: Ensure overhead lights are always orange during normal gameplay
+        if (this.gameStarted && !this.isPaused && this.overheadLight && this.overheadLight2) {
+            const currentColor1 = this.overheadLight.color.getHex();
+            const currentColor2 = this.overheadLight2.color.getHex();
+            const orangeColor = 0xff6600;
+            
+            // Force orange if not already orange (unless in special states)
+            const inSpecialState = (this.goalBlinkTimer > 0 && this.goalBlinkTarget) || 
+                                  (this.multiBallZoom.active) ||
+                                  (this.isCelebrating);
+            
+            if (!inSpecialState) {
+                if (currentColor1 !== orangeColor) {
+                    this.overheadLight.color.setHex(orangeColor);
+                    console.log('🔧 Safety fix: Overhead light 1 forced back to orange');
+                }
+                if (currentColor2 !== orangeColor) {
+                    this.overheadLight2.color.setHex(orangeColor);
+                    console.log('🔧 Safety fix: Overhead light 2 forced back to orange');
+                }
+            }
+        }
+        
         // Optimized rendering pipeline with performance mode support
         if (this.performanceMode) {
             // Performance mode: simplified pipeline
