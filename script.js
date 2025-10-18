@@ -339,6 +339,11 @@ class TronPong {
             pause: null  // New pause sound
         };
         
+        // Spatial audio system
+        this.audioContext = null;
+        this.listener = null;
+        this.spatialSounds = [];
+        
         this.cacheDOMElements(); // Cache DOM first!
         this.init();
         this.loadSounds();
@@ -357,7 +362,67 @@ class TronPong {
         this.domElements.deathText = document.getElementById('deathText');
     }
     
+    initSpatialAudio() {
+        // Initialize Web Audio API for spatial audio
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.listener = this.audioContext.listener;
+            
+            // Set listener position (camera position)
+            if (this.listener.positionX) {
+                this.listener.positionX.value = 0;
+                this.listener.positionY.value = 18;
+                this.listener.positionZ.value = 22;
+            }
+            
+            console.log('🎵 Spatial audio initialized');
+        } catch (e) {
+            console.log('❌ Spatial audio not supported:', e);
+        }
+    }
+
+    playSpatialSound(soundFile, position, volume = 1.0) {
+        // Play a sound with 3D spatial positioning
+        if (!this.audioContext) return;
+        
+        try {
+            // Create audio buffer source
+            const source = this.audioContext.createBufferSource();
+            
+            // Create panner node for spatial positioning
+            const panner = this.audioContext.createPanner();
+            panner.panningModel = 'HRTF'; // High-quality spatial audio
+            panner.distanceModel = 'exponential';
+            panner.rolloffFactor = 1;
+            panner.maxDistance = 50;
+            panner.refDistance = 1;
+            
+            // Set position
+            panner.positionX.value = position.x;
+            panner.positionY.value = position.y;
+            panner.positionZ.value = position.z;
+            
+            // Load and play sound
+            fetch(soundFile)
+                .then(response => response.arrayBuffer())
+                .then(data => this.audioContext.decodeAudioData(data))
+                .then(buffer => {
+                    source.buffer = buffer;
+                    source.connect(panner);
+                    panner.connect(this.audioContext.destination);
+                    source.start();
+                })
+                .catch(e => console.log('Spatial audio error:', e));
+                
+        } catch (e) {
+            console.log('Spatial audio playback error:', e);
+        }
+    }
+
     loadSounds() {
+        // Initialize spatial audio first
+        this.initSpatialAudio();
+        
         // Load sound files
         try {
             this.sounds.paddleHit = new Audio('SoundEffects/jump-10.wav');
@@ -4897,7 +4962,12 @@ class TronPong {
                 this.triggerRumble(0.2, 80);
                 this.createImpactEffect(ball.position.clone(), 0x00FEFC);
                 this.worldLightBoost = 12.0;
-                this.playSound('wallHit');
+                // Spatial audio for left wall hit
+                this.playSpatialSound('SoundEffects/jump-5.wav', {
+                    x: ball.position.x,
+                    y: ball.position.y,
+                    z: ball.position.z
+                });
                 this.triggerLensFlare();
             }
         
@@ -4923,7 +4993,12 @@ class TronPong {
                 this.triggerRumble(0.2, 80);
                 this.createImpactEffect(ball.position.clone(), 0x00FEFC);
                 this.worldLightBoost = 12.0;
-                this.playSound('wallHit');
+                // Spatial audio for right wall hit
+                this.playSpatialSound('SoundEffects/jump-5.wav', {
+                    x: ball.position.x,
+                    y: ball.position.y,
+                    z: ball.position.z
+                });
                 this.triggerLensFlare();
             }
         
@@ -5304,7 +5379,24 @@ class TronPong {
         // Look at the center of the arena, looking down
         this.camera.lookAt(0, this.startMenuCamera.lookAtHeight, 0);
     }
-    
+
+    updateSpatialAudioListener() {
+        // Update spatial audio listener position to match camera
+        if (this.listener && this.listener.positionX) {
+            this.listener.positionX.value = this.camera.position.x;
+            this.listener.positionY.value = this.camera.position.y;
+            this.listener.positionZ.value = this.camera.position.z;
+            
+            // Update listener orientation to match camera rotation
+            this.listener.forwardX.value = 0;
+            this.listener.forwardY.value = 0;
+            this.listener.forwardZ.value = -1;
+            this.listener.upX.value = 0;
+            this.listener.upY.value = 1;
+            this.listener.upZ.value = 0;
+        }
+    }
+
     updateCameraTransition() {
         // Smooth transition from start menu camera to gameplay camera
         if (!this.cameraTransition.active) return;
@@ -6297,6 +6389,7 @@ class TronPong {
             this.updateBall();
             this.updateDynamicCamera();
             this.updateCameraShake();
+            this.updateSpatialAudioListener();
             
             // Update logo 3D effects
             if (this.handleLogoGamepad) {
