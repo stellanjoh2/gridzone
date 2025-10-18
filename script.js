@@ -445,6 +445,10 @@ class TronPong {
             direction: 1 // 1 = to cyan, -1 = to purple
         };
         
+        // Traveling celebration light
+        this.celebrationLight = null;
+        this.celebrationLightActive = false;
+        
         // Building height animation system - REMOVED for performance
         
         // Wall wave animation system
@@ -3634,6 +3638,9 @@ class TronPong {
         this.undergroundLightTransition.progress = 0;
         this.undergroundLightTransition.direction = 1; // To cyan
         
+        // Create traveling celebration light
+        this.createCelebrationLight();
+        
         // Play wave sound effect (only once)
         if (!this.waveSoundPlayed) {
             this.playSound('waveBuzz');
@@ -3641,6 +3648,23 @@ class TronPong {
         }
         
         console.log('🎉 CELEBRATORY WAVE TRIGGERED!');
+    }
+    
+    createCelebrationLight() {
+        // Create subtle cyan light above the playfield
+        this.celebrationLight = new THREE.PointLight(0x00FEFC, 0, 120); // Start at 0 intensity
+        this.celebrationLight.position.set(0, 25, -19); // Above enemy goal, high up
+        this.celebrationLight.castShadow = false;
+        this.scene.add(this.celebrationLight);
+        
+        // Set up light properties
+        this.celebrationLightActive = true;
+        this.celebrationLightStartTime = performance.now();
+        this.celebrationLightDuration = 2500; // 2.5 seconds travel time
+        this.celebrationLightStartZ = -19; // Enemy goal
+        this.celebrationLightEndZ = 19;    // Player goal
+        
+        console.log('✨ Celebration light created');
     }
     
     updateCelebration(deltaTime) {
@@ -3659,6 +3683,39 @@ class TronPong {
             const currentColor = startColor.clone().lerp(endColor, this.undergroundLightTransition.progress);
             
             this.undergroundLight.color.copy(currentColor);
+        }
+        
+        // Update traveling celebration light
+        if (this.celebrationLightActive && this.celebrationLight) {
+            const elapsed = performance.now() - this.celebrationLightStartTime;
+            const progress = Math.min(elapsed / this.celebrationLightDuration, 1.0);
+            
+            // Move light from enemy goal to player goal
+            this.celebrationLight.position.z = this.celebrationLightStartZ + 
+                (this.celebrationLightEndZ - this.celebrationLightStartZ) * progress;
+            
+            // Fade in for first 30%, stay at max for 40%, fade out for last 30%
+            let intensity = 0;
+            if (progress <= 0.3) {
+                // Fade in
+                intensity = (progress / 0.3) * 1.2; // Max intensity 1.2
+            } else if (progress <= 0.7) {
+                // Stay at max
+                intensity = 1.2;
+            } else {
+                // Fade out
+                intensity = 1.2 * (1 - (progress - 0.7) / 0.3);
+            }
+            
+            this.celebrationLight.intensity = intensity;
+            
+            // Remove light when complete
+            if (progress >= 1.0) {
+                this.scene.remove(this.celebrationLight);
+                this.celebrationLight = null;
+                this.celebrationLightActive = false;
+                console.log('✨ Celebration light completed');
+            }
         }
         
         if (this.isCelebrating) {
@@ -3683,6 +3740,14 @@ class TronPong {
                 this.undergroundLightTransition.direction = 1; // Reset for next celebration
                 this.undergroundLightTransition.startColor = 0x6600cc; // Reset to purple
                 this.undergroundLightTransition.endColor = 0x00FEFC;   // Reset to cyan
+                
+                // Clean up celebration light if still active
+                if (this.celebrationLight && this.celebrationLightActive) {
+                    this.scene.remove(this.celebrationLight);
+                    this.celebrationLight = null;
+                    this.celebrationLightActive = false;
+                }
+                
                 console.log('🎉 Celebration ended - underground light back to purple');
             }
         }
