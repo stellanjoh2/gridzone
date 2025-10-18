@@ -128,7 +128,7 @@ class TronPong {
         };
         
         // Performance mode system
-        this.performanceMode = true; // Start in performance mode for better FPS
+        this.performanceMode = false; // Start in quality mode
         this.performanceModeKeyPressed = false; // Track key state
         this.lastCirclePress = false;
         this.performanceSettings = {
@@ -3829,14 +3829,14 @@ class TronPong {
     }
     
     initializePerformanceMode() {
-        // Initialize to performance mode for better FPS
-        this.performanceMode = true;
-        this.performanceSettings.renderScale = 0.5; // Half resolution for performance
-        this.performanceSettings.enableFisheye = false; // Disable fisheye for performance
-        this.performanceSettings.enableBloom = true; // Keep bloom but reduced quality
-        this.performanceSettings.particleCount = 75; // Reduced particles for performance
-        this.performanceSettings.shadowQuality = 'low'; // Lower shadow quality for performance
-        console.log('⚡ Game initialized in PERFORMANCE mode (optimized for 60fps)');
+        // Initialize to quality mode (full effects)
+        this.performanceMode = false;
+        this.performanceSettings.renderScale = 1.0;
+        this.performanceSettings.enableFisheye = true;
+        this.performanceSettings.enableBloom = true;
+        this.performanceSettings.particleCount = 225;
+        this.performanceSettings.shadowQuality = 'high';
+        console.log('🎨 Game initialized in QUALITY mode (full visual effects)');
     }
     
     togglePerformanceMode() {
@@ -4524,10 +4524,10 @@ class TronPong {
         // Skip floor glow in performance mode for better FPS
         if (this.performanceMode) return;
         
-        // MODERATE FRAME SKIPPING: Only update every 2nd frame to prevent FPS drops
+        // AGGRESSIVE FRAME SKIPPING: Only update every 4th frame to prevent FPS drops
         if (!this._floorGlowFrame) this._floorGlowFrame = 0;
         this._floorGlowFrame++;
-        if (this._floorGlowFrame % 2 !== 0) return;
+        if (this._floorGlowFrame % 4 !== 0) return;
         
         const maxElevation = 3.5; // Even more dramatic elevation! Higher floor tiles
         const activationRadius = 4.5; // LARGER magnetic field (was 2.5)
@@ -6381,25 +6381,31 @@ class TronPong {
             }
         }
         
-        // SAFETY CHECK: Ensure overhead lights are always orange during normal gameplay
+        // SAFETY CHECK: Ensure overhead lights are always orange during normal gameplay (optimized)
         if (this.gameStarted && !this.isPaused && this.overheadLight && this.overheadLight2) {
-            const currentColor1 = this.overheadLight.color.getHex();
-            const currentColor2 = this.overheadLight2.color.getHex();
-            const orangeColor = 0xff6600;
+            // Only check every 60 frames to avoid performance impact
+            if (!this._overheadLightCheckFrame) this._overheadLightCheckFrame = 0;
+            this._overheadLightCheckFrame++;
             
-            // Force orange if not already orange (unless in special states)
-            const inSpecialState = (this.goalBlinkTimer > 0 && this.goalBlinkTarget) || 
-                                  (this.multiBallZoom.active) ||
-                                  (this.isCelebrating);
-            
-            if (!inSpecialState) {
-                if (currentColor1 !== orangeColor) {
-                    this.overheadLight.color.setHex(orangeColor);
-                    console.log('🔧 Safety fix: Overhead light 1 forced back to orange');
-                }
-                if (currentColor2 !== orangeColor) {
-                    this.overheadLight2.color.setHex(orangeColor);
-                    console.log('🔧 Safety fix: Overhead light 2 forced back to orange');
+            if (this._overheadLightCheckFrame % 60 === 0) {
+                const currentColor1 = this.overheadLight.color.getHex();
+                const currentColor2 = this.overheadLight2.color.getHex();
+                const orangeColor = 0xff6600;
+                
+                // Force orange if not already orange (unless in special states)
+                const inSpecialState = (this.goalBlinkTimer > 0 && this.goalBlinkTarget) || 
+                                      (this.multiBallZoom.active) ||
+                                      (this.isCelebrating);
+                
+                if (!inSpecialState) {
+                    if (currentColor1 !== orangeColor) {
+                        this.overheadLight.color.setHex(orangeColor);
+                        console.log('🔧 Safety fix: Overhead light 1 forced back to orange');
+                    }
+                    if (currentColor2 !== orangeColor) {
+                        this.overheadLight2.color.setHex(orangeColor);
+                        console.log('🔧 Safety fix: Overhead light 2 forced back to orange');
+                    }
                 }
             }
         }
