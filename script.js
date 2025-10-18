@@ -2521,7 +2521,7 @@ class TronPong {
                 const stickX = gamepad.axes[2] || 0; // Right stick X
                 const stickY = gamepad.axes[3] || 0; // Right stick Y
                 
-                console.log('🎮 Right stick values:', stickX, stickY);
+                // console.log('🎮 Right stick values:', stickX, stickY); // DISABLED - too spammy
                 
                 if (Math.abs(stickX) > 0.1 || Math.abs(stickY) > 0.1) {
                     targetRotateY = stickX * 8;
