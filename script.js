@@ -409,16 +409,33 @@ class TronPong {
     }
 
     playStereoWallHit(side) {
-        // Simple stereo effect using regular audio elements
-        const sound = this.sounds.wallHit;
-        if (sound) {
-            // Reset and play the regular sound
-            sound.currentTime = 0;
-            sound.volume = 0.7; // Back to original volume
-            sound.play().catch(e => console.log('Wall hit error:', e));
-            
-            // Log which side for debugging
-            console.log(`🎵 Wall hit: ${side} side`);
+        // Create stereo effect using multiple audio elements
+        try {
+            if (side === 'left') {
+                // Left wall - play louder on left, quieter on right
+                const leftAudio = new Audio('SoundEffects/jump-5.wav');
+                leftAudio.volume = 0.8; // Loud
+                leftAudio.play().catch(e => console.log('Left audio error:', e));
+                
+                const rightAudio = new Audio('SoundEffects/jump-5.wav');
+                rightAudio.volume = 0.1; // Very quiet
+                rightAudio.play().catch(e => console.log('Right audio error:', e));
+                
+                console.log('🎵 Left wall - stereo left');
+            } else if (side === 'right') {
+                // Right wall - play quieter on left, louder on right
+                const leftAudio = new Audio('SoundEffects/jump-5.wav');
+                leftAudio.volume = 0.1; // Very quiet
+                leftAudio.play().catch(e => console.log('Left audio error:', e));
+                
+                const rightAudio = new Audio('SoundEffects/jump-5.wav');
+                rightAudio.volume = 0.8; // Loud
+                rightAudio.play().catch(e => console.log('Right audio error:', e));
+                
+                console.log('🎵 Right wall - stereo right');
+            }
+        } catch (e) {
+            console.log('Stereo wall hit error:', e);
         }
     }
 
