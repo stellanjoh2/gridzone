@@ -3485,7 +3485,7 @@ class TronPong {
     triggerWallBlink(wallPillars, ballZ) {
         // Create shockwave effect - impact center sends wave outward to nearby pillars
         // Energy dissipates as wave travels: weaker light + slower fadeout at distance
-        const shockwaveRadius = 7.0; // Wider radius to affect 1-2 more pillars
+        const shockwaveRadius = 4.5; // Reduced radius to affect exactly 5 segments total
         const waveSpeed = 0.04; // Time delay per unit distance (slower = more visible wave)
         
         for (let pillar of wallPillars) {
