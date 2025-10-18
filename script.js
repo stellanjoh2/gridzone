@@ -128,7 +128,7 @@ class TronPong {
         };
         
         // Performance mode system
-        this.performanceMode = false; // Start in quality mode
+        this.performanceMode = true; // Start in performance mode for better FPS
         this.performanceModeKeyPressed = false; // Track key state
         this.lastCirclePress = false;
         this.performanceSettings = {
@@ -3829,14 +3829,14 @@ class TronPong {
     }
     
     initializePerformanceMode() {
-        // Initialize to quality mode (full effects)
-        this.performanceMode = false;
-        this.performanceSettings.renderScale = 1.0;
-        this.performanceSettings.enableFisheye = true;
-        this.performanceSettings.enableBloom = true;
-        this.performanceSettings.particleCount = 225;
-        this.performanceSettings.shadowQuality = 'high';
-        console.log('🎨 Game initialized in QUALITY mode (full visual effects)');
+        // Initialize to performance mode for better FPS
+        this.performanceMode = true;
+        this.performanceSettings.renderScale = 0.5; // Half resolution for performance
+        this.performanceSettings.enableFisheye = false; // Disable fisheye for performance
+        this.performanceSettings.enableBloom = true; // Keep bloom but reduced quality
+        this.performanceSettings.particleCount = 75; // Reduced particles for performance
+        this.performanceSettings.shadowQuality = 'low'; // Lower shadow quality for performance
+        console.log('⚡ Game initialized in PERFORMANCE mode (optimized for 60fps)');
     }
     
     togglePerformanceMode() {
@@ -6297,6 +6297,7 @@ class TronPong {
             
             if (!allowSlowMotion && this.timeScale !== 1.0) {
                 this.timeScale = 1.0;
+                console.log('🚀 NUCLEAR: timeScale forced to 1.0 - was:', this.timeScale);
             }
         }
         
@@ -6363,7 +6364,7 @@ class TronPong {
         
         // DEBUG: Log FPS drops to help identify performance issues
         if (this.fpsCounter.fps < 40 && this.fpsCounter.fps > 0) {
-            console.log(`⚠️ FPS DROP DETECTED: ${this.fpsCounter.fps} FPS - Performance mode: ${this.performanceMode}, Balls: ${this.balls.length}, Trails: ${this.trails.length}, Impact particles: ${this.impactParticles.length}, Active timeouts: ${this.activeTimeouts.length}, Active intervals: ${this.activeIntervals.length}`);
+            console.log(`⚠️ FPS DROP DETECTED: ${this.fpsCounter.fps} FPS - Performance mode: ${this.performanceMode}, TimeScale: ${this.timeScale}, Balls: ${this.balls.length}, Trails: ${this.trails.length}, Impact particles: ${this.impactParticles.length}, Active timeouts: ${this.activeTimeouts.length}, Active intervals: ${this.activeIntervals.length}`);
         }
         
         // Cleanup math cache periodically
