@@ -3748,7 +3748,9 @@ class TronPong {
                     this.celebrationLightActive = false;
                 }
                 
-                console.log('🎉 Celebration ended - underground light back to purple');
+                // CRITICAL: Reset game speed to normal after celebration
+                this.timeScale = 1.0;
+                console.log('🎉 Celebration ended - underground light back to purple, speed reset to normal');
             }
         }
     }
@@ -6285,6 +6287,12 @@ class TronPong {
             // Only allow slow motion during VERY specific, active effects
             const allowSlowMotion = (this.goalBlinkTimer > 0 && this.goalBlinkTarget) || 
                                    (this.multiBallZoom.active);
+            
+            // Force normal speed after celebration ends
+            if (this.isCelebrating === false && this.timeScale !== 1.0) {
+                this.timeScale = 1.0;
+                console.log('🚀 Speed forced to normal after celebration ended');
+            }
             
             if (!allowSlowMotion && this.timeScale !== 1.0) {
                 this.timeScale = 1.0;
