@@ -6298,23 +6298,23 @@ class TronPong {
         
         // Debug timeScale removed for performance
         
-        // NUCLEAR OPTION: Force timeScale to 1.0 at the start of every frame during normal gameplay (TEMPORARILY DISABLED FOR DEBUGGING)
-        // if (this.gameStarted && !this.isPaused) {
-        //     // Only allow slow motion during VERY specific, active effects
-        //     const allowSlowMotion = (this.goalBlinkTimer > 0 && this.goalBlinkTarget) || 
-        //                            (this.multiBallZoom.active);
-        //     
-        //     // Force normal speed after celebration ends
-        //     if (this.isCelebrating === false && this.timeScale !== 1.0) {
-        //         this.timeScale = 1.0;
-        //         console.log('🚀 Speed forced to normal after celebration ended');
-        //     }
-        //     
-        //     if (!allowSlowMotion && this.timeScale !== 1.0) {
-        //         this.timeScale = 1.0;
-        //         console.log('🚀 NUCLEAR: timeScale forced to 1.0 - was:', this.timeScale);
-        //     }
-        // }
+        // NUCLEAR OPTION: Force timeScale to 1.0 at the start of every frame during normal gameplay
+        if (this.gameStarted && !this.isPaused) {
+            // Only allow slow motion during VERY specific, active effects
+            const allowSlowMotion = (this.goalBlinkTimer > 0 && this.goalBlinkTarget) || 
+                                   (this.multiBallZoom.active);
+            
+            // Force normal speed after celebration ends
+            if (this.isCelebrating === false && this.timeScale !== 1.0) {
+                this.timeScale = 1.0;
+                console.log('🚀 Speed forced to normal after celebration ended');
+            }
+            
+            if (!allowSlowMotion && this.timeScale !== 1.0) {
+                this.timeScale = 1.0;
+                console.log('🚀 NUCLEAR: timeScale forced to 1.0 - was:', this.timeScale);
+            }
+        }
         
         // Start menu camera (before game starts)
         if (!this.gameStarted) {
