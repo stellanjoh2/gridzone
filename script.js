@@ -1778,7 +1778,7 @@ class TronPong {
         const ballSound = new Audio('SoundEffects/hit-6.wav');
         ballSound.loop = true;
         ballSound.volume = 0; // Start at 0, will be updated based on distance
-        ballSound.play().catch(e => console.log('Ball sound autoplay blocked'));
+        // ballSound.play().catch(e => console.log('Ball sound autoplay blocked')); // DISABLED - causing spam
         this.ballSounds.push(ballSound);
         
         console.log(`Ball spawned! Total balls: ${this.balls.length}`);
