@@ -1770,11 +1770,12 @@ class TronPong {
             // Restore intensity for existing light (in case it was turned off)
             if (this.ballLights[ballIndex]) {
                 this.ballLights[ballIndex].intensity = 0.15;
+                console.log(`💡 Restored ball light ${ballIndex} intensity to 0.15`);
             }
         }
         
         // Create spatial audio for this ball
-        const ballSound = new Audio('SoundEffects/ball_sound_converted.wav');
+        const ballSound = new Audio('SoundEffects/hit-6.wav');
         ballSound.loop = true;
         ballSound.volume = 0; // Start at 0, will be updated based on distance
         ballSound.play().catch(e => console.log('Ball sound autoplay blocked'));
@@ -5192,12 +5193,10 @@ class TronPong {
                 trail.positions = [];
             }
             
-            // Remove ball light for this ball
+            // Turn off ball light for this ball (will be restored when ball respawns)
             if (this.ballLights[removal.index]) {
-                // Don't remove, just turn off (will be cleaned up in reset)
-                if (this.ballLights[removal.index]) {
-                    this.ballLights[removal.index].intensity = 0;
-                }
+                this.ballLights[removal.index].intensity = 0;
+                console.log(`💡 Ball light ${removal.index} turned off (ball removed)`);
             }
             
             // Stop ball sound for this ball
@@ -5818,7 +5817,7 @@ class TronPong {
         
         // Restore first ball light intensity
         if (this.ballLights.length > 0) {
-            this.ballLights[0].intensity = 3;
+            this.ballLights[0].intensity = 0.15; // Consistent with other ball lights
         }
         
         // Reset multi-ball system
