@@ -5089,7 +5089,7 @@ class TronPong {
             
                 this.setBallColor(i, 'player');
                 this.worldLightBoost = 12.0;
-                this.playSound('paddleHit');
+                // this.playSound('paddleHit'); // DISABLED - causing spam on startup
                 this.triggerLensFlare(); // Lens flare on impact!
             }
         
@@ -5114,7 +5114,7 @@ class TronPong {
                 this.createImpactEffect(ball.position.clone(), 0xff00ff);
                 this.setBallColor(i, 'ai');
                 this.worldLightBoost = 12.0;
-                this.playSound('paddleHit');
+                // this.playSound('paddleHit'); // DISABLED - causing spam on startup
                 this.triggerLensFlare(); // Lens flare on impact!
             
                 // Paddle pushback!
