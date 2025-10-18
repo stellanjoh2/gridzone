@@ -3359,6 +3359,10 @@ class TronPong {
     
     updateWaveLights() {
         // Update traveling wave lights
+        if (this.waveLights.length > 0) {
+            console.log('💡 Updating', this.waveLights.length, 'traveling lights');
+        }
+        
         for (let i = this.waveLights.length - 1; i >= 0; i--) {
             const waveLight = this.waveLights[i];
             const elapsed = performance.now() - waveLight.startTime;
@@ -3368,7 +3372,7 @@ class TronPong {
             waveLight.light.position.z = waveLight.startZ + (waveLight.endZ - waveLight.startZ) * progress;
             
             // Fade intensity as wave progresses (bright at start, dim at end)
-            waveLight.light.intensity = 4.5 * (1 - progress);
+            waveLight.light.intensity = 8.0 * (1 - progress);
             
             // Remove when complete
             if (progress >= 1) {
@@ -3576,8 +3580,8 @@ class TronPong {
         }
         
         // Create TWO traveling lights (one per wall side)
-        // Left wall light - 50% stronger and wider
-        const leftLight = new THREE.PointLight(0x00FEFC, 4.5, 38);
+        // Left wall light - MUCH stronger and wider for visibility
+        const leftLight = new THREE.PointLight(0x00FEFC, 8.0, 50);
         leftLight.position.set(-12, 2, aiGoalZ);
         leftLight.castShadow = false;
         this.scene.add(leftLight);
@@ -3590,8 +3594,8 @@ class TronPong {
             side: 'left'
         });
         
-        // Right wall light - 50% stronger and wider
-        const rightLight = new THREE.PointLight(0x00FEFC, 4.5, 38);
+        // Right wall light - MUCH stronger and wider for visibility
+        const rightLight = new THREE.PointLight(0x00FEFC, 8.0, 50);
         rightLight.position.set(12, 2, aiGoalZ);
         rightLight.castShadow = false;
         this.scene.add(rightLight);
@@ -3608,6 +3612,7 @@ class TronPong {
         this.playSound('waveBuzz');
         
         console.log('🎉 CELEBRATORY WAVE TRIGGERED!');
+        console.log('💡 Created', this.waveLights.length, 'traveling lights');
     }
     
     // Building height animation functions removed for performance
