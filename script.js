@@ -4524,12 +4524,12 @@ class TronPong {
         // Skip floor glow in performance mode for better FPS
         if (this.performanceMode) return;
         
-        // AGGRESSIVE FRAME SKIPPING: Only update every 4th frame to prevent FPS drops
+        // MODERATE FRAME SKIPPING: Only update every 2nd frame to prevent FPS drops
         if (!this._floorGlowFrame) this._floorGlowFrame = 0;
         this._floorGlowFrame++;
-        if (this._floorGlowFrame % 4 !== 0) return;
+        if (this._floorGlowFrame % 2 !== 0) return;
         
-        const maxElevation = 2.8; // SUPER DRAMATIC elevation! More visible waves
+        const maxElevation = 3.5; // Even more dramatic elevation! Higher floor tiles
         const activationRadius = 4.5; // LARGER magnetic field (was 2.5)
         const activationRadiusSq = activationRadius * activationRadius; // Cache squared radius
         const easeSpeed = 0.06; // Slightly slower return for smoother feel
