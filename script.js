@@ -416,15 +416,15 @@ class TronPong {
                 sound.currentTime = 0;
                 
                 if (side === 'left') {
-                    // Slightly lower volume and pitch for left
-                    sound.volume = 0.6;
-                    sound.playbackRate = 0.95; // Slightly slower/lower pitch
-                    console.log('🎵 Left wall hit - lower volume & pitch');
+                    // Much lower volume and pitch for left - dramatic difference
+                    sound.volume = 0.4;
+                    sound.playbackRate = 0.85; // Much slower/lower pitch
+                    console.log('🎵 Left wall hit - much lower volume & pitch');
                 } else if (side === 'right') {
-                    // Slightly higher volume and pitch for right
-                    sound.volume = 0.8;
-                    sound.playbackRate = 1.05; // Slightly faster/higher pitch
-                    console.log('🎵 Right wall hit - higher volume & pitch');
+                    // Much higher volume and pitch for right - dramatic difference
+                    sound.volume = 1.0;
+                    sound.playbackRate = 1.15; // Much faster/higher pitch
+                    console.log('🎵 Right wall hit - much higher volume & pitch');
                 }
                 
                 sound.play().catch(e => console.log('Wall hit audio error:', e));
