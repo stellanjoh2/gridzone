@@ -438,7 +438,7 @@ class TronPong {
         this.undergroundLightTransition = {
             active: false,
             startColor: 0x6600cc, // Purple
-            endColor: 0x00FEFC,   // Cyan
+            endColor: 0x00FFFF,   // Pure cyan (was 0x00FEFC - too pale)
             currentColor: 0x6600cc,
             progress: 0,
             duration: 1000, // 1 second transition
@@ -3728,7 +3728,7 @@ class TronPong {
                     this.undergroundLightTransition.active = true;
                     this.undergroundLightTransition.progress = 0;
                     this.undergroundLightTransition.direction = -1; // To purple
-                    this.undergroundLightTransition.startColor = 0x00FEFC; // From cyan
+                    this.undergroundLightTransition.startColor = 0x00FFFF; // From pure cyan
                     this.undergroundLightTransition.endColor = 0x6600cc;   // To purple
                 }
             }
@@ -3740,7 +3740,7 @@ class TronPong {
                 this.undergroundLightTransition.active = false;
                 this.undergroundLightTransition.direction = 1; // Reset for next celebration
                 this.undergroundLightTransition.startColor = 0x6600cc; // Reset to purple
-                this.undergroundLightTransition.endColor = 0x00FEFC;   // Reset to cyan
+                this.undergroundLightTransition.endColor = 0x00FFFF;   // Reset to pure cyan
                 
                 // Clean up celebration light if still active
                 if (this.celebrationLight && this.celebrationLightActive) {
