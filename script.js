@@ -1313,13 +1313,13 @@ class TronPong {
         const ambientLight = new THREE.AmbientLight(0x6600cc, 10.0); // Purple color, 25% increase from 8.0 to 10.0
         this.scene.add(ambientLight);
         
-        this.overheadLight = new THREE.PointLight(0xff6600, 7.5, 120); // Orange laser gate
+        this.overheadLight = new THREE.PointLight(0xff6600, 6.75, 120); // Orange laser gate (10% decrease from 7.5)
         this.overheadLight.position.set(0, 60, 20);
         this.overheadLight.castShadow = false; // Keep shadows disabled for performance
         this.overheadLight.layers.set(0);
         this.scene.add(this.overheadLight);
         
-        this.overheadLight2 = new THREE.PointLight(0xff6600, 16.875, 100); // Orange laser gate, 50% increase from 11.25 to 16.875
+        this.overheadLight2 = new THREE.PointLight(0xff6600, 18.5625, 100); // Orange laser gate (10% increase from 16.875)
         this.overheadLight2.position.set(0, 80, -60); // Halfway back from -70 to -60
         this.overheadLight2.castShadow = false; // Keep shadows disabled for performance
         this.overheadLight2.layers.set(0);
@@ -5530,16 +5530,16 @@ class TronPong {
         
         // Update world light boost (both lights flash on any hit) - sharp triangle curve
         if (this.worldLightBoost > 0) {
-            this.overheadLight.intensity = 7.5 + this.worldLightBoost; // Your light base intensity
-            this.overheadLight2.intensity = 16.875 + this.worldLightBoost; // Enemy light base intensity (50% increase from 11.25)
+            this.overheadLight.intensity = 6.75 + this.worldLightBoost; // Your light base intensity (10% decrease)
+            this.overheadLight2.intensity = 18.5625 + this.worldLightBoost; // Enemy light base intensity (10% increase)
             
             // Sharp triangle curve: immediate linear decay (no plateau)
             this.worldLightBoost -= 0.8; // Linear decay for sharp triangle effect
             
             if (this.worldLightBoost <= 0) {
                 this.worldLightBoost = 0;
-                this.overheadLight.intensity = 7.5; // Reset to your light base intensity
-                this.overheadLight2.intensity = 16.875; // Reset to enemy light base intensity (50% increase from 11.25)
+                this.overheadLight.intensity = 6.75; // Reset to your light base intensity (10% decrease)
+                this.overheadLight2.intensity = 18.5625; // Reset to enemy light base intensity (10% increase)
                 console.log('💡 Light intensities reset - Overhead1:', this.overheadLight.intensity, 'Overhead2:', this.overheadLight2.intensity);
             }
         }
@@ -6151,8 +6151,8 @@ class TronPong {
                 goal.material.uniforms.opacity.value = 0.9 - (0.7 * progress);
                 
         // Fade overhead lights from 10.0 back to base intensities
-        this.overheadLight.intensity = 7.5 + (2.5 * (1 - progress)); // Fade from 10.0 to 7.5
-        this.overheadLight2.intensity = 16.875 + (-6.875 * (1 - progress)); // Fade from 10.0 to 16.875
+        this.overheadLight.intensity = 6.75 + (3.25 * (1 - progress)); // Fade from 10.0 to 6.75
+        this.overheadLight2.intensity = 18.5625 + (-8.5625 * (1 - progress)); // Fade from 10.0 to 18.5625
                 
                 if (step >= fadeSteps) {
                     clearInterval(fadeTimer);
@@ -6164,8 +6164,8 @@ class TronPong {
                     // Reset lights to orange laser gates (keep orange after wins)
                     this.overheadLight.color.setHex(0xff6600);
                     this.overheadLight2.color.setHex(0xff6600);
-            this.overheadLight.intensity = 7.5; // Use your light base intensity
-            this.overheadLight2.intensity = 16.875; // Use enemy light base intensity (50% increase from 11.25)
+            this.overheadLight.intensity = 6.75; // Use your light base intensity (10% decrease)
+            this.overheadLight2.intensity = 18.5625; // Use enemy light base intensity (10% increase)
                     console.log('🎯 Goal fade complete - Overhead1:', this.overheadLight.intensity, 'Overhead2:', this.overheadLight2.intensity);
                     // Remove from tracking when complete
                     this.activeIntervals = this.activeIntervals.filter(interval => interval.id !== fadeTimer);
