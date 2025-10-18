@@ -434,6 +434,17 @@ class TronPong {
         this.celebrationTimer = 0;
         this.waveSoundPlayed = false; // Prevent multiple wave sounds
         
+        // Color transition system
+        this.undergroundLightTransition = {
+            active: false,
+            startColor: 0x6600cc, // Purple
+            endColor: 0x00FEFC,   // Cyan
+            currentColor: 0x6600cc,
+            progress: 0,
+            duration: 1000, // 1 second transition
+            direction: 1 // 1 = to cyan, -1 = to purple
+        };
+        
         // Building height animation system - REMOVED for performance
         
         // Wall wave animation system
@@ -3614,10 +3625,14 @@ class TronPong {
         //     side: 'right'
         // });
         
-        // Start celebration - change underground light to cyan
+        // Start celebration - begin smooth transition to cyan
         this.isCelebrating = true;
         this.celebrationTimer = 3000; // 3 seconds celebration
-        this.undergroundLight.color.setHex(0x00FEFC); // Change to cyan
+        
+        // Start smooth color transition to cyan
+        this.undergroundLightTransition.active = true;
+        this.undergroundLightTransition.progress = 0;
+        this.undergroundLightTransition.direction = 1; // To cyan
         
         // Play wave sound effect (only once)
         if (!this.waveSoundPlayed) {
@@ -3629,14 +3644,45 @@ class TronPong {
     }
     
     updateCelebration(deltaTime) {
+        // Update color transition
+        if (this.undergroundLightTransition.active) {
+            this.undergroundLightTransition.progress += (deltaTime * 1000) / this.undergroundLightTransition.duration;
+            
+            if (this.undergroundLightTransition.progress >= 1.0) {
+                this.undergroundLightTransition.progress = 1.0;
+                this.undergroundLightTransition.active = false;
+            }
+            
+            // Smooth color interpolation
+            const startColor = new THREE.Color(this.undergroundLightTransition.startColor);
+            const endColor = new THREE.Color(this.undergroundLightTransition.endColor);
+            const currentColor = startColor.clone().lerp(endColor, this.undergroundLightTransition.progress);
+            
+            this.undergroundLight.color.copy(currentColor);
+        }
+        
         if (this.isCelebrating) {
             this.celebrationTimer -= deltaTime * 1000; // Convert to milliseconds
             
+            if (this.celebrationTimer <= 1000) { // Start transition back 1 second before end
+                if (this.undergroundLightTransition.direction === 1) { // Only start once
+                    // Start transition back to purple
+                    this.undergroundLightTransition.active = true;
+                    this.undergroundLightTransition.progress = 0;
+                    this.undergroundLightTransition.direction = -1; // To purple
+                    this.undergroundLightTransition.startColor = 0x00FEFC; // From cyan
+                    this.undergroundLightTransition.endColor = 0x6600cc;   // To purple
+                }
+            }
+            
             if (this.celebrationTimer <= 0) {
-                // Celebration ended - return underground light to purple
+                // Celebration ended
                 this.isCelebrating = false;
                 this.waveSoundPlayed = false; // Reset sound flag for next celebration
-                this.undergroundLight.color.setHex(0x6600cc); // Back to purple
+                this.undergroundLightTransition.active = false;
+                this.undergroundLightTransition.direction = 1; // Reset for next celebration
+                this.undergroundLightTransition.startColor = 0x6600cc; // Reset to purple
+                this.undergroundLightTransition.endColor = 0x00FEFC;   // Reset to cyan
                 console.log('🎉 Celebration ended - underground light back to purple');
             }
         }
