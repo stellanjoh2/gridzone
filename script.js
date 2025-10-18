@@ -5013,6 +5013,7 @@ class TronPong {
             this.triggerPaddleBlink(this.paddle1, 'paddle1');
                 this.triggerRumble(0.4, 120);
                 this.createImpactEffect(ball.position.clone(), 0x00FEFC); // Lime green
+                this.playSound('paddleHit');
                 
                 // Paddle pushback!
                 this.paddle1Pushback = 1.5; // Push back 1.5 units (increased from 0.8)
@@ -5056,7 +5057,6 @@ class TronPong {
             
                 this.setBallColor(i, 'player');
                 this.worldLightBoost = 12.0;
-                this.playSound('paddleHit');
                 this.triggerLensFlare(); // Lens flare on impact!
             }
         
