@@ -3825,6 +3825,14 @@ class TronPong {
         if (progress >= 1.0) {
             this.wallWaveAnimation.active = false;
             console.log('🌊 Wall wave animation complete - natural fade out!');
+            
+            // Clean up celebration light when wall waves finish
+            if (this.celebrationLight && this.celebrationLightActive) {
+                this.scene.remove(this.celebrationLight);
+                this.celebrationLight = null;
+                this.celebrationLightActive = false;
+                console.log('✨ Celebration light cleaned up after wall waves finished');
+            }
         }
     }
     
@@ -5965,6 +5973,14 @@ class TronPong {
         // Reset wall wave animation and heights
         this.wallWaveAnimation.active = false;
         this.resetWallHeights();
+        
+        // Clean up celebration light during reset
+        if (this.celebrationLight && this.celebrationLightActive) {
+            this.scene.remove(this.celebrationLight);
+            this.celebrationLight = null;
+            this.celebrationLightActive = false;
+            console.log('✨ Celebration light cleaned up during game reset');
+        }
         
         // Music keeps playing (don't stop it)
         
