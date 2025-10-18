@@ -128,7 +128,7 @@ class TronPong {
         };
         
         // Performance mode system
-        this.performanceMode = true; // Start in performance mode for better FPS
+        this.performanceMode = false; // Start in quality mode for full experience
         this.performanceModeKeyPressed = false; // Track key state
         this.lastCirclePress = false;
         this.performanceSettings = {
@@ -3829,14 +3829,14 @@ class TronPong {
     }
     
     initializePerformanceMode() {
-        // Initialize to performance mode for better FPS
-        this.performanceMode = true;
-        this.performanceSettings.renderScale = 0.5; // Half resolution for performance
-        this.performanceSettings.enableFisheye = false; // Disable fisheye for performance
-        this.performanceSettings.enableBloom = true; // Keep bloom but reduced quality
-        this.performanceSettings.particleCount = 75; // Reduced particles for performance
-        this.performanceSettings.shadowQuality = 'low'; // Lower shadow quality for performance
-        console.log('⚡ Game initialized in PERFORMANCE mode (optimized for 60fps)');
+        // Initialize to quality mode for full visual experience
+        this.performanceMode = false;
+        this.performanceSettings.renderScale = 1.0; // Full resolution
+        this.performanceSettings.enableFisheye = true; // Full fisheye effect
+        this.performanceSettings.enableBloom = true; // Full bloom effects
+        this.performanceSettings.particleCount = 225; // Full particle count
+        this.performanceSettings.shadowQuality = 'high'; // High quality shadows
+        console.log('🎨 Game initialized in QUALITY mode (full visual experience)');
     }
     
     togglePerformanceMode() {
