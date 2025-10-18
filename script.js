@@ -61,7 +61,7 @@ class TronPong {
         // RED FLICKER on enemy hit
         this.bonusCubeFlickerActive = false;
         this.bonusCubeFlickerTimer = 0;
-        this.bonusCubeFlickerDuration = 1.0; // Full yellow (0.5s) + 4 fast red blinks (0.5s) = 1.0s total
+        this.bonusCubeFlickerDuration = 1.0; // Fast red blinks for 1.0s total
         
         // Cache DOM elements for better performance
         this.domElements = {
@@ -3409,25 +3409,18 @@ class TronPong {
         if (this.bonusCubeFlickerActive) {
             this.bonusCubeFlickerTimer += deltaTime;
             
-            // Timeline: Full yellow visibility, then 3 fast red blinks
+            // Timeline: Immediate red blinks (no yellow delay)
             let color = 0x000000;
             let intensity = 0.0;
             
-            if (this.bonusCubeFlickerTimer < 0.5) {
-                // Phase 1: Full yellow visibility (0.5 seconds)
-                color = 0xffff00; // Bright yellow
+            // Immediate red blinking - no yellow delay
+            const blinkCycle = (this.bonusCubeFlickerTimer % 0.15) / 0.15; // 0-1 per blink
+            if (blinkCycle < 0.6) { // 60% on, 40% off
+                color = 0xff0000; // Red
                 intensity = 8.0;
-            } else if (this.bonusCubeFlickerTimer < 1.0) {
-                // Phase 2: 4 fast red blinks (0.5 seconds total)
-                const blinkTime = this.bonusCubeFlickerTimer - 0.5; // Time into blink phase
-                const blinkCycle = (blinkTime % 0.125) / 0.125; // 0-1 per blink (faster)
-                if (blinkCycle < 0.5) {
-                    color = 0xff0000; // Red
-                    intensity = 8.0;
-                } else {
-                    color = 0x000000; // Off
-                    intensity = 0.0;
-                }
+            } else {
+                color = 0x000000; // Off
+                intensity = 0.0;
             }
             
             if (this.bonusCube.userData.material && this.bonusCube.userData.material.uniforms) {
@@ -3494,11 +3487,10 @@ class TronPong {
                 this.bonusLight = null;
                 console.log('🔴 Bonus denied light expired and cleaned up');
             } else {
-                // Blink light with same timing as mesh
-                const blinkSpeed = 6.0;
-                const blinkCycle = (this.goalAnimationTime * blinkSpeed) % 1.0;
-                const isOn = blinkCycle < 0.5;
-                this.bonusLight.light.intensity = isOn ? 8.0 : 3.0;
+                // Blink light with same timing as mesh (immediate red blinking)
+                const blinkCycle = (this.bonusCubeFlickerTimer % 0.15) / 0.15; // Match cube timing
+                const isOn = blinkCycle < 0.6; // 60% on, 40% off
+                this.bonusLight.light.intensity = isOn ? 8.0 : 0.0;
             }
         }
         
