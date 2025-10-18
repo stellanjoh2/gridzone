@@ -5243,6 +5243,9 @@ class TronPong {
     updateDynamicCamera() {
         if (this.isPaused) return;
         
+        // Don't update camera during death sequence
+        if (this.deathResetPhase > 0) return;
+        
         // Camera transition override (start menu → gameplay)
         if (this.cameraTransition.active) {
             this.updateCameraTransition();
