@@ -3061,14 +3061,14 @@ class TronPong {
             const progress = flybackTime / zoom.flybackDuration;
             const eased = this.easeInOutCubic(progress);
             
-            // Default gameplay camera position
-            const finalPos = { x: 0, y: 20, z: 20 };
+            // Default gameplay camera position - reduced to 5% of original movement
+            const finalPos = { x: 0, y: 20 + (20 - 20) * 0.05, z: 20 + (20 - 22) * 0.05 };
             const finalLookAt = { x: 0, y: 1, z: 0 };
             
-            // Interpolate back to gameplay position
-            this.camera.position.x = zoom.targetPos.x + (finalPos.x - zoom.targetPos.x) * eased;
-            this.camera.position.y = zoom.targetPos.y + (finalPos.y - zoom.targetPos.y) * eased;
-            this.camera.position.z = zoom.targetPos.z + (finalPos.z - zoom.targetPos.z) * eased;
+            // Interpolate back to gameplay position with reduced movement
+            this.camera.position.x = zoom.targetPos.x + (finalPos.x - zoom.targetPos.x) * eased * 0.05;
+            this.camera.position.y = zoom.targetPos.y + (finalPos.y - zoom.targetPos.y) * eased * 0.05;
+            this.camera.position.z = zoom.targetPos.z + (finalPos.z - zoom.targetPos.z) * eased * 0.05;
             
             // Return FOV to normal
             this.camera.fov = zoom.zoomFOV + (zoom.originalFOV - zoom.zoomFOV) * eased;
@@ -5243,9 +5243,6 @@ class TronPong {
     updateDynamicCamera() {
         if (this.isPaused) return;
         
-        // Don't update camera during death sequence
-        if (this.deathResetPhase > 0) return;
-        
         // Camera transition override (start menu → gameplay)
         if (this.cameraTransition.active) {
             this.updateCameraTransition();
@@ -5530,7 +5527,14 @@ class TronPong {
             // Phase 5: Reset camera and spawn new ball
             this.camera.fov = 75;
             this.camera.updateProjectionMatrix();
-            // Keep camera at current position - don't reset it on death
+            // Reduce camera movement to 5% of original distance
+            const currentPos = this.camera.position;
+            const targetPos = { x: 0, y: 18, z: 22 };
+            this.camera.position.set(
+                currentPos.x + (targetPos.x - currentPos.x) * 0.05,
+                currentPos.y + (targetPos.y - currentPos.y) * 0.05,
+                currentPos.z + (targetPos.z - currentPos.z) * 0.05
+            );
             this.cameraTarget.x = 0;
             this.cameraTarget.z = 0;
             this.cameraTarget.zoom = 22;
