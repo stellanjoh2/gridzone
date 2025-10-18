@@ -409,37 +409,26 @@ class TronPong {
     }
 
     playStereoWallHit(side) {
-        // Create stereo effect using Web Audio API StereoPannerNode
+        // Use the existing wallHit sound but with different volume/pitch to simulate stereo
         try {
-            // Create new audio element
-            const audio = new Audio('SoundEffects/jump-5.wav');
-            
-            // Create audio context and nodes
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const source = audioContext.createMediaElementSource(audio);
-            const stereoPanner = audioContext.createStereoPanner();
-            const gainNode = audioContext.createGain();
-            
-            // Set pan position: -1 = full left, 1 = full right
-            if (side === 'left') {
-                stereoPanner.pan.value = -1.0; // Hard left
-                console.log('🎵 Left wall - panning hard left');
-            } else if (side === 'right') {
-                stereoPanner.pan.value = 1.0; // Hard right
-                console.log('🎵 Right wall - panning hard right');
+            const sound = this.sounds.wallHit;
+            if (sound) {
+                sound.currentTime = 0;
+                
+                if (side === 'left') {
+                    // Slightly lower volume and pitch for left
+                    sound.volume = 0.6;
+                    sound.playbackRate = 0.95; // Slightly slower/lower pitch
+                    console.log('🎵 Left wall hit - lower volume & pitch');
+                } else if (side === 'right') {
+                    // Slightly higher volume and pitch for right
+                    sound.volume = 0.8;
+                    sound.playbackRate = 1.05; // Slightly faster/higher pitch
+                    console.log('🎵 Right wall hit - higher volume & pitch');
+                }
+                
+                sound.play().catch(e => console.log('Wall hit audio error:', e));
             }
-            
-            // Set volume
-            gainNode.gain.value = 0.7;
-            
-            // Connect nodes: source -> stereoPanner -> gain -> destination
-            source.connect(stereoPanner);
-            stereoPanner.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            // Play the audio
-            audio.play().catch(e => console.log('Stereo wall hit audio error:', e));
-            
         } catch (e) {
             console.log('Stereo wall hit error:', e);
             // Fallback to regular sound
