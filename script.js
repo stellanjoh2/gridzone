@@ -1770,12 +1770,7 @@ class TronPong {
             }
         }
         
-        // Create spatial audio for this ball
-        const ballSound = new Audio('SoundEffects/jump-5.wav');
-        ballSound.loop = true;
-        ballSound.volume = 0; // Start at 0, will be updated based on distance
-        // ballSound.play().catch(e => console.log('Ball sound autoplay blocked')); // DISABLED - no auto play
-        this.ballSounds.push(ballSound);
+        // Ball sound removed - no automatic sound on spawn
         
         console.log(`Ball spawned! Total balls: ${this.balls.length}`);
         return ball;
