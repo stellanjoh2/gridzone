@@ -4989,6 +4989,9 @@ class TronPong {
             this.timeScale = 1.0;
             console.log('🚀 NUCLEAR: IMMEDIATE speed reset on death - NO EXCEPTIONS');
             
+            // Deactivate multi-ball zoom to prevent camera flyback
+            this.multiBallZoom.active = false;
+            
             // Show death screen
             this.showDeathScreen();
             
