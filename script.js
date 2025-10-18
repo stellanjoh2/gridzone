@@ -97,6 +97,10 @@ class TronPong {
         this.deathResetPhase = 0;
         this.deathResetProgress = 0;
         
+        // Death camera lock
+        this.deathCameraLocked = false;
+        this.deathCameraPosition = null;
+        
         // Timeout tracking for cleanup
         this.activeTimeouts = [];
         
@@ -4989,8 +4993,19 @@ class TronPong {
             this.timeScale = 1.0;
             console.log('🚀 NUCLEAR: IMMEDIATE speed reset on death - NO EXCEPTIONS');
             
-            // Deactivate multi-ball zoom to prevent camera flyback
+            // LOCK CAMERA POSITION IMMEDIATELY - prevent any movement
+            this.deathCameraLocked = true;
+            this.deathCameraPosition = {
+                x: this.camera.position.x,
+                y: this.camera.position.y,
+                z: this.camera.position.z
+            };
+            
+            // Deactivate ALL camera systems
             this.multiBallZoom.active = false;
+            this.cameraTransition.active = false;
+            this.startMenuCamera.active = false;
+            this.pauseCamera.active = false;
             
             // Show death screen
             this.showDeathScreen();
@@ -5242,6 +5257,16 @@ class TronPong {
     
     updateDynamicCamera() {
         if (this.isPaused) return;
+        
+        // DEATH CAMERA LOCK - prevent any camera movement during death
+        if (this.deathCameraLocked && this.deathCameraPosition) {
+            this.camera.position.set(
+                this.deathCameraPosition.x,
+                this.deathCameraPosition.y,
+                this.deathCameraPosition.z
+            );
+            return;
+        }
         
         // Camera transition override (start menu → gameplay)
         if (this.cameraTransition.active) {
@@ -5527,19 +5552,16 @@ class TronPong {
             // Phase 5: Reset camera and spawn new ball
             this.camera.fov = 75;
             this.camera.updateProjectionMatrix();
-            // Reduce camera movement to 5% of original distance
-            const currentPos = this.camera.position;
-            const targetPos = { x: 0, y: 18, z: 22 };
-            this.camera.position.set(
-                currentPos.x + (targetPos.x - currentPos.x) * 0.05,
-                currentPos.y + (targetPos.y - currentPos.y) * 0.05,
-                currentPos.z + (targetPos.z - currentPos.z) * 0.05
-            );
+            // NO CAMERA POSITION RESET - keep camera locked in place
             this.cameraTarget.x = 0;
             this.cameraTarget.z = 0;
             this.cameraTarget.zoom = 22;
             this.cameraLookOffset = 0;
             this.camera.rotation.z = 0;
+            
+            // Unlock camera after reset is complete
+            this.deathCameraLocked = false;
+            this.deathCameraPosition = null;
             
             // CRITICAL: Reset timeScale to normal speed!
             this.forceNormalSpeed();
