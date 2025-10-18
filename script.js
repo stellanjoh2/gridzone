@@ -1800,9 +1800,9 @@ class TronPong {
             
             // Update trail color
             if (trail) {
-                trail.mesh.material.color.setHex(0x00FEFC);
+                trail.mesh.material.color.setHex(0x00FFFF);
                 trail.spheres.forEach(sphere => {
-                    sphere.material.color.setHex(0x00FEFC);
+                    sphere.material.color.setHex(0x00FFFF);
             });
             }
             
@@ -1857,7 +1857,7 @@ class TronPong {
         
         // Soft glowing material (hidden - we only use ghost spheres)
         const trailMaterial = new THREE.LineBasicMaterial({
-            color: 0x00FEFC,
+            color: 0x00FFFF, // Pure cyan
             transparent: true,
             opacity: 0.0, // Hidden - only using ghost spheres for trail
             linewidth: 8,
@@ -1873,7 +1873,7 @@ class TronPong {
         for (let i = 0; i < 12; i++) {
             // Use shared geometry for performance!
             const sphereMaterial = new THREE.MeshBasicMaterial({
-                color: 0x00FEFC,        // Lime-yellow
+                color: 0x00FFFF,        // Pure cyan
                 transparent: true,
                 opacity: 0.3 * (1 - i / 12),
                 blending: THREE.AdditiveBlending
@@ -3451,6 +3451,7 @@ class TronPong {
                 if (this.bonusLight && this.bonusLight.light) {
                     this.scene.remove(this.bonusLight.light);
                     this.bonusLight = null;
+                    console.log('🔴 Bonus denied light cleaned up');
                 }
                 
                 console.log('🔴 BONUS CUBE REMOVED after red flicker');
@@ -3491,6 +3492,7 @@ class TronPong {
                 // Remove light after duration
                 this.scene.remove(this.bonusLight.light);
                 this.bonusLight = null;
+                console.log('🔴 Bonus denied light expired and cleaned up');
             } else {
                 // Blink light with same timing as mesh
                 const blinkSpeed = 6.0;
@@ -3498,6 +3500,13 @@ class TronPong {
                 const isOn = blinkCycle < 0.5;
                 this.bonusLight.light.intensity = isOn ? 8.0 : 3.0;
             }
+        }
+        
+        // Safety check: If bonus cube is gone but light still exists, clean it up
+        if (this.bonusLight && !this.bonusCube) {
+            this.scene.remove(this.bonusLight.light);
+            this.bonusLight = null;
+            console.log('🔴 Safety cleanup: Bonus light removed (cube was already gone)');
         }
         
         // Spawn scale animation
