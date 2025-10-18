@@ -3651,20 +3651,20 @@ class TronPong {
     }
     
     createCelebrationLight() {
-        // Create subtle cyan light above the playfield
-        this.celebrationLight = new THREE.PointLight(0x00FEFC, 0, 120); // Start at 0 intensity
-        this.celebrationLight.position.set(0, 25, -19); // Above enemy goal, high up
+        // Create more visible cyan light above the playfield
+        this.celebrationLight = new THREE.PointLight(0x00FEFC, 0, 150); // Start at 0 intensity, larger radius
+        this.celebrationLight.position.set(0, 20, -19); // Above enemy goal, slightly lower for better visibility
         this.celebrationLight.castShadow = false;
         this.scene.add(this.celebrationLight);
         
         // Set up light properties
         this.celebrationLightActive = true;
         this.celebrationLightStartTime = performance.now();
-        this.celebrationLightDuration = 2500; // 2.5 seconds travel time
+        this.celebrationLightDuration = 3000; // 3 seconds travel time (slower)
         this.celebrationLightStartZ = -19; // Enemy goal
         this.celebrationLightEndZ = 19;    // Player goal
         
-        console.log('✨ Celebration light created');
+        console.log('✨ Celebration light created - boosted visibility');
     }
     
     updateCelebration(deltaTime) {
@@ -3694,17 +3694,17 @@ class TronPong {
             this.celebrationLight.position.z = this.celebrationLightStartZ + 
                 (this.celebrationLightEndZ - this.celebrationLightStartZ) * progress;
             
-            // Fade in for first 30%, stay at max for 40%, fade out for last 30%
+            // Fade in for first 25%, stay at max for 50%, fade out for last 25%
             let intensity = 0;
-            if (progress <= 0.3) {
+            if (progress <= 0.25) {
                 // Fade in
-                intensity = (progress / 0.3) * 1.2; // Max intensity 1.2
-            } else if (progress <= 0.7) {
+                intensity = (progress / 0.25) * 3.5; // Max intensity 3.5 (much more visible)
+            } else if (progress <= 0.75) {
                 // Stay at max
-                intensity = 1.2;
+                intensity = 3.5;
             } else {
                 // Fade out
-                intensity = 1.2 * (1 - (progress - 0.7) / 0.3);
+                intensity = 3.5 * (1 - (progress - 0.75) / 0.25);
             }
             
             this.celebrationLight.intensity = intensity;
