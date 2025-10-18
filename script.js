@@ -409,36 +409,12 @@ class TronPong {
     }
 
     playStereoWallHit(side) {
-        // Use the existing wallHit sound but with different volume/pitch to simulate stereo
-        try {
-            const sound = this.sounds.wallHit;
-            if (sound) {
-                sound.currentTime = 0;
-                
-                if (side === 'left') {
-                    // Much lower volume and pitch for left - dramatic difference
-                    sound.volume = 0.4;
-                    sound.playbackRate = 0.85; // Much slower/lower pitch
-                    console.log('🎵 Left wall hit - much lower volume & pitch');
-                } else if (side === 'right') {
-                    // Much higher volume and pitch for right - dramatic difference
-                    sound.volume = 1.0;
-                    sound.playbackRate = 1.15; // Much faster/higher pitch
-                    console.log('🎵 Right wall hit - much higher volume & pitch');
-                }
-                
-                sound.play().catch(e => console.log('Wall hit audio error:', e));
-            }
-        } catch (e) {
-            console.log('Stereo wall hit error:', e);
-            // Fallback to regular sound
-            this.playSound('wallHit');
-        }
+        // Simple wall hit sound - no stereo effects
+        this.playSound('wallHit');
+        console.log(`🎵 Wall hit: ${side} side`);
     }
 
     loadSounds() {
-        // Initialize spatial audio first
-        this.initSpatialAudio();
         
         // Load sound files
         try {
