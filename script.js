@@ -4993,13 +4993,8 @@ class TronPong {
             this.timeScale = 1.0;
             console.log('🚀 NUCLEAR: IMMEDIATE speed reset on death - NO EXCEPTIONS');
             
-            // LOCK CAMERA POSITION IMMEDIATELY - prevent any movement
+            // LOCK CAMERA MOVEMENT - prevent dramatic movements but allow normal tracking
             this.deathCameraLocked = true;
-            this.deathCameraPosition = {
-                x: this.camera.position.x,
-                y: this.camera.position.y,
-                z: this.camera.position.z
-            };
             
             // Deactivate ALL camera systems
             this.multiBallZoom.active = false;
@@ -5258,13 +5253,38 @@ class TronPong {
     updateDynamicCamera() {
         if (this.isPaused) return;
         
-        // DEATH CAMERA LOCK - prevent any camera movement during death
-        if (this.deathCameraLocked && this.deathCameraPosition) {
-            this.camera.position.set(
-                this.deathCameraPosition.x,
-                this.deathCameraPosition.y,
-                this.deathCameraPosition.z
-            );
+        // DEATH CAMERA LOCK - allow normal gameplay tracking but prevent dramatic movements
+        if (this.deathCameraLocked) {
+            // Allow normal camera tracking but prevent large movements
+            // Camera follow system - track first ball (if exists)
+            if (this.balls.length > 0) {
+                this.cameraTarget.x = this.balls[0].position.x * 0.15;
+                this.cameraTarget.z = this.balls[0].position.z * 0.1;
+            
+                const ballSpeed = Math.sqrt(this.ballVelocities[0].x ** 2 + this.ballVelocities[0].z ** 2);
+                this.cameraTarget.zoom = 22 + ballSpeed * 2;
+            }
+            
+            // Additional zoom based on paddle horizontal position (centered = default, sides = zoom in slightly)
+            const paddleOffsetFromCenter = Math.abs(this.paddle1.position.x); // 0 at center, 10 at edge
+            const paddleZoom = (paddleOffsetFromCenter / 10) * 1.5; // 0 to 1.5 units of zoom
+            this.cameraTarget.zoom += paddleZoom;
+            
+            // Smooth camera movement but limited during death
+            const currentPos = this.camera.position;
+            const targetX = this.cameraTarget.x;
+            const targetZ = this.cameraTarget.zoom + this.cameraTarget.z;
+            
+            // Only allow small movements during death
+            const maxMovement = 0.5; // Limit movement to 0.5 units
+            const deltaX = Math.max(-maxMovement, Math.min(maxMovement, (targetX - currentPos.x) * this.cameraSmooth));
+            const deltaZ = Math.max(-maxMovement, Math.min(maxMovement, (targetZ - currentPos.z) * this.cameraSmooth));
+            
+            currentPos.x += deltaX;
+            currentPos.z += deltaZ;
+            
+            // Look at target with paddle direction offset
+            this.camera.lookAt(this.cameraTarget.x + this.cameraLookOffset, -4, this.cameraTarget.z);
             return;
         }
         
@@ -5561,7 +5581,6 @@ class TronPong {
             
             // Unlock camera after reset is complete
             this.deathCameraLocked = false;
-            this.deathCameraPosition = null;
             
             // CRITICAL: Reset timeScale to normal speed!
             this.forceNormalSpeed();
