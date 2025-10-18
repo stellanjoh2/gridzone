@@ -5089,9 +5089,9 @@ class TronPong {
             
                 this.setBallColor(i, 'player');
                 this.worldLightBoost = 12.0;
-            this.playSound('paddleHit');
-            this.triggerLensFlare(); // Lens flare on impact!
-        }
+                this.playSound('paddleHit');
+                this.triggerLensFlare(); // Lens flare on impact!
+            }
         
         // AI paddle collision (top) - ANTI-STUCK system
             if (ball.position.z <= -14.5 && 
@@ -5114,8 +5114,8 @@ class TronPong {
                 this.createImpactEffect(ball.position.clone(), 0xff00ff);
                 this.setBallColor(i, 'ai');
                 this.worldLightBoost = 12.0;
-            this.playSound('paddleHit');
-            this.triggerLensFlare(); // Lens flare on impact!
+                this.playSound('paddleHit');
+                this.triggerLensFlare(); // Lens flare on impact!
             
                 // Paddle pushback!
                 this.paddle2Pushback = 1.5; // Push back 1.5 units (increased from 0.8)
