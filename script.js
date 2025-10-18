@@ -71,7 +71,9 @@ class TronPong {
             ui: null,
             pauseMenu: null,
             awesomeText: null,
-            multiBallText: null
+            multiBallText: null,
+            deathScreen: null,
+            deathText: null
         };
         
         // Game state
@@ -347,6 +349,8 @@ class TronPong {
         this.domElements.pauseMenu = document.getElementById('pauseMenu');
         this.domElements.awesomeText = document.getElementById('awesomeText');
         this.domElements.multiBallText = document.getElementById('multiBallText');
+        this.domElements.deathScreen = document.getElementById('deathScreen');
+        this.domElements.deathText = document.getElementById('deathText');
     }
     
     loadSounds() {
@@ -4985,6 +4989,9 @@ class TronPong {
             this.timeScale = 1.0;
             console.log('🚀 NUCLEAR: IMMEDIATE speed reset on death - NO EXCEPTIONS');
             
+            // Show death screen
+            this.showDeathScreen();
+            
             // Simple death handling - no special camera effects
             this.playSound('death');
             
@@ -5123,6 +5130,20 @@ class TronPong {
                 this.domElements.multiBallText.classList.remove('exit');
             }, 600);
         }, 1400); // Show for 1.4s before starting exit
+    }
+    
+    showDeathScreen() {
+        // Show death screen
+        this.domElements.deathScreen.style.display = 'block';
+        this.domElements.deathScreen.classList.add('active');
+        
+        // Hide death screen after 2 seconds
+        setTimeout(() => {
+            this.domElements.deathScreen.classList.remove('active');
+            setTimeout(() => {
+                this.domElements.deathScreen.style.display = 'none';
+            }, 2000); // Wait for animation to complete
+        }, 2000);
     }
     
     updateStartMenuCamera(deltaTime) {
