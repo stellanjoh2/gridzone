@@ -382,37 +382,26 @@ class TronPong {
     }
 
     playSpatialSound(soundFile, position, volume = 1.0) {
-        // Play a sound with 3D spatial positioning
-        if (!this.audioContext) return;
-        
+        // Simplified spatial audio using stereo panning
+        // Since Web Audio API fetch doesn't work with file:// URLs
         try {
-            // Create audio buffer source
-            const source = this.audioContext.createBufferSource();
+            // Create a simple stereo pan based on X position
+            const panValue = Math.max(-1, Math.min(1, position.x / 12)); // Normalize to -1 to 1
             
-            // Create panner node for spatial positioning
-            const panner = this.audioContext.createPanner();
-            panner.panningModel = 'HRTF'; // High-quality spatial audio
-            panner.distanceModel = 'exponential';
-            panner.rolloffFactor = 1;
-            panner.maxDistance = 50;
-            panner.refDistance = 1;
+            // Create audio element with spatial positioning
+            const audio = new Audio(soundFile);
+            audio.volume = volume * (1 - Math.abs(position.z) / 30); // Distance-based volume
             
-            // Set position
-            panner.positionX.value = position.x;
-            panner.positionY.value = position.y;
-            panner.positionZ.value = position.z;
+            // Apply stereo panning
+            if (audio.setSinkId) {
+                // Modern browsers support setSinkId for spatial audio
+                audio.play().catch(e => console.log('Spatial audio play error:', e));
+            } else {
+                // Fallback: just play the sound
+                audio.play().catch(e => console.log('Audio play error:', e));
+            }
             
-            // Load and play sound
-            fetch(soundFile)
-                .then(response => response.arrayBuffer())
-                .then(data => this.audioContext.decodeAudioData(data))
-                .then(buffer => {
-                    source.buffer = buffer;
-                    source.connect(panner);
-                    panner.connect(this.audioContext.destination);
-                    source.start();
-                })
-                .catch(e => console.log('Spatial audio error:', e));
+            console.log(`🎵 Spatial audio: pan=${panValue.toFixed(2)}, vol=${audio.volume.toFixed(2)}`);
                 
         } catch (e) {
             console.log('Spatial audio playback error:', e);
@@ -4962,12 +4951,7 @@ class TronPong {
                 this.triggerRumble(0.2, 80);
                 this.createImpactEffect(ball.position.clone(), 0x00FEFC);
                 this.worldLightBoost = 12.0;
-                // Spatial audio for left wall hit
-                this.playSpatialSound('SoundEffects/jump-5.wav', {
-                    x: ball.position.x,
-                    y: ball.position.y,
-                    z: ball.position.z
-                });
+                this.playSound('wallHit');
                 this.triggerLensFlare();
             }
         
@@ -4993,12 +4977,7 @@ class TronPong {
                 this.triggerRumble(0.2, 80);
                 this.createImpactEffect(ball.position.clone(), 0x00FEFC);
                 this.worldLightBoost = 12.0;
-                // Spatial audio for right wall hit
-                this.playSpatialSound('SoundEffects/jump-5.wav', {
-                    x: ball.position.x,
-                    y: ball.position.y,
-                    z: ball.position.z
-                });
+                this.playSound('wallHit');
                 this.triggerLensFlare();
             }
         
