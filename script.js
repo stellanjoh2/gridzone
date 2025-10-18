@@ -327,6 +327,7 @@ class TronPong {
         
         // Audio
         this.sounds = {
+            paddleHit: null,
             wallHit: null,
             death: null,
             music: null,
@@ -359,6 +360,7 @@ class TronPong {
     loadSounds() {
         // Load sound files
         try {
+            this.sounds.paddleHit = new Audio('SoundEffects/jump-10.wav');
             this.sounds.wallHit = new Audio('SoundEffects/jump-5.wav');
             this.sounds.death = new Audio('SoundEffects/lose-10.wav');
             this.sounds.combo = new Audio('SoundEffects/video-game-bonus-323603.mp3');
@@ -400,6 +402,7 @@ class TronPong {
             this.sounds.music.loop = true;
             
             // Set volumes
+            this.sounds.paddleHit.volume = 0.8;
             this.sounds.wallHit.volume = 0.7; // Bounce_Deep sound
             this.sounds.death.volume = 0.5;
             this.sounds.combo.volume = 0.6;
@@ -5004,6 +5007,7 @@ class TronPong {
             this.triggerPaddleBlink(this.paddle1, 'paddle1');
                 this.triggerRumble(0.4, 120);
                 this.createImpactEffect(ball.position.clone(), 0x00FEFC); // Lime green
+                this.playSound('paddleHit');
                 
                 // Paddle pushback!
                 this.paddle1Pushback = 1.5; // Push back 1.5 units (increased from 0.8)
@@ -5071,6 +5075,7 @@ class TronPong {
                 this.createImpactEffect(ball.position.clone(), 0xff00ff);
                 this.setBallColor(i, 'ai');
                 this.worldLightBoost = 12.0;
+                this.playSound('paddleHit');
                 this.triggerLensFlare(); // Lens flare on impact!
             
                 // Paddle pushback!
