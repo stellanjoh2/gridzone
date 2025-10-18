@@ -128,7 +128,7 @@ class TronPong {
         };
         
         // Performance mode system
-        this.performanceMode = false; // Start in quality mode
+        this.performanceMode = true; // Start in performance mode for better FPS
         this.performanceModeKeyPressed = false; // Track key state
         this.lastCirclePress = false;
         this.performanceSettings = {
@@ -367,7 +367,7 @@ class TronPong {
             this.sounds.score = new Audio('SoundEffects/win-1.wav');
             this.sounds.multiBall = new Audio('SoundEffects/win-9.wav');
             this.sounds.goalAlarm = new Audio('SoundEffects/going-up.wav'); // Wall lighting sound after win
-            this.sounds.ballBase = new Audio('SoundEffects/ball_sound_converted.wav');
+            this.sounds.ballBase = new Audio('SoundEffects/hit-6.wav');
             this.sounds.menuSelect = new Audio('SoundEffects/Coin_22_converted.wav');
             this.sounds.bonusDenied = new Audio('SoundEffects/bonk-5.wav');
             this.sounds.waveBuzz = new Audio('SoundEffects/Robotic_low_buzz.wav');
@@ -3829,14 +3829,14 @@ class TronPong {
     }
     
     initializePerformanceMode() {
-        // Initialize to quality mode (full effects)
-        this.performanceMode = false;
-        this.performanceSettings.renderScale = 1.0;
-        this.performanceSettings.enableFisheye = true;
-        this.performanceSettings.enableBloom = true;
-        this.performanceSettings.particleCount = 225;
-        this.performanceSettings.shadowQuality = 'high';
-        console.log('🎨 Game initialized in QUALITY mode (full visual effects)');
+        // Initialize to performance mode for better FPS
+        this.performanceMode = true;
+        this.performanceSettings.renderScale = 0.5; // Half resolution for performance
+        this.performanceSettings.enableFisheye = false; // Disable fisheye for performance
+        this.performanceSettings.enableBloom = true; // Keep bloom but reduced quality
+        this.performanceSettings.particleCount = 75; // Reduced particles for performance
+        this.performanceSettings.shadowQuality = 'low'; // Lower shadow quality for performance
+        console.log('⚡ Game initialized in PERFORMANCE mode (optimized for 60fps)');
     }
     
     togglePerformanceMode() {
@@ -6282,24 +6282,23 @@ class TronPong {
         
         // Debug timeScale removed for performance
         
-        // NUCLEAR OPTION: Force timeScale to 1.0 at the start of every frame during normal gameplay
-        // This overrides ANY other timeScale setting that might be lingering
-        if (this.gameStarted && !this.isPaused) {
-            // Only allow slow motion during VERY specific, active effects
-            const allowSlowMotion = (this.goalBlinkTimer > 0 && this.goalBlinkTarget) || 
-                                   (this.multiBallZoom.active);
-            
-            // Force normal speed after celebration ends
-            if (this.isCelebrating === false && this.timeScale !== 1.0) {
-                this.timeScale = 1.0;
-                console.log('🚀 Speed forced to normal after celebration ended');
-            }
-            
-            if (!allowSlowMotion && this.timeScale !== 1.0) {
-                this.timeScale = 1.0;
-                console.log('🚀 NUCLEAR: timeScale forced to 1.0 - was:', this.timeScale);
-            }
-        }
+        // NUCLEAR OPTION: Force timeScale to 1.0 at the start of every frame during normal gameplay (TEMPORARILY DISABLED FOR DEBUGGING)
+        // if (this.gameStarted && !this.isPaused) {
+        //     // Only allow slow motion during VERY specific, active effects
+        //     const allowSlowMotion = (this.goalBlinkTimer > 0 && this.goalBlinkTarget) || 
+        //                            (this.multiBallZoom.active);
+        //     
+        //     // Force normal speed after celebration ends
+        //     if (this.isCelebrating === false && this.timeScale !== 1.0) {
+        //         this.timeScale = 1.0;
+        //         console.log('🚀 Speed forced to normal after celebration ended');
+        //     }
+        //     
+        //     if (!allowSlowMotion && this.timeScale !== 1.0) {
+        //         this.timeScale = 1.0;
+        //         console.log('🚀 NUCLEAR: timeScale forced to 1.0 - was:', this.timeScale);
+        //     }
+        // }
         
         // Start menu camera (before game starts)
         if (!this.gameStarted) {
@@ -6362,10 +6361,10 @@ class TronPong {
         // Update FPS counter
         this.updateFPSCounter();
         
-        // DEBUG: Log FPS drops to help identify performance issues
-        if (this.fpsCounter.fps < 40 && this.fpsCounter.fps > 0) {
-            console.log(`⚠️ FPS DROP DETECTED: ${this.fpsCounter.fps} FPS - Performance mode: ${this.performanceMode}, TimeScale: ${this.timeScale}, Balls: ${this.balls.length}, Trails: ${this.trails.length}, Impact particles: ${this.impactParticles.length}, Active timeouts: ${this.activeTimeouts.length}, Active intervals: ${this.activeIntervals.length}`);
-        }
+        // DEBUG: Log FPS drops to help identify performance issues (DISABLED FOR PERFORMANCE)
+        // if (this.fpsCounter.fps < 40 && this.fpsCounter.fps > 0) {
+        //     console.log(`⚠️ FPS DROP DETECTED: ${this.fpsCounter.fps} FPS - Performance mode: ${this.performanceMode}, TimeScale: ${this.timeScale}, Balls: ${this.balls.length}, Trails: ${this.trails.length}, Impact particles: ${this.impactParticles.length}, Active timeouts: ${this.activeTimeouts.length}, Active intervals: ${this.activeIntervals.length}`);
+        // }
         
         // Cleanup math cache periodically
         this.cleanupMathCache();
@@ -6381,34 +6380,34 @@ class TronPong {
             }
         }
         
-        // SAFETY CHECK: Ensure overhead lights are always orange during normal gameplay (optimized)
-        if (this.gameStarted && !this.isPaused && this.overheadLight && this.overheadLight2) {
-            // Only check every 60 frames to avoid performance impact
-            if (!this._overheadLightCheckFrame) this._overheadLightCheckFrame = 0;
-            this._overheadLightCheckFrame++;
-            
-            if (this._overheadLightCheckFrame % 60 === 0) {
-                const currentColor1 = this.overheadLight.color.getHex();
-                const currentColor2 = this.overheadLight2.color.getHex();
-                const orangeColor = 0xff6600;
-                
-                // Force orange if not already orange (unless in special states)
-                const inSpecialState = (this.goalBlinkTimer > 0 && this.goalBlinkTarget) || 
-                                      (this.multiBallZoom.active) ||
-                                      (this.isCelebrating);
-                
-                if (!inSpecialState) {
-                    if (currentColor1 !== orangeColor) {
-                        this.overheadLight.color.setHex(orangeColor);
-                        console.log('🔧 Safety fix: Overhead light 1 forced back to orange');
-                    }
-                    if (currentColor2 !== orangeColor) {
-                        this.overheadLight2.color.setHex(orangeColor);
-                        console.log('🔧 Safety fix: Overhead light 2 forced back to orange');
-                    }
-                }
-            }
-        }
+        // SAFETY CHECK: Ensure overhead lights are always orange during normal gameplay (TEMPORARILY DISABLED FOR DEBUGGING)
+        // if (this.gameStarted && !this.isPaused && this.overheadLight && this.overheadLight2) {
+        //     // Only check every 60 frames to avoid performance impact
+        //     if (!this._overheadLightCheckFrame) this._overheadLightCheckFrame = 0;
+        //     this._overheadLightCheckFrame++;
+        //     
+        //     if (this._overheadLightCheckFrame % 60 === 0) {
+        //         const currentColor1 = this.overheadLight.color.getHex();
+        //         const currentColor2 = this.overheadLight2.color.getHex();
+        //         const orangeColor = 0xff6600;
+        //         
+        //         // Force orange if not already orange (unless in special states)
+        //         const inSpecialState = (this.goalBlinkTimer > 0 && this.goalBlinkTarget) || 
+        //                               (this.multiBallZoom.active) ||
+        //                               (this.isCelebrating);
+        //         
+        //         if (!inSpecialState) {
+        //             if (currentColor1 !== orangeColor) {
+        //                 this.overheadLight.color.setHex(orangeColor);
+        //                 console.log('🔧 Safety fix: Overhead light 1 forced back to orange');
+        //             }
+        //             if (currentColor2 !== orangeColor) {
+        //                 this.overheadLight2.color.setHex(orangeColor);
+        //                 console.log('🔧 Safety fix: Overhead light 2 forced back to orange');
+        //             }
+        //         }
+        //     }
+        // }
         
         // Optimized rendering pipeline with performance mode support
         if (this.performanceMode) {
