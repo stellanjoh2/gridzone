@@ -4145,9 +4145,7 @@ class TronPong {
                 this.undergroundLightTransition.startColor = 0x6600cc; // Reset to purple
                 this.undergroundLightTransition.endColor = 0x00FFFF;   // Reset to pure cyan
                 
-                // Remove cyan vignette when celebration ends
-                const vignette = document.getElementById('vignette');
-                vignette.classList.remove('win');
+                // Cyan vignette fades out automatically via CSS animation
                 
                 // UNFREEZE GAME: Resume normal gameplay after win sequence
                 this.gameSpeed = 1.0;
@@ -4830,12 +4828,12 @@ class TronPong {
         // Play success sound
         this.playSound('multiBall'); // Nice uplifting sound!
         
-        // Flash yellow vignette for bonus pickup
+        // Flash yellow vignette for bonus pickup (CSS animation handles fade-out)
         const vignette = document.getElementById('vignette');
         vignette.classList.add('bonus');
         setTimeout(() => {
             vignette.classList.remove('bonus');
-        }, 600); // Quick flash: 0.2s ease in + 0.4s ease out = 0.6s total (50% longer)
+        }, 1200); // Remove class after animation completes
         
         // Show 2X WIDTH text
         this.showBonusText();
@@ -5638,9 +5636,14 @@ class TronPong {
                 // Flash AI goal GREEN (ball went past AI) - WIN!
                 this.flashGoalGreen(this.aiGoal);
                 
-                // Add cyan vignette for win celebration
+                // Add cyan vignette for win celebration (starts fading out immediately)
                 const vignette = document.getElementById('vignette');
                 vignette.classList.add('win');
+                
+                // Clean up vignette class after animation completes
+                setTimeout(() => {
+                    vignette.classList.remove('win');
+                }, 3000); // Match CSS animation duration
                 
                 this.triggerCelebratoryWave(); // CELEBRATORY WAVE!
                 this.playSound('score');
@@ -5731,12 +5734,14 @@ class TronPong {
                 this.domElements.deathText.classList.remove('exit');
                 this.domElements.deathScreen.style.display = 'none';
                 
-                // Remove magenta vignette (quick fade back to normal)
-                vignette.classList.remove('death');
-                
                 // UNFREEZE GAME: Resume normal gameplay
                 this.gameSpeed = 1.0;
                 this.isGameFrozen = false;
+                
+                // Clean up death vignette class after animation completes
+                setTimeout(() => {
+                    vignette.classList.remove('death');
+                }, 2000); // Match CSS animation duration
             }, 600);
         }, 1400); // Show for 1.4s before starting exit
     }

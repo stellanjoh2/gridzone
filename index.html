@@ -73,12 +73,20 @@
             height: 100%;
             background: radial-gradient(ellipse at center, transparent 0%, transparent 35%, rgba(255, 0, 255, 0.3) 65%, rgba(255, 0, 255, 0.7) 100%);
             opacity: 0;
-            transition: opacity 0.3s ease-out;
             pointer-events: none;
         }
         
         #vignette.death::before {
-            opacity: 1;
+            animation: deathVignetteFade 2s ease-out forwards;
+        }
+        
+        @keyframes deathVignetteFade {
+            0% {
+                opacity: 0.8;
+            }
+            100% {
+                opacity: 0;
+            }
         }
         
         /* Cyan vignette overlay for win sequence */
@@ -91,18 +99,35 @@
             height: 100%;
             background: radial-gradient(ellipse at center, transparent 0%, transparent 35%, rgba(0, 254, 252, 0.3) 65%, rgba(0, 254, 252, 0.7) 100%);
             opacity: 0;
-            transition: opacity 0.4s ease-out;
             pointer-events: none;
         }
         
         #vignette.win::after {
-            opacity: 1;
+            animation: winVignetteFade 3s ease-out forwards;
+        }
+        
+        @keyframes winVignetteFade {
+            0% {
+                opacity: 0.8;
+            }
+            100% {
+                opacity: 0;
+            }
         }
         
         /* Yellow vignette overlay for bonus pickup */
         #vignette.bonus {
             background: radial-gradient(ellipse at center, transparent 0%, transparent 35%, rgba(255, 215, 0, 0.4) 65%, rgba(255, 215, 0, 0.8) 100%);
-            transition: background 0.2s ease-in-out;
+            animation: bonusVignetteFade 1.2s ease-out forwards;
+        }
+        
+        @keyframes bonusVignetteFade {
+            0% {
+                opacity: 0.7;
+            }
+            100% {
+                opacity: 0;
+            }
         }
         
         /* Grain and chromatic aberration overlay */
