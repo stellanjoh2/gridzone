@@ -497,6 +497,11 @@ class TronPong {
         this.waveSoundPlayed = false;
         this.lastWaveSoundTime = 0; // Track when wave sound was last played
         
+        // Message queue system to prevent overlapping on-screen messages
+        this.messageQueue = [];
+        this.currentMessage = null;
+        this.messageActive = false;
+        
         // RGB Split effect - always active at low level to prevent rendering pipeline changes
         this.rgbSplitActive = true; // Always active
         this.rgbSplitIntensity = 0.05; // Always at 5% base level
@@ -3554,6 +3559,116 @@ class TronPong {
         log('🌈 RGB Split bonus pickup boosted! Duration: 0.3s with smooth ease-in and fade-out (NO camera interaction)');
     }
     
+    // Message queue system to prevent overlapping on-screen messages
+    queueMessage(text, duration = 2000, style = 'default') {
+        this.messageQueue.push({
+            text: text,
+            duration: duration,
+            style: style,
+            timestamp: performance.now()
+        });
+        
+        // Process queue if no message is currently active
+        if (!this.messageActive) {
+            this.processMessageQueue();
+        }
+        
+        log(`📝 Message queued: "${text}" (${this.messageQueue.length} messages in queue)`);
+    }
+    
+    processMessageQueue() {
+        if (this.messageQueue.length === 0 || this.messageActive) {
+            return;
+        }
+        
+        const message = this.messageQueue.shift();
+        this.currentMessage = message;
+        this.messageActive = true;
+        
+        this.showQueuedMessage(message);
+        
+        log(`📺 Showing message: "${message.text}"`);
+    }
+    
+    showQueuedMessage(message) {
+        const messageElement = document.createElement('div');
+        messageElement.textContent = message.text;
+        
+        // Apply style based on message type
+        if (message.style === 'awesome') {
+            messageElement.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 120px;
+                font-weight: bold;
+                color: #ffffff;
+                text-shadow: 
+                    0 0 40px #00FEFC,
+                    0 0 80px #00FEFC,
+                    0 0 120px #00FEFC;
+                font-family: 'Orbitron', monospace;
+                z-index: 1000;
+                pointer-events: none;
+                animation: hardBlinkEnter 0.6s ease-out forwards;
+            `;
+        } else if (message.style === 'bonus') {
+            messageElement.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 120px;
+                font-weight: bold;
+                color: #ffffff;
+                text-shadow: 
+                    0 0 40px #00FEFC,
+                    0 0 80px #00FEFC,
+                    0 0 120px #00FEFC;
+                font-family: 'Orbitron', monospace;
+                z-index: 1000;
+                pointer-events: none;
+                animation: hardBlinkEnter 0.6s ease-out forwards;
+            `;
+        } else {
+            // Default style
+            messageElement.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 80px;
+                font-weight: bold;
+                color: #ffffff;
+                text-shadow: 0 0 20px #00FEFC;
+                font-family: 'Orbitron', monospace;
+                z-index: 1000;
+                pointer-events: none;
+                animation: hardBlinkEnter 0.6s ease-out forwards;
+            `;
+        }
+        
+        document.body.appendChild(messageElement);
+        
+        // Remove message after duration
+        setTimeout(() => {
+            messageElement.style.animation = 'hardBlinkExit 0.6s ease-out forwards';
+            setTimeout(() => {
+                if (messageElement.parentNode) {
+                    document.body.removeChild(messageElement);
+                }
+                this.messageActive = false;
+                this.currentMessage = null;
+                
+                // Process next message in queue
+                this.processMessageQueue();
+                
+                log(`📺 Message completed: "${message.text}"`);
+            }, 600);
+        }, message.duration);
+    }
+    
     updateLensFlare(deltaTime) {
         // Fade out lens flare over time
         if (this.lensFlareOpacity > 0) {
@@ -4709,35 +4824,8 @@ class TronPong {
     }
     
     showBonusText() {
-        const bonusText = document.createElement('div');
-        bonusText.textContent = '2X WIDTH';
-        bonusText.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 120px;
-            font-weight: bold;
-            color: #ffffff;
-            text-shadow: 
-                0 0 40px #00FEFC,
-                0 0 80px #00FEFC,
-                0 0 120px #00FEFC;
-            font-family: 'Orbitron', monospace;
-            z-index: 1000;
-            pointer-events: none;
-            animation: hardBlinkEnter 0.6s ease-out forwards;
-        `;
-        
-        document.body.appendChild(bonusText);
-        
-        // Remove after animation (0.6s for hardBlinkEnter + 1s display)
-        setTimeout(() => {
-            bonusText.style.animation = 'hardBlinkExit 0.6s ease-out forwards';
-        setTimeout(() => {
-            document.body.removeChild(bonusText);
-            }, 600);
-        }, 1000);
+        // Use message queue system to prevent overlapping
+        this.queueMessage('2X WIDTH', 1000, 'bonus');
     }
     
     updateParticles() {
@@ -5524,23 +5612,8 @@ class TronPong {
     
     
     showAwesomeText() {
-        // Reset classes
-        this.domElements.awesomeText.classList.remove('active', 'exit');
-        void this.domElements.awesomeText.offsetWidth; // Force reflow
-        
-        // Enter with 3 hard blinks
-        this.domElements.awesomeText.classList.add('active');
-        
-        // Start exit animation after display time
-        setTimeout(() => {
-            this.domElements.awesomeText.classList.remove('active');
-            this.domElements.awesomeText.classList.add('exit');
-            
-            // Fully hide after exit animation
-            setTimeout(() => {
-                this.domElements.awesomeText.classList.remove('exit');
-            }, 600);
-        }, 1400); // Show for 1.4s before starting exit
+        // Use message queue system to prevent overlapping
+        this.queueMessage('AWESOME', 1400, 'awesome');
     }
     
     showMultiBallText() {
