@@ -498,7 +498,8 @@ class TronPong {
         // RGB Split effect
         this.rgbSplitActive = false;
         this.rgbSplitIntensity = 0;
-        this.rgbSplitDuration = 0; // Prevent multiple wave sounds
+        this.rgbSplitDuration = 0;
+        this.rgbSplitOriginalDuration = 0; // Store original duration to prevent fade duration switching
         
         // Color transition system
         this.undergroundLightTransition = {
@@ -3489,6 +3490,7 @@ class TronPong {
         this.rgbSplitActive = true;
         this.rgbSplitIntensity = 1.0;
         this.rgbSplitDuration = 2000; // 2 seconds duration for win celebration
+        this.rgbSplitOriginalDuration = 2000; // Store original duration
         
         log('🌈 RGB Split win celebration triggered! Duration: 2 seconds');
     }
@@ -3498,6 +3500,7 @@ class TronPong {
         this.rgbSplitActive = true;
         this.rgbSplitIntensity = 1.0;
         this.rgbSplitDuration = 500; // 0.5 seconds duration for bonus pickup
+        this.rgbSplitOriginalDuration = 500; // Store original duration
         
         log('🌈 RGB Split bonus pickup triggered! Duration: 0.5s');
     }
@@ -3520,8 +3523,8 @@ class TronPong {
         if (this.rgbSplitActive && this.rgbSplitDuration > 0) {
             this.rgbSplitDuration -= deltaTime * 1000; // Convert to milliseconds
             
-            // Determine fade duration based on effect type
-            const fadeDuration = this.rgbSplitDuration > 1000 ? 2000 : 500; // 2s for wins, 0.5s for bonus
+            // Use stored original duration to prevent fade duration switching mid-effect
+            const fadeDuration = this.rgbSplitOriginalDuration;
             
             // Smooth fade out
             this.rgbSplitIntensity = Math.max(0, this.rgbSplitDuration / fadeDuration);
