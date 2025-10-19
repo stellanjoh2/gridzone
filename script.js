@@ -2740,7 +2740,10 @@ class TronPong {
         }
         
         // Hide during main menu sequence, show after logo animation completes
-        if (performance.now() < 3250) { // Hide until logo entry animation completes
+        // Only show logo during title screen, not during gameplay
+        if (this.gameStarted) {
+            this.worldLogo.visible = false;
+        } else if (performance.now() < 3250) { // Hide until logo entry animation completes
             this.worldLogo.visible = false;
         } else {
             this.worldLogo.visible = true;
