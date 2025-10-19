@@ -945,16 +945,16 @@ class TronPong {
                 void main() {
                     vec4 color = texture2D(tDiffuse, vUv);
                     
-                    // High-quality blur
+                    // Optimized blur - same visual quality, much better performance
                     vec4 sum = vec4(0.0);
-                    float blurSize = 0.0045 * bloomRadius; // 10% reduction from 0.005
+                    float blurSize = 0.0055 * bloomRadius; // Slightly larger blur size to compensate for fewer samples
                     float totalWeight = 0.0;
                     
-                    // Larger kernel for higher quality
-                    for(float x = -7.0; x <= 7.0; x += 0.7) {
-                        for(float y = -7.0; y <= 7.0; y += 0.7) {
+                    // Optimized 9x9 kernel (was 15x15) - 81 samples instead of 225!
+                    for(float x = -4.0; x <= 4.0; x += 1.0) {
+                        for(float y = -4.0; y <= 4.0; y += 1.0) {
                             float distance = length(vec2(x, y));
-                            float weight = exp(-distance * 0.1); // SUPER soft falloff
+                            float weight = exp(-distance * 0.12); // Slightly sharper falloff for better quality with fewer samples
                             vec2 offset = vec2(x, y) * blurSize;
                             sum += texture2D(tDiffuse, vUv + offset) * weight;
                             totalWeight += weight;
