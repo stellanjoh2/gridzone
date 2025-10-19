@@ -3526,8 +3526,10 @@ class TronPong {
             // Use stored original duration to prevent fade duration switching mid-effect
             const fadeDuration = this.rgbSplitOriginalDuration;
             
-            // Smooth fade out
-            this.rgbSplitIntensity = Math.max(0, this.rgbSplitDuration / fadeDuration);
+            // Smooth fade out with easing (prevents pop at end)
+            const progress = Math.max(0, this.rgbSplitDuration / fadeDuration);
+            // Use ease-out curve for smoother fade
+            this.rgbSplitIntensity = progress * progress * (3 - 2 * progress); // Smoothstep function
             
             if (this.rgbSplitDuration <= 0) {
                 this.rgbSplitActive = false;
@@ -3736,6 +3738,12 @@ class TronPong {
     }
     
     triggerCelebratoryWave() {
+        // Prevent multiple celebrations from running simultaneously
+        if (this.isCelebrating) {
+            log('🎉 Celebration already active - skipping duplicate wave');
+            return;
+        }
+        
         // CELEBRATORY WAVE - travels from AI goal toward player!
         // Creates a wave of GREEN laser light that flows down both walls
         const waveSpeed = 0.05; // Time delay per unit distance
@@ -5381,6 +5389,14 @@ class TronPong {
             
             // Spawn new ball after celebration (2.5s delay to match goal animation)
             const ballSpawnTimeout = setTimeout(() => {
+                // Clean up celebration light before spawning new ball
+                if (this.celebrationLight && this.celebrationLightActive) {
+                    this.scene.remove(this.celebrationLight);
+                    this.celebrationLight = null;
+                    this.celebrationLightActive = false;
+                    log('✨ Celebration light cleaned up before new ball spawn');
+                }
+                
                 this.spawnBall(0, 0, 0, { x: 0, y: 0, z: -this.baseBallSpeed });
             }, 2500);
             this.activeTimeouts.push(ballSpawnTimeout);
@@ -5444,6 +5460,7 @@ class TronPong {
     showDeathScreen() {
         // Show death screen (transparent background, just for positioning)
         this.domElements.deathScreen.style.display = 'block';
+        
         
         // Use same animation style as "AWESOME" text
         this.domElements.deathText.classList.remove('active', 'exit');
@@ -5935,6 +5952,7 @@ class TronPong {
             // Reset phase tracking
             this.deathResetPhase = 0;
             this.deathResetProgress = 0;
+            
             
             log('✅ Optimized death reset complete!');
         }
