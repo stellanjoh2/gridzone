@@ -499,7 +499,8 @@ class TronPong {
         this.rgbSplitActive = false;
         this.rgbSplitIntensity = 0;
         this.rgbSplitDuration = 0;
-        this.rgbSplitOriginalDuration = 0; // Store original duration to prevent fade duration switching
+        this.rgbSplitOriginalDuration = 0;
+        
         
         // Color transition system
         this.undergroundLightTransition = {
@@ -885,6 +886,7 @@ class TronPong {
         this.setupLogo3DEffects();
         this.createWorldLogo();
         
+        
         // Create FPS counter
         this.createFPSCounter();
         
@@ -922,6 +924,9 @@ class TronPong {
         
         // RGB Split effect render target (full resolution)
         this.rgbSplitRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
+        
+        // Lens Dirt effect render target (full resolution)
+        this.lensDirtRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
         
         // Depth of Field render targets - DISABLED for performance
         // this.dofRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
@@ -1112,21 +1117,21 @@ class TronPong {
                     vec4 g1 = texture2D(tDiffuse, ghost1);
                     float g1Brightness = max(g1.r, max(g1.g, g1.b));
                     float g1Mask = step(threshold, g1Brightness);
-                    flare += g1.rgb * ghostIntensity * 1.0 * g1Mask;
+                    flare += g1.rgb * ghostIntensity * 1.45 * g1Mask; // Increased by 45% total (25% + 20%)
                     
                     // Ghost 2 (medium distance) - made brighter for opposite side
                     vec2 ghost2 = vUv + toCenter * 0.3;
                     vec4 g2 = texture2D(tDiffuse, ghost2);
                     float g2Brightness = max(g2.r, max(g2.g, g2.b));
                     float g2Mask = step(threshold, g2Brightness);
-                    flare += g2.rgb * ghostIntensity * 0.875 * g2Mask; // Increased from 0.625 to 0.875
+                    flare += g2.rgb * ghostIntensity * 1.3125 * g2Mask; // Increased by 50% total (0.875 * 1.5)
                     
                     // Ghost 3 (far, subtle) - made brighter for opposite side
                     vec2 ghost3 = vUv + toCenter * 0.6;
                     vec4 g3 = texture2D(tDiffuse, ghost3);
                     float g3Brightness = max(g3.r, max(g3.g, g3.b));
                     float g3Mask = step(threshold, g3Brightness);
-                    flare += g3.rgb * ghostIntensity * 0.75 * g3Mask; // Increased from 0.375 to 0.75
+                    flare += g3.rgb * ghostIntensity * 1.125 * g3Mask; // Increased by 50% total (0.75 * 1.5)
                     
                     // Subtle radial glow around bright spots (+25% intensity)
                     float brightness = max(original.r, max(original.g, original.b));
@@ -2582,6 +2587,11 @@ class TronPong {
                 this.rgbSplitRenderTarget.setSize(window.innerWidth, window.innerHeight);
             }
             
+            // Resize lens dirt render target
+            if (this.lensDirtRenderTarget) {
+                this.lensDirtRenderTarget.setSize(window.innerWidth, window.innerHeight);
+            }
+            
             // Update lens flare aspect ratio
             if (this.lensFlareMaterial) {
                 this.lensFlareMaterial.uniforms.aspectRatio.value = window.innerWidth / window.innerHeight;
@@ -2697,6 +2707,7 @@ class TronPong {
         
         // Load both SVG textures
         const loader = new THREE.TextureLoader();
+        loader.setCrossOrigin(''); // Remove CORS restrictions for local files
         let loadedCount = 0;
         const textures = {};
         
@@ -2748,7 +2759,9 @@ class TronPong {
         // Create a simple fallback logo (no external files needed)
         log('🎨 Creating procedural logo (no external files)');
         createSingleLogo(null);
+        
     }
+    
     
     createLogoLights() {
         // Create lights positioned to create specular highlights on the logo
@@ -4035,6 +4048,9 @@ class TronPong {
         }
         if (this.rgbSplitRenderTarget) {
             this.rgbSplitRenderTarget.setSize(width, height);
+        }
+        if (this.lensDirtRenderTarget) {
+            this.lensDirtRenderTarget.setSize(width, height);
         }
         if (this.blurRenderTarget) {
             this.blurRenderTarget.setSize(width, height);
@@ -6715,9 +6731,24 @@ class TronPong {
             this.renderer.clear();
             this.renderer.render(this.lensFlareScene, this.lensFlareCamera);
             
-            // 6. Apply fisheye distortion (final output)
+            // 6. Apply lens dirt effect (camera imperfections on bright areas)
+            if (this.lensDirtMaterial && this.lensDirtTexture) {
+                log('📸 Applying lens dirt effect - material and texture exist');
+                this.renderer.setRenderTarget(this.lensDirtRenderTarget);
+                this.lensDirtMaterial.uniforms.tDiffuse.value = this.lensFlareRenderTarget.texture;
+                this.lensDirtMaterial.uniforms.time.value = performance.now() * 0.001; // Animate if needed
+                this.renderer.clear();
+                this.renderer.render(this.lensDirtScene, this.lensDirtCamera);
+                var finalTexture = this.lensDirtRenderTarget.texture;
+                log('📸 Lens dirt effect applied successfully');
+            } else {
+                log('📸 Lens dirt effect skipped - material:', !!this.lensDirtMaterial, 'texture:', !!this.lensDirtTexture);
+                var finalTexture = this.lensFlareRenderTarget.texture;
+            }
+            
+            // 7. Apply fisheye distortion (final output)
             this.renderer.setRenderTarget(null);
-            this.fisheyeMaterial.uniforms.tDiffuse.value = this.lensFlareRenderTarget.texture;
+            this.fisheyeMaterial.uniforms.tDiffuse.value = finalTexture;
             this.renderer.clear();
             this.renderer.render(this.fisheyeScene, this.fisheyeCamera);
         }
