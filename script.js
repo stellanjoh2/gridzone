@@ -1,5 +1,9 @@
 // Tron-style 3D Pong Game with Enhanced Trail & Background
 // OPTIMIZED VERSION - Performance improvements:
+
+// Production mode - disable console logs on live site for better performance
+const isProduction = window.location.hostname === 'gridzone.online' || window.location.hostname === 'stellanjoh2.github.io';
+const log = isProduction ? () => {} : console.log;
 // - Object pooling for impact particles (prevents memory leaks)
 // - Enhanced particle count: 800 particles (optimized with smart updates)
 // - Smart particle updates (alternating frames & particles)
@@ -375,9 +379,9 @@ class TronPong {
                 this.listener.positionZ.value = 22;
             }
             
-            console.log('🎵 Spatial audio initialized');
+            log('🎵 Spatial audio initialized');
         } catch (e) {
-            console.log('❌ Spatial audio not supported:', e);
+            log('❌ Spatial audio not supported:', e);
         }
     }
 
@@ -395,23 +399,23 @@ class TronPong {
             // Apply stereo panning
             if (audio.setSinkId) {
                 // Modern browsers support setSinkId for spatial audio
-                audio.play().catch(e => console.log('Spatial audio play error:', e));
+                audio.play().catch(e => log('Spatial audio play error:', e));
             } else {
                 // Fallback: just play the sound
-                audio.play().catch(e => console.log('Audio play error:', e));
+                audio.play().catch(e => log('Audio play error:', e));
             }
             
-            console.log(`🎵 Spatial audio: pan=${panValue.toFixed(2)}, vol=${audio.volume.toFixed(2)}`);
+            log(`🎵 Spatial audio: pan=${panValue.toFixed(2)}, vol=${audio.volume.toFixed(2)}`);
                 
         } catch (e) {
-            console.log('Spatial audio playback error:', e);
+            log('Spatial audio playback error:', e);
         }
     }
 
     playStereoWallHit(side) {
         // Simple wall hit sound - no stereo effects
         this.playSound('wallHit');
-        console.log(`🎵 Wall hit: ${side} side`);
+        log(`🎵 Wall hit: ${side} side`);
     }
 
     loadSounds() {
@@ -432,8 +436,8 @@ class TronPong {
             this.sounds.paddleWiden = new Audio('SoundEffects/Robotic_twang.wav'); // Use existing file
             this.sounds.bonusAppear = new Audio('SoundEffects/coin-6.wav');
             this.sounds.pause = new Audio('SoundEffects/collect-2.wav');
-            console.log('🎵 Loaded bonusAppear sound:', this.sounds.bonusAppear);
-            console.log('🎵 Loaded pause sound:', this.sounds.pause);
+            log('🎵 Loaded bonusAppear sound:', this.sounds.bonusAppear);
+            log('🎵 Loaded pause sound:', this.sounds.pause);
             
             // Music Player System
             this.musicTracks = [
