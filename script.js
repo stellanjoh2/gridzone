@@ -2945,20 +2945,15 @@ class TronPong {
         }
         
         // Square button (button 2) to reset game when paused
-        // TEMPORARILY DISABLED TO DEBUG RANDOM RESTARTS
-        // if (this.isPaused && this.gamepad.buttons[2] && this.gamepad.buttons[2].pressed) {
-        //     if (!this.lastResetPress) {
-        //         log('🔄 Gamepad reset button pressed - intentional reset');
-        //         log('🔄 Gamepad button 2 state:', this.gamepad.buttons[2]);
-        //         log('🔄 Game is paused:', this.isPaused);
-        //         this.fullGameReset();
-        //         this.lastResetPress = true;
-        //     }
-        // } else {
-        //     this.lastResetPress = false;
-        // }
-        
-        // Gamepad button 2 (Square) monitoring disabled
+        if (this.isPaused && this.gamepad.buttons[2] && this.gamepad.buttons[2].pressed) {
+            if (!this.lastResetPress) {
+                log('🔄 Gamepad reset button pressed - super hard reset');
+                this.superHardReset();
+                this.lastResetPress = true;
+            }
+        } else {
+            this.lastResetPress = false;
+        }
     }
     
     togglePause() {
