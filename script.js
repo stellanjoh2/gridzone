@@ -4180,14 +4180,14 @@ class TronPong {
             // Fade in for first 25%, stay at max for 50%, fade out for last 25%
             let intensity = 0;
             if (progress <= 0.25) {
-                // Fade in
-                intensity = (progress / 0.25) * 3.5; // Max intensity 3.5 (much more visible)
+                // Fade in (reduced by 75%: 3.5 -> 0.875)
+                intensity = (progress / 0.25) * 0.875; // Max intensity 0.875 (75% reduction)
             } else if (progress <= 0.75) {
-                // Stay at max
-                intensity = 3.5;
+                // Stay at max (reduced by 75%: 3.5 -> 0.875)
+                intensity = 0.875;
             } else {
-                // Fade out
-                intensity = 3.5 * (1 - (progress - 0.75) / 0.25);
+                // Fade out (reduced by 75%: 3.5 -> 0.875)
+                intensity = 0.875 * (1 - (progress - 0.75) / 0.25);
             }
             
             this.celebrationLight.intensity = intensity;
