@@ -3528,26 +3528,27 @@ class TronPong {
         // Trigger RGB split effect for win celebration
         this.rgbSplitActive = true;
         this.rgbSplitIntensity = 0.0; // Start at 0 intensity for smooth ease-in
-        this.rgbSplitDuration = 2500; // 2.5 seconds duration for win celebration (more time for smooth fade)
-        this.rgbSplitOriginalDuration = 2500; // Store original duration
+        this.rgbSplitDuration = 1200; // 1.2 seconds duration for win celebration (no hold, just ease-in and fade-out)
+        this.rgbSplitOriginalDuration = 1200; // Store original duration
         this.rgbSplitPhase = 'ease-in'; // Start with ease-in phase
         this.rgbSplitEaseInDuration = 300; // 300ms ease-in duration
         this.rgbSplitEaseInStartTime = performance.now();
         
-        log('🌈 RGB Split win celebration triggered! Duration: 2.5 seconds with ease-in and smooth fade-out');
+        log('🌈 RGB Split win celebration triggered! Duration: 1.2 seconds with ease-in and smooth fade-out');
     }
     
     triggerRGBSplitBonus() {
         // Trigger RGB split effect for bonus pickup (smooth ease-in and fade-out)
         this.rgbSplitActive = true;
         this.rgbSplitIntensity = 0.0; // Start at 0 intensity for smooth ease-in
-        this.rgbSplitDuration = 1500; // 1.5 seconds duration for bonus pickup (more time for smooth fade)
-        this.rgbSplitOriginalDuration = 1500; // Store original duration
+        this.rgbSplitDuration = 800; // 0.8 seconds duration for bonus pickup (no hold, just ease-in and fade-out)
+        this.rgbSplitOriginalDuration = 800; // Store original duration
         this.rgbSplitPhase = 'ease-in'; // Start with ease-in phase
         this.rgbSplitEaseInDuration = 150; // 150ms quick ease-in duration
         this.rgbSplitEaseInStartTime = performance.now();
         
-        log('🌈 RGB Split bonus pickup triggered! Duration: 1.5s with smooth ease-in and fade-out');
+        
+        log('🌈 RGB Split bonus pickup triggered! Duration: 0.8s with smooth ease-in and fade-out');
     }
     
     updateLensFlare(deltaTime) {
@@ -3586,7 +3587,7 @@ class TronPong {
             else if (this.rgbSplitPhase === 'fade-out') {
                 // Calculate fade-out progress based on remaining time vs fade-out duration
                 // Use different fade-out durations for win celebration vs bonus pickup
-                const fadeOutDuration = this.rgbSplitOriginalDuration === 2500 ? 800 : 600; // 800ms for win, 600ms for bonus
+                const fadeOutDuration = this.rgbSplitOriginalDuration === 1200 ? 600 : 400; // 600ms for win, 400ms for bonus
                 const fadeProgress = Math.max(0, this.rgbSplitDuration / fadeOutDuration);
                 
                 // Smooth fade out with easing (prevents pop at end)
@@ -3596,12 +3597,12 @@ class TronPong {
             else if (this.rgbSplitPhase === 'hold') {
                 // Start fade-out based on effect type (win celebration vs bonus pickup)
                 let fadeStartTime;
-                if (this.rgbSplitOriginalDuration === 2500) {
-                    // Win celebration: 800ms fade-out
-                    fadeStartTime = 800;
-                } else {
-                    // Bonus pickup: 600ms fade-out
+                if (this.rgbSplitOriginalDuration === 1200) {
+                    // Win celebration: 600ms fade-out
                     fadeStartTime = 600;
+                } else {
+                    // Bonus pickup: 400ms fade-out
+                    fadeStartTime = 400;
                 }
                 
                 if (this.rgbSplitDuration <= fadeStartTime) {
@@ -5754,19 +5755,21 @@ class TronPong {
         
         
         
-        // Camera follow system - track first ball
-        if (this.balls.length > 0) {
-            this.cameraTarget.x = this.balls[0].position.x * 0.15;
-            this.cameraTarget.z = this.balls[0].position.z * 0.1;
-        
+        // Subtle ball tracking during normal gameplay (disabled during dramatic events)
+        if (this.balls.length > 0 && !this.rgbSplitActive && !this.isCelebrating && !this.deathResetPhase) {
+            // Gentle ball tracking - 10% more movement for better feel
+            this.cameraTarget.x = this.balls[0].position.x * 0.088; // 10% increase from 0.08
+            this.cameraTarget.z = this.balls[0].position.z * 0.055; // 10% increase from 0.05
+            
+            // Very gentle zoom based on ball speed
             const ballSpeed = Math.sqrt(this.ballVelocities[0].x ** 2 + this.ballVelocities[0].z ** 2);
-        this.cameraTarget.zoom = 22 + ballSpeed * 2;
+            this.cameraTarget.zoom = 22 + ballSpeed * 0.88; // 10% increase from 0.8
+        } else {
+            // Smoothly transition to default position during dramatic events (no instant snap)
+            this.cameraTarget.x += (0 - this.cameraTarget.x) * 0.1; // Smooth transition to 0
+            this.cameraTarget.z += (0 - this.cameraTarget.z) * 0.1; // Smooth transition to 0
+            this.cameraTarget.zoom += (22 - this.cameraTarget.zoom) * 0.1; // Smooth transition to 22
         }
-        
-        // Additional zoom based on paddle horizontal position (centered = default, sides = zoom in slightly)
-        const paddleOffsetFromCenter = Math.abs(this.paddle1.position.x); // 0 at center, 10 at edge
-        const paddleZoom = (paddleOffsetFromCenter / 10) * 1.5; // 0 to 1.5 units of zoom
-        this.cameraTarget.zoom += paddleZoom;
         
         // Smooth camera movement
         const currentPos = this.camera.position;
