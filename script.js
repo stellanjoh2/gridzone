@@ -3499,11 +3499,14 @@ class TronPong {
     triggerRGBSplit() {
         // Trigger RGB split effect for win celebration
         this.rgbSplitActive = true;
-        this.rgbSplitIntensity = 1.0;
-        this.rgbSplitDuration = 2000; // 2 seconds duration for win celebration
-        this.rgbSplitOriginalDuration = 2000; // Store original duration
+        this.rgbSplitIntensity = 0.0; // Start at 0 intensity for smooth ease-in
+        this.rgbSplitDuration = 2500; // 2.5 seconds duration for win celebration (more time for smooth fade)
+        this.rgbSplitOriginalDuration = 2500; // Store original duration
+        this.rgbSplitPhase = 'ease-in'; // Start with ease-in phase
+        this.rgbSplitEaseInDuration = 300; // 300ms ease-in duration
+        this.rgbSplitEaseInStartTime = performance.now();
         
-        log('🌈 RGB Split win celebration triggered! Duration: 2 seconds');
+        log('🌈 RGB Split win celebration triggered! Duration: 2.5 seconds with ease-in and smooth fade-out');
     }
     
     triggerRGBSplitBonus() {
@@ -3534,13 +3537,37 @@ class TronPong {
         if (this.rgbSplitActive && this.rgbSplitDuration > 0) {
             this.rgbSplitDuration -= deltaTime * 1000; // Convert to milliseconds
             
-            // Use stored original duration to prevent fade duration switching mid-effect
-            const fadeDuration = this.rgbSplitOriginalDuration;
-            
-            // Smooth fade out with easing (prevents pop at end)
-            const progress = Math.max(0, this.rgbSplitDuration / fadeDuration);
-            // Use ease-out curve for smoother fade
-            this.rgbSplitIntensity = progress * progress * (3 - 2 * progress); // Smoothstep function
+            // Handle ease-in phase
+            if (this.rgbSplitPhase === 'ease-in') {
+                const easeInElapsed = performance.now() - this.rgbSplitEaseInStartTime;
+                const easeInProgress = Math.min(easeInElapsed / this.rgbSplitEaseInDuration, 1.0);
+                
+                // Quick ease-in curve (cubic ease-in)
+                this.rgbSplitIntensity = easeInProgress * easeInProgress * easeInProgress;
+                
+                // Switch to hold phase when ease-in is complete
+                if (easeInProgress >= 1.0) {
+                    this.rgbSplitPhase = 'hold';
+                    this.rgbSplitIntensity = 1.0; // Ensure we reach full intensity
+                }
+            }
+            // Handle fade-out phase
+            else if (this.rgbSplitPhase === 'fade-out') {
+                // Calculate fade-out progress based on remaining time vs fade-out duration
+                const fadeOutDuration = 800; // 800ms fade-out duration
+                const fadeProgress = Math.max(0, this.rgbSplitDuration / fadeOutDuration);
+                
+                // Smooth fade out with easing (prevents pop at end)
+                this.rgbSplitIntensity = fadeProgress * fadeProgress * (3 - 2 * fadeProgress); // Smoothstep function
+            }
+            // Handle hold phase - check if we should start fade-out
+            else if (this.rgbSplitPhase === 'hold') {
+                // Start fade-out when we have 800ms left (40% of original duration for smooth fade)
+                const fadeStartTime = Math.min(800, this.rgbSplitOriginalDuration * 0.4);
+                if (this.rgbSplitDuration <= fadeStartTime) {
+                    this.rgbSplitPhase = 'fade-out';
+                }
+            }
             
             if (this.rgbSplitDuration <= 0) {
                 this.rgbSplitActive = false;
