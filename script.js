@@ -3148,6 +3148,9 @@ class TronPong {
             this.camera.fov = this.multiBallZoom.originalFOV;
             this.camera.updateProjectionMatrix();
             
+            // NO CAMERA RESET - just let normal gameplay camera continue
+            // Camera will naturally return to normal gameplay behavior
+            
             log('✅ Multi-ball sequence complete!');
         }, this.multiBallZoom.duration);
         this.activeTimeouts.push(multiBallTimeout);
@@ -3215,14 +3218,14 @@ class TronPong {
             const progress = flybackTime / zoom.flybackDuration;
             const eased = this.easeInOutCubic(progress);
             
-            // Default gameplay camera position - reduced to 5% of original movement
-            const finalPos = { x: 0, y: 20 + (20 - 20) * 0.05, z: 20 + (20 - 22) * 0.05 };
-            const finalLookAt = { x: 0, y: 1, z: 0 };
+            // Default gameplay camera position (same as after Press Start)
+            const finalPos = { x: 0, y: 18, z: 22 };
+            const finalLookAt = { x: 0, y: -4, z: 0 };
             
-            // Interpolate back to gameplay position with reduced movement
-            this.camera.position.x = zoom.targetPos.x + (finalPos.x - zoom.targetPos.x) * eased * 0.05;
-            this.camera.position.y = zoom.targetPos.y + (finalPos.y - zoom.targetPos.y) * eased * 0.05;
-            this.camera.position.z = zoom.targetPos.z + (finalPos.z - zoom.targetPos.z) * eased * 0.05;
+            // Smooth interpolate back to default gameplay position
+            this.camera.position.x = zoom.targetPos.x + (finalPos.x - zoom.targetPos.x) * eased;
+            this.camera.position.y = zoom.targetPos.y + (finalPos.y - zoom.targetPos.y) * eased;
+            this.camera.position.z = zoom.targetPos.z + (finalPos.z - zoom.targetPos.z) * eased;
             
             // Return FOV to normal
             this.camera.fov = zoom.zoomFOV + (zoom.originalFOV - zoom.zoomFOV) * eased;
@@ -3801,7 +3804,7 @@ class TronPong {
         // Play wave sound effect (only once, with time-based protection)
         const currentTime = performance.now();
         if (!this.waveSoundPlayed && (currentTime - this.lastWaveSoundTime) > 2000) {
-            this.playSound('waveBuzz');
+        this.playSound('waveBuzz');
             this.waveSoundPlayed = true;
             this.lastWaveSoundTime = currentTime;
         }
@@ -3899,6 +3902,9 @@ class TronPong {
                 this.undergroundLightTransition.direction = 1; // Reset for next celebration
                 this.undergroundLightTransition.startColor = 0x6600cc; // Reset to purple
                 this.undergroundLightTransition.endColor = 0x00FFFF;   // Reset to pure cyan
+                
+                // NO CAMERA RESET - just let normal gameplay camera continue
+                // Camera will naturally return to normal gameplay behavior
                 
                 // Clean up celebration light if still active
                 if (this.celebrationLight && this.celebrationLightActive) {
@@ -5308,8 +5314,7 @@ class TronPong {
             this.timeScale = 1.0;
             log('🚀 NUCLEAR: IMMEDIATE speed reset on death - NO EXCEPTIONS');
             
-            // LOCK CAMERA MOVEMENT - prevent dramatic movements but allow normal tracking
-            this.deathCameraLocked = true;
+            // NO SPECIAL CAMERA BEHAVIOR - let normal gameplay camera continue
             
             // Deactivate ALL camera systems
             this.multiBallZoom.active = false;
@@ -5568,6 +5573,36 @@ class TronPong {
         }
     }
     
+    updateCameraResetTransition() {
+        if (!this.cameraResetTransition || !this.cameraResetTransition.active) return;
+        
+        const elapsed = performance.now() - this.cameraResetTransition.startTime;
+        const progress = Math.min(elapsed / this.cameraResetTransition.duration, 1);
+        const eased = this.easeInOutCubic(progress);
+        
+        // Interpolate position
+        this.camera.position.x = this.cameraResetTransition.startPos.x + (this.cameraResetTransition.targetPos.x - this.cameraResetTransition.startPos.x) * eased;
+        this.camera.position.y = this.cameraResetTransition.startPos.y + (this.cameraResetTransition.targetPos.y - this.cameraResetTransition.startPos.y) * eased;
+        this.camera.position.z = this.cameraResetTransition.startPos.z + (this.cameraResetTransition.targetPos.z - this.cameraResetTransition.startPos.z) * eased;
+        
+        // Interpolate lookAt
+        const lookX = this.cameraResetTransition.startLookAt.x + (this.cameraResetTransition.targetLookAt.x - this.cameraResetTransition.startLookAt.x) * eased;
+        const lookY = this.cameraResetTransition.startLookAt.y + (this.cameraResetTransition.targetLookAt.y - this.cameraResetTransition.startLookAt.y) * eased;
+        const lookZ = this.cameraResetTransition.startLookAt.z + (this.cameraResetTransition.targetLookAt.z - this.cameraResetTransition.startLookAt.z) * eased;
+        
+        this.camera.lookAt(lookX, lookY, lookZ);
+        
+        // Interpolate FOV
+        this.camera.fov = this.cameraResetTransition.startFOV + (this.cameraResetTransition.targetFOV - this.cameraResetTransition.startFOV) * eased;
+        this.camera.updateProjectionMatrix();
+        
+        // Complete transition
+        if (progress >= 1) {
+            this.cameraResetTransition.active = false;
+            log('✅ Camera reset transition complete - back to default position');
+        }
+    }
+    
     startCameraTransition() {
         // Begin smooth transition from start menu to gameplay
         log('🎬 Starting camera transition...');
@@ -5592,41 +5627,50 @@ class TronPong {
         this.cameraTransition.startTime = performance.now();
     }
     
+    resetCameraToDefault() {
+        // Start smooth transition back to default gameplay position
+        this.cameraResetTransition = {
+            active: true,
+            startTime: performance.now(),
+            duration: 1500, // 1.5 seconds smooth transition
+            startPos: {
+                x: this.camera.position.x,
+                y: this.camera.position.y,
+                z: this.camera.position.z
+            },
+            targetPos: { x: 0, y: 18, z: 22 }, // Default gameplay position
+            startLookAt: {
+                x: this.camera.position.x + this.cameraLookOffset,
+                y: -4,
+                z: this.camera.position.z
+            },
+            targetLookAt: { x: 0, y: -4, z: 0 }, // Default lookAt
+            startFOV: this.camera.fov,
+            targetFOV: 75
+        };
+        
+        // Reset all camera targets to default
+        this.cameraTarget.x = 0;
+        this.cameraTarget.z = 0;
+        this.cameraTarget.zoom = 22;
+        this.cameraLookOffset = 0;
+        this.camera.rotation.z = 0;
+        
+        // Deactivate any active camera systems
+        this.multiBallZoom.active = false;
+        this.cameraTransition.active = false;
+        this.deathCameraLocked = false;
+        
+        log('📷 Camera smoothly transitioning to default gameplay position');
+    }
+    
     updateDynamicCamera() {
         if (this.isPaused) return;
         
-        // DEATH CAMERA LOCK - allow normal gameplay tracking but prevent dramatic movements
-        if (this.deathCameraLocked) {
-            // Allow normal camera tracking but prevent large movements
-            // Camera follow system - track first ball (if exists)
-            if (this.balls.length > 0) {
-                this.cameraTarget.x = this.balls[0].position.x * 0.15;
-                this.cameraTarget.z = this.balls[0].position.z * 0.1;
-            
-                const ballSpeed = Math.sqrt(this.ballVelocities[0].x ** 2 + this.ballVelocities[0].z ** 2);
-                this.cameraTarget.zoom = 22 + ballSpeed * 2;
-            }
-            
-            // Additional zoom based on paddle horizontal position (centered = default, sides = zoom in slightly)
-            const paddleOffsetFromCenter = Math.abs(this.paddle1.position.x); // 0 at center, 10 at edge
-            const paddleZoom = (paddleOffsetFromCenter / 10) * 1.5; // 0 to 1.5 units of zoom
-            this.cameraTarget.zoom += paddleZoom;
-            
-            // Smooth camera movement but limited during death
-            const currentPos = this.camera.position;
-            const targetX = this.cameraTarget.x;
-            const targetZ = this.cameraTarget.zoom + this.cameraTarget.z;
-            
-            // Only allow small movements during death
-            const maxMovement = 0.5; // Limit movement to 0.5 units
-            const deltaX = Math.max(-maxMovement, Math.min(maxMovement, (targetX - currentPos.x) * this.cameraSmooth));
-            const deltaZ = Math.max(-maxMovement, Math.min(maxMovement, (targetZ - currentPos.z) * this.cameraSmooth));
-            
-            currentPos.x += deltaX;
-            currentPos.z += deltaZ;
-            
-            // Look at target with paddle direction offset
-            this.camera.lookAt(this.cameraTarget.x + this.cameraLookOffset, -4, this.cameraTarget.z);
+        
+        // Camera reset transition override (smooth return to default position)
+        if (this.cameraResetTransition && this.cameraResetTransition.active) {
+            this.updateCameraResetTransition();
             return;
         }
         
@@ -5910,18 +5954,21 @@ class TronPong {
         }
         
         if (this.deathResetPhase === 5) {
-            // Phase 5: Reset camera and spawn new ball
+            // Phase 5: Reset camera to default gameplay position and spawn new ball
             this.camera.fov = 75;
             this.camera.updateProjectionMatrix();
-            // NO CAMERA POSITION RESET - keep camera locked in place
+            
+            // NO CAMERA RESET - just let normal gameplay camera continue
+            // Camera will naturally return to normal gameplay behavior
+            
+            // Reset all camera targets to default
             this.cameraTarget.x = 0;
             this.cameraTarget.z = 0;
             this.cameraTarget.zoom = 22;
             this.cameraLookOffset = 0;
             this.camera.rotation.z = 0;
             
-            // Unlock camera after reset is complete
-            this.deathCameraLocked = false;
+            // NO SPECIAL CAMERA BEHAVIOR - let normal gameplay camera continue
             
             // CRITICAL: Reset timeScale to normal speed!
             this.forceNormalSpeed();
