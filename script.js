@@ -480,7 +480,7 @@ class TronPong {
             this.sounds.pause.volume = 0.6;
             
             // Music settings
-            this.sounds.goalAlarm.loop = true; // Loop the alarm while green wall is flashing
+            this.sounds.goalAlarm.loop = false; // Don't loop the alarm - play once only
             
             // Shoulder button debounce
             this.lastLBPress = false;
@@ -494,6 +494,7 @@ class TronPong {
         this.isCelebrating = false;
         this.celebrationTimer = 0;
         this.waveSoundPlayed = false;
+        this.lastWaveSoundTime = 0; // Track when wave sound was last played
         
         // RGB Split effect
         this.rgbSplitActive = false;
@@ -3797,10 +3798,12 @@ class TronPong {
         // Create traveling celebration light
         this.createCelebrationLight();
         
-        // Play wave sound effect (only once)
-        if (!this.waveSoundPlayed) {
-        this.playSound('waveBuzz');
+        // Play wave sound effect (only once, with time-based protection)
+        const currentTime = performance.now();
+        if (!this.waveSoundPlayed && (currentTime - this.lastWaveSoundTime) > 2000) {
+            this.playSound('waveBuzz');
             this.waveSoundPlayed = true;
+            this.lastWaveSoundTime = currentTime;
         }
         
         log('🎉 CELEBRATORY WAVE TRIGGERED!');
