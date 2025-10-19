@@ -3610,11 +3610,13 @@ class TronPong {
                 this.bonusCubeFlickerActive = false;
                 this.bonusCubeFlickerTimer = 0;
                 
-                // Remove any bonus light that was spawned
+                // Clean up bonus denied light when cube is removed
                 if (this.bonusLight && this.bonusLight.light) {
                     this.scene.remove(this.bonusLight.light);
                     this.bonusLight = null;
-                    log('🔴 Bonus denied light cleaned up');
+                    log('🔴 Bonus denied light cleaned up with cube');
+                } else {
+                    log('🔴 No bonus light to clean up when cube removed');
                 }
                 
                 log('🔴 BONUS CUBE REMOVED after red flicker');
@@ -3649,19 +3651,11 @@ class TronPong {
         }
         
         // Update bonus light blinking (same timing as mesh)
-        if (this.bonusLight && this.bonusLight.active) {
-            const elapsed = performance.now() - this.bonusLight.startTime;
-            if (elapsed >= this.bonusLight.duration) {
-                // Remove light after duration
-                this.scene.remove(this.bonusLight.light);
-                this.bonusLight = null;
-                log('🔴 Bonus denied light expired and cleaned up');
-            } else {
-                // Blink light with same timing as mesh (immediate red blinking)
-                const blinkCycle = (this.bonusCubeFlickerTimer % 0.15) / 0.15; // Match cube timing
-                const isOn = blinkCycle < 0.6; // 60% on, 40% off
-                this.bonusLight.light.intensity = isOn ? 8.0 : 0.0;
-            }
+        if (this.bonusLight && this.bonusLight.active && this.bonusCubeFlickerActive) {
+            // Blink light with same timing as mesh
+            const blinkCycle = (this.bonusCubeFlickerTimer % 0.15) / 0.15; // Match cube timing exactly
+            const isOn = blinkCycle < 0.6; // 60% on, 40% off - same as mesh
+            this.bonusLight.light.intensity = isOn ? 8.0 : 0.0;
         }
         
         // Safety check: If bonus cube is gone but light still exists, clean it up
@@ -3669,6 +3663,13 @@ class TronPong {
             this.scene.remove(this.bonusLight.light);
             this.bonusLight = null;
             log('🔴 Safety cleanup: Bonus light removed (cube was already gone)');
+        }
+        
+        // Additional safety check: If bonus light exists but no cube, clean it up
+        if (this.bonusLight && !this.bonusCube) {
+            log('🔴 Additional safety check: Cleaning up orphaned bonus light');
+            this.scene.remove(this.bonusLight.light);
+            this.bonusLight = null;
         }
         
         // Spawn scale animation
@@ -4594,7 +4595,7 @@ class TronPong {
         this.bonusLight = {
             light: bonusLight,
             startTime: performance.now(),
-            duration: 2000, // 2 seconds
+            duration: 1000, // 1 second - match cube flicker duration
             active: true
         };
         
