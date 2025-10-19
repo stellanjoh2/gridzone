@@ -3,7 +3,7 @@
 
 // Production mode - disable console logs on live site for better performance
 const isProduction = window.location.hostname === 'gridzone.online' || window.location.hostname === 'stellanjoh2.github.io';
-const log = isProduction ? () => {} : console.log;
+const log = isProduction ? () => {} : log;
 // - Object pooling for impact particles (prevents memory leaks)
 // - Enhanced particle count: 800 particles (optimized with smart updates)
 // - Smart particle updates (alternating frames & particles)
@@ -522,10 +522,10 @@ class TronPong {
             waveDirection: 1 // 1 = towards player, -1 = towards enemy
         };
             
-            console.log('Sounds loaded successfully!');
-            console.log('🎵 Music tracks loaded:', this.musicTracks.length);
+            log('Sounds loaded successfully!');
+            log('🎵 Music tracks loaded:', this.musicTracks.length);
         } catch (e) {
-            console.log('Could not load sounds:', e);
+            log('Could not load sounds:', e);
         }
     }
     
@@ -533,10 +533,10 @@ class TronPong {
         const sound = this.sounds[soundName];
         if (sound) {
             sound.currentTime = 0;
-            sound.play().catch(e => console.log('Audio play failed for', soundName, ':', e));
-            console.log('🎵 Playing sound:', soundName);
+            sound.play().catch(e => log('Audio play failed for', soundName, ':', e));
+            log('🎵 Playing sound:', soundName);
         } else {
-            console.log('❌ Sound not found:', soundName);
+            log('❌ Sound not found:', soundName);
         }
     }
     
@@ -574,7 +574,7 @@ class TronPong {
                 this.sounds.music.currentTime = 0;
             }
             this.showTrackName(newTrack.name, true); // Pass true for magenta styling
-            console.log('🎵 No Music (Muted)');
+            log('🎵 No Music (Muted)');
             return;
         }
         
@@ -584,13 +584,13 @@ class TronPong {
         
         // Play if game started AND (was playing OR coming from "No Music")
         if (this.gameStarted && (wasPlaying || wasOnNoMusic)) {
-            this.sounds.music.play().catch(e => console.log('Could not play new track'));
+            this.sounds.music.play().catch(e => log('Could not play new track'));
         }
         
         // Show track name
         this.showTrackName(newTrack.name);
         
-        console.log('🎵 Now playing:', newTrack.name);
+        log('🎵 Now playing:', newTrack.name);
     }
     
     showTrackName(trackName, isMuted = false) {
@@ -647,7 +647,7 @@ class TronPong {
                 duration: duration,
                 weakMagnitude: intensity * 0.5,
                 strongMagnitude: intensity
-            }).catch(e => console.log('Rumble not supported'));
+            }).catch(e => log('Rumble not supported'));
         }
     }
     
@@ -1281,7 +1281,7 @@ class TronPong {
         this.dofScene = new THREE.Scene();
         this.dofScene.add(this.dofQuad);
         
-        console.log('✓ Custom bloom & DoF effects enabled!');
+        log('✓ Custom bloom & DoF effects enabled!');
     }
     
     setupEnvironmentMap() {
@@ -1289,7 +1289,7 @@ class TronPong {
         const textureLoader = new THREE.TextureLoader();
         
         // Skip loading external cubemap - use procedural fallback directly
-        console.log('🎨 Creating procedural environment map (no external files)');
+        log('🎨 Creating procedural environment map (no external files)');
         this.createFallbackEnvMap();
     }
     
@@ -1342,7 +1342,7 @@ class TronPong {
         this.envMap.encoding = THREE.sRGBEncoding;
         
         this.updateMaterialsWithEnvMap();
-        console.log('✓ Fallback environment map created');
+        log('✓ Fallback environment map created');
     }
     
     updateMaterialsWithEnvMap() {
@@ -1366,7 +1366,7 @@ class TronPong {
             }
         });
         
-        console.log(`✓ Materials updated with environment map! (${updatedCount} materials updated)`);
+        log(`✓ Materials updated with environment map! (${updatedCount} materials updated)`);
     }
     
     
@@ -1719,7 +1719,7 @@ class TronPong {
             }
         }
         
-        console.log(`Floor created with ${this.floorCubes.length} cubes (confined within laser walls)`);
+        log(`Floor created with ${this.floorCubes.length} cubes (confined within laser walls)`);
         
         // Build spatial grid for floor glow optimization
         this.buildFloorGlowGrid();
@@ -1741,7 +1741,7 @@ class TronPong {
             this.floorGlowGrid.get(cellKey).push(cube);
         }
         
-        console.log(`🏗️ Built spatial grid with ${this.floorGlowGrid.size} cells for floor glow optimization`);
+        log(`🏗️ Built spatial grid with ${this.floorGlowGrid.size} cells for floor glow optimization`);
     }
     
     
@@ -1826,18 +1826,18 @@ class TronPong {
             ballLight.layers.set(0);
             this.scene.add(ballLight);
             this.ballLights.push(ballLight);
-            console.log(`Created light for ball ${ballIndex + 1}`);
+            log(`Created light for ball ${ballIndex + 1}`);
         } else {
             // Restore intensity for existing light (in case it was turned off)
             if (this.ballLights[ballIndex]) {
                 this.ballLights[ballIndex].intensity = 0.15;
-                console.log(`💡 Restored ball light ${ballIndex} intensity to 0.15`);
+                log(`💡 Restored ball light ${ballIndex} intensity to 0.15`);
             }
         }
         
         // Ball sound removed - no automatic sound on spawn
         
-        console.log(`Ball spawned! Total balls: ${this.balls.length}`);
+        log(`Ball spawned! Total balls: ${this.balls.length}`);
         return ball;
     }
     
@@ -2264,7 +2264,7 @@ class TronPong {
             this.rightWallCubes.push(pillar);
         }
         
-        console.log(`Walls created: Left ${this.leftWallCubes.length} pillars, Right ${this.rightWallCubes.length} pillars - CONFINED WITHIN LASER WALLS!`);
+        log(`Walls created: Left ${this.leftWallCubes.length} pillars, Right ${this.rightWallCubes.length} pillars - CONFINED WITHIN LASER WALLS!`);
     }
     
     createGoals() {
@@ -2356,7 +2356,7 @@ class TronPong {
         this.aiGoal.userData.originalColor = new THREE.Color(0xff3300); // Deep red/orange
         this.scene.add(this.aiGoal);
         
-        console.log('✨ Laser forcefield goals created!');
+        log('✨ Laser forcefield goals created!');
     }
     
     createParticles() {
@@ -2441,7 +2441,7 @@ class TronPong {
         this.particles = new THREE.Points(particleGeometry, particleMaterial);
         this.scene.add(this.particles);
         
-        console.log(`✨ Created ${particleCount} optimized particles focused around player area!`);
+        log(`✨ Created ${particleCount} optimized particles focused around player area!`);
     }
     
     setupEventListeners() {
@@ -2479,12 +2479,12 @@ class TronPong {
         this.lastStartPress = false; // Debounce for start button
         
         window.addEventListener('gamepadconnected', (e) => {
-            console.log('🎮 Gamepad connected:', e.gamepad.id);
+            log('🎮 Gamepad connected:', e.gamepad.id);
             this.gamepad = e.gamepad;
         });
         
         window.addEventListener('gamepaddisconnected', (e) => {
-            console.log('🎮 Gamepad disconnected');
+            log('🎮 Gamepad disconnected');
             this.gamepad = null;
         });
         
@@ -2581,7 +2581,7 @@ class TronPong {
                 if (Math.abs(stickX) > 0.1 || Math.abs(stickY) > 0.1) {
                     targetRotateY = stickX * 8;
                     targetRotateX = -stickY * 6;
-                    console.log('🎮 Logo rotation:', targetRotateX, targetRotateY);
+                    log('🎮 Logo rotation:', targetRotateX, targetRotateY);
                 } else {
                     targetRotateY = 0;
                     targetRotateX = 0;
@@ -2667,9 +2667,9 @@ class TronPong {
             // Add dedicated lights for logo specular highlights
             this.createLogoLights();
             
-            console.log('🌍 Single world logo created!');
-            console.log('Main logo position:', this.worldLogo.position);
-            console.log('Main logo visible:', this.worldLogo.visible);
+            log('🌍 Single world logo created!');
+            log('Main logo position:', this.worldLogo.position);
+            log('Main logo visible:', this.worldLogo.visible);
         };
         
         // Error handling for texture loading
@@ -2678,7 +2678,7 @@ class TronPong {
         };
         
         // Create a simple fallback logo (no external files needed)
-        console.log('🎨 Creating procedural logo (no external files)');
+        log('🎨 Creating procedural logo (no external files)');
         createSingleLogo(null);
     }
     
@@ -2704,7 +2704,7 @@ class TronPong {
         this.scene.add(accentLight);
         this.logoLights.push(accentLight);
         
-        console.log('💡 Logo lights created for specular highlights!');
+        log('💡 Logo lights created for specular highlights!');
     }
     
     updateWorldLogo(deltaTime) {
@@ -2766,7 +2766,7 @@ class TronPong {
         
         if (startButton && startButton.pressed) {
             if (!this.lastStartPress) {
-                console.log('🎮 Start button pressed!');
+                log('🎮 Start button pressed!');
                 this.startGame();
                 this.lastStartPress = true;
             }
@@ -2779,7 +2779,7 @@ class TronPong {
         // Common function for starting game (keyboard or gamepad)
         if (this.gameStarted) return; // Prevent double-start
         
-        console.log('🚀 Starting game...');
+        log('🚀 Starting game...');
         
         // Ensure we start with normal speed
         this.forceNormalSpeed();
@@ -2808,7 +2808,7 @@ class TronPong {
         // Delay ball spawn slightly to let camera transition start smoothly
         // This prevents visual glitch where ball appears before camera moves
         setTimeout(() => {
-        console.log('⚽ Ball spawning - clean start!');
+        log('⚽ Ball spawning - clean start!');
         this.spawnBall(0, 0, 0, {
             x: 0,      // No horizontal movement initially
             y: 0,
@@ -2850,7 +2850,7 @@ class TronPong {
             
             // Start music
             if (this.sounds.music) {
-                this.sounds.music.play().catch(e => console.log('Could not play music'));
+                this.sounds.music.play().catch(e => log('Could not play music'));
         }
     }
     
@@ -2892,7 +2892,7 @@ class TronPong {
         // Options button (button 9) to pause
         if (this.gamepad.buttons[9] && this.gamepad.buttons[9].pressed) {
             if (!this.lastPausePress) {
-                console.log('⏸️ Gamepad pause button pressed');
+                log('⏸️ Gamepad pause button pressed');
                 this.togglePause();
                 this.lastPausePress = true;
             }
@@ -2944,9 +2944,9 @@ class TronPong {
         // TEMPORARILY DISABLED TO DEBUG RANDOM RESTARTS
         // if (this.isPaused && this.gamepad.buttons[2] && this.gamepad.buttons[2].pressed) {
         //     if (!this.lastResetPress) {
-        //         console.log('🔄 Gamepad reset button pressed - intentional reset');
-        //         console.log('🔄 Gamepad button 2 state:', this.gamepad.buttons[2]);
-        //         console.log('🔄 Game is paused:', this.isPaused);
+        //         log('🔄 Gamepad reset button pressed - intentional reset');
+        //         log('🔄 Gamepad button 2 state:', this.gamepad.buttons[2]);
+        //         log('🔄 Game is paused:', this.isPaused);
         //         this.fullGameReset();
         //         this.lastResetPress = true;
         //     }
@@ -2961,14 +2961,14 @@ class TronPong {
         if (!this.gameStarted) return;
         
         this.isPaused = !this.isPaused;
-        console.log('⏸️ Game paused:', this.isPaused);
+        log('⏸️ Game paused:', this.isPaused);
         
         if (this.isPaused) {
             this.domElements.pauseMenu.style.display = 'block';
             // Play pause sound
             if (this.sounds.pause) {
                 this.sounds.pause.currentTime = 0;
-                this.sounds.pause.play().catch(e => console.log('Could not play pause sound'));
+                this.sounds.pause.play().catch(e => log('Could not play pause sound'));
             }
             
             // Activate pause camera - start from current position
@@ -2997,7 +2997,7 @@ class TronPong {
             // Play unpause sound (same sound for consistency)
             if (this.sounds.pause) {
                 this.sounds.pause.currentTime = 0;
-                this.sounds.pause.play().catch(e => console.log('Could not play unpause sound'));
+                this.sounds.pause.play().catch(e => log('Could not play unpause sound'));
             }
             
             // Deactivate pause camera
@@ -3005,7 +3005,7 @@ class TronPong {
             
             // Resume music when unpaused (only if not "No Music")
             if (this.sounds.music && this.musicTracks[this.currentTrackIndex].file !== null) {
-                this.sounds.music.play().catch(e => console.log('Could not resume music'));
+                this.sounds.music.play().catch(e => log('Could not resume music'));
             }
         }
     }
@@ -3032,7 +3032,7 @@ class TronPong {
     
     startMultiBallZoom() {
         // Quick dramatic zoom on NEW ball (enemy ball) + super slow-mo
-        console.log('🎬 MULTI-BALL CAMERA ZOOM STARTING!');
+        log('🎬 MULTI-BALL CAMERA ZOOM STARTING!');
         
         // Record current camera position
         this.multiBallZoom.startPos = {
@@ -3073,7 +3073,7 @@ class TronPong {
             this.camera.fov = this.multiBallZoom.originalFOV;
             this.camera.updateProjectionMatrix();
             
-            console.log('✅ Multi-ball sequence complete!');
+            log('✅ Multi-ball sequence complete!');
         }, this.multiBallZoom.duration);
         this.activeTimeouts.push(multiBallTimeout);
     }
@@ -3384,7 +3384,7 @@ class TronPong {
                     }
                     this.bonusActivePaddle = null;
                     this.bonusTimer = 0;
-                    console.log('⏱️ BONUS EXPIRED - Paddle back to normal');
+                    log('⏱️ BONUS EXPIRED - Paddle back to normal');
                 }
             }
             // Widening or staying wide
@@ -3435,7 +3435,7 @@ class TronPong {
     updateWaveLights() {
         // Update traveling wave lights
         if (this.waveLights.length > 0) {
-            console.log('💡 Updating', this.waveLights.length, 'traveling lights');
+            log('💡 Updating', this.waveLights.length, 'traveling lights');
         }
         
         for (let i = this.waveLights.length - 1; i >= 0; i--) {
@@ -3499,10 +3499,10 @@ class TronPong {
                 if (this.bonusLight && this.bonusLight.light) {
                     this.scene.remove(this.bonusLight.light);
                     this.bonusLight = null;
-                    console.log('🔴 Bonus denied light cleaned up');
+                    log('🔴 Bonus denied light cleaned up');
                 }
                 
-                console.log('🔴 BONUS CUBE REMOVED after red flicker');
+                log('🔴 BONUS CUBE REMOVED after red flicker');
             }
             return;
         }
@@ -3540,7 +3540,7 @@ class TronPong {
                 // Remove light after duration
                 this.scene.remove(this.bonusLight.light);
                 this.bonusLight = null;
-                console.log('🔴 Bonus denied light expired and cleaned up');
+                log('🔴 Bonus denied light expired and cleaned up');
             } else {
                 // Blink light with same timing as mesh (immediate red blinking)
                 const blinkCycle = (this.bonusCubeFlickerTimer % 0.15) / 0.15; // Match cube timing
@@ -3553,7 +3553,7 @@ class TronPong {
         if (this.bonusLight && !this.bonusCube) {
             this.scene.remove(this.bonusLight.light);
             this.bonusLight = null;
-            console.log('🔴 Safety cleanup: Bonus light removed (cube was already gone)');
+            log('🔴 Safety cleanup: Bonus light removed (cube was already gone)');
         }
         
         // Spawn scale animation
@@ -3673,7 +3673,7 @@ class TronPong {
             this.waveSoundPlayed = true;
         }
         
-        console.log('🎉 CELEBRATORY WAVE TRIGGERED!');
+        log('🎉 CELEBRATORY WAVE TRIGGERED!');
     }
     
     createCelebrationLight() {
@@ -3690,7 +3690,7 @@ class TronPong {
         this.celebrationLightStartZ = -19; // Enemy goal
         this.celebrationLightEndZ = 19;    // Player goal
         
-        console.log('✨ Celebration light created - boosted visibility');
+        log('✨ Celebration light created - boosted visibility');
     }
     
     updateCelebration(deltaTime) {
@@ -3740,7 +3740,7 @@ class TronPong {
                 this.scene.remove(this.celebrationLight);
                 this.celebrationLight = null;
                 this.celebrationLightActive = false;
-                console.log('✨ Celebration light completed');
+                log('✨ Celebration light completed');
             }
         }
         
@@ -3776,7 +3776,7 @@ class TronPong {
                 
                 // CRITICAL: Reset game speed to normal after celebration
                 this.timeScale = 1.0;
-                console.log('🎉 Celebration ended - underground light back to purple, speed reset to normal');
+                log('🎉 Celebration ended - underground light back to purple, speed reset to normal');
             }
         }
     }
@@ -3797,7 +3797,7 @@ class TronPong {
             this.wallWaveAnimation.originalHeights.set(pillar, pillar.scale.y);
         }
         
-        console.log('🌊 Starting wall wave animation (towards player)...');
+        log('🌊 Starting wall wave animation (towards player)...');
     }
     
     updateWallWaveAnimation(deltaTime) {
@@ -3849,14 +3849,14 @@ class TronPong {
         // End animation when complete - let it fade out smoothly
         if (progress >= 1.0) {
             this.wallWaveAnimation.active = false;
-            console.log('🌊 Wall wave animation complete - natural fade out!');
+            log('🌊 Wall wave animation complete - natural fade out!');
             
             // Clean up celebration light when wall waves finish
             if (this.celebrationLight && this.celebrationLightActive) {
                 this.scene.remove(this.celebrationLight);
                 this.celebrationLight = null;
                 this.celebrationLightActive = false;
-                console.log('✨ Celebration light cleaned up after wall waves finished');
+                log('✨ Celebration light cleaned up after wall waves finished');
             }
         }
     }
@@ -3869,7 +3869,7 @@ class TronPong {
         this.performanceSettings.enableBloom = true; // Full bloom effects
         this.performanceSettings.particleCount = 225; // Full particle count
         this.performanceSettings.shadowQuality = 'high'; // High quality shadows
-        console.log('🎨 Game initialized in QUALITY mode (full visual experience)');
+        log('🎨 Game initialized in QUALITY mode (full visual experience)');
     }
     
     togglePerformanceMode() {
@@ -3882,7 +3882,7 @@ class TronPong {
             this.performanceSettings.enableBloom = true; // Keep bloom but reduced quality
             this.performanceSettings.particleCount = 75; // Reduce particles more aggressively
             this.performanceSettings.shadowQuality = 'low'; // Lower shadow quality
-            console.log('⚡ Performance mode: ENABLED (optimized for 60fps)');
+            log('⚡ Performance mode: ENABLED (optimized for 60fps)');
         } else {
             // Quality mode: full visual effects
             this.performanceSettings.renderScale = 1.0; // Full resolution
@@ -3890,7 +3890,7 @@ class TronPong {
             this.performanceSettings.enableBloom = true; // Full bloom
             this.performanceSettings.particleCount = 225; // Full particles
             this.performanceSettings.shadowQuality = 'high'; // High shadow quality
-            console.log('🎨 Quality mode: ENABLED (full visual effects)');
+            log('🎨 Quality mode: ENABLED (full visual effects)');
         }
         
         // Update render target sizes and shadow quality
@@ -4020,17 +4020,17 @@ class TronPong {
             this.trackNameTimeout = null;
         }
         
-        console.log('🧹 All timeouts cleared to prevent timeScale interference');
+        log('🧹 All timeouts cleared to prevent timeScale interference');
     }
     
     forceNormalSpeed() {
         // Aggressive timeScale reset - call this whenever we need to ensure normal speed
         this.timeScale = 1.0;
-        console.log('🚀 FORCED normal speed reset');
+        log('🚀 FORCED normal speed reset');
         
         // CRITICAL: Reset ball speed multiplier to ensure consistent ball speed
         this.ballSpeedMultiplier = 1.0;
-        console.log('⚽ Ball speed multiplier reset to 1.0');
+        log('⚽ Ball speed multiplier reset to 1.0');
         
         // Clear any lingering effects
         this.goalBlinkTimer = 0;
@@ -4085,7 +4085,7 @@ class TronPong {
             this.ballStuckFrames[ballIndex]++;
             
             if (this.ballStuckFrames[ballIndex] >= this.maxStuckFrames) {
-                console.log(`🚨 Ball ${ballIndex} stuck for ${this.maxStuckFrames} frames - resetting!`);
+                log(`🚨 Ball ${ballIndex} stuck for ${this.maxStuckFrames} frames - resetting!`);
                 this.emergencyResetBall(ballIndex);
                 return true;
             }
@@ -4122,17 +4122,17 @@ class TronPong {
             obstacle: 0
         };
         
-        console.log(`🔄 Emergency reset ball ${ballIndex} - unstuck!`);
+        log(`🔄 Emergency reset ball ${ballIndex} - unstuck!`);
     }
     
     performMemoryCleanse() {
-        console.log('🧹 Starting light memory cleanse...');
+        log('🧹 Starting light memory cleanse...');
         
         // ONLY clean up what's safe and necessary
         this.cleanupImpactEffects();
         this.clearAllTimeouts();
         
-        console.log('✅ Light memory cleanse complete');
+        log('✅ Light memory cleanse complete');
     }
     
     cleanupImpactEffects() {
@@ -4169,7 +4169,7 @@ class TronPong {
         }
         this.waveLights = [];
         
-        console.log('🧹 AGGRESSIVE cleanup: All impact effects removed');
+        log('🧹 AGGRESSIVE cleanup: All impact effects removed');
     }
     
     
@@ -4196,7 +4196,7 @@ class TronPong {
         this.fpsCounter.element.textContent = 'FPS: 60';
         document.body.appendChild(this.fpsCounter.element);
         
-        console.log('📊 FPS counter created');
+        log('📊 FPS counter created');
     }
     
     toggleFPSCounter() {
@@ -4204,7 +4204,7 @@ class TronPong {
         if (this.fpsCounter.element) {
             this.fpsCounter.element.style.display = this.fpsCounter.visible ? 'block' : 'none';
         }
-        console.log(`📊 FPS counter ${this.fpsCounter.visible ? 'shown' : 'hidden'}`);
+        log(`📊 FPS counter ${this.fpsCounter.visible ? 'shown' : 'hidden'}`);
     }
     
     updateFPSCounter() {
@@ -4248,7 +4248,7 @@ class TronPong {
             
             // Trigger cleanse after consecutive low FPS readings
             if (this.memoryManagement.consecutiveLowFps >= this.memoryManagement.maxConsecutiveLowFps) {
-                console.log(`🧹 Auto-memory cleanse triggered: FPS ${this.fpsCounter.fps} for ${this.memoryManagement.consecutiveLowFps} seconds`);
+                log(`🧹 Auto-memory cleanse triggered: FPS ${this.fpsCounter.fps} for ${this.memoryManagement.consecutiveLowFps} seconds`);
                 this.performMemoryCleanse();
                 this.memoryManagement.consecutiveLowFps = 0;
                 this.memoryManagement.lastCleanse = currentTime;
@@ -4260,7 +4260,7 @@ class TronPong {
         
         // Periodic cleanse every 60 seconds
         if (currentTime - this.memoryManagement.lastCleanse >= this.memoryManagement.cleanseInterval) {
-            console.log('🧹 Periodic memory cleanse triggered (60s interval)');
+            log('🧹 Periodic memory cleanse triggered (60s interval)');
             this.performMemoryCleanse();
             this.memoryManagement.lastCleanse = currentTime;
         }
@@ -4276,7 +4276,7 @@ class TronPong {
                 pillar.position.y = (originalHeight - 1) * 0.5;
             }
         }
-        console.log('🏗️ Wall heights reset to normal');
+        log('🏗️ Wall heights reset to normal');
     }
     
     spawnBonusCube() {
@@ -4286,7 +4286,7 @@ class TronPong {
         }
         
         // Play bonus appear sound
-        console.log('🎵 Playing bonus appear sound...');
+        log('🎵 Playing bonus appear sound...');
         this.playSound('bonusAppear');
         
         // Filter floor tiles to only playable arena area
@@ -4381,7 +4381,7 @@ class TronPong {
         // Play bonus spawn sound
         this.playSound('bonusSpawn');
         
-        console.log('🟢 BONUS CUBE SPAWNED!');
+        log('🟢 BONUS CUBE SPAWNED!');
     }
     
     checkBonusCubeCollision() {
@@ -4395,9 +4395,9 @@ class TronPong {
             // Collision detected!
             if (distance < 1.5) {
                 // Check who hit it based on this specific ball's ownership
-                console.log(`🎯 Bonus collision: Ball ${i} owner = ${this.ballOwners[i]}`);
+                log(`🎯 Bonus collision: Ball ${i} owner = ${this.ballOwners[i]}`);
                 if (this.ballOwners[i] === 'player') {
-                    console.log('✅ Player gets bonus!');
+                    log('✅ Player gets bonus!');
                     this.triggerBonus();
                     // Remove bonus cube immediately on player hit
                     // Remove ambient light
@@ -4413,7 +4413,7 @@ class TronPong {
                         this.bonusLight = null;
                     }
                 } else {
-                    console.log('❌ AI gets bonus denied!');
+                    log('❌ AI gets bonus denied!');
                     this.triggerBonusLoss();
                     // Start flicker animation (cube removed after flicker)
                 }
@@ -4423,7 +4423,7 @@ class TronPong {
     }
     
     triggerBonus() {
-        console.log('🎁 BONUS COLLECTED BY PLAYER!');
+        log('🎁 BONUS COLLECTED BY PLAYER!');
         
         // Play success sound
         this.playSound('multiBall'); // Nice uplifting sound!
@@ -4450,11 +4450,11 @@ class TronPong {
         this.bonusTimer = this.bonusDuration;
         this.paddleWidthTransition = 0; // Start transition
         
-        console.log('✨ PLAYER PADDLE WIDENING!');
+        log('✨ PLAYER PADDLE WIDENING!');
     }
     
     triggerBonusLoss() {
-        console.log('💀 ENEMY HIT BONUS - Red flicker then disappear!');
+        log('💀 ENEMY HIT BONUS - Red flicker then disappear!');
         
         // Play denied sound
         this.playSound('bonusDenied');
@@ -4723,7 +4723,7 @@ class TronPong {
         // Make it VERY visible - change base color too
         randomCube.material.color.setHex(0xff0033);
         
-        console.log('🔴 RED OBSTACLE SPAWNED at:', randomCube.position.x, randomCube.position.z);
+        log('🔴 RED OBSTACLE SPAWNED at:', randomCube.position.x, randomCube.position.z);
     }
     
     updatePlayerPaddle() {
@@ -5169,7 +5169,7 @@ class TronPong {
         if (playerDied) {
             // NUCLEAR OPTION: IMMEDIATE timeScale reset - NO EXCEPTIONS
             this.timeScale = 1.0;
-            console.log('🚀 NUCLEAR: IMMEDIATE speed reset on death - NO EXCEPTIONS');
+            log('🚀 NUCLEAR: IMMEDIATE speed reset on death - NO EXCEPTIONS');
             
             // LOCK CAMERA MOVEMENT - prevent dramatic movements but allow normal tracking
             this.deathCameraLocked = true;
@@ -5188,7 +5188,7 @@ class TronPong {
             
             // CLEANUP AFTER DEATH: Clear all accumulated effects
             const deathCleanupTimeout = setTimeout(() => {
-                console.log('🧹 Post-death cleanup triggered');
+                log('🧹 Post-death cleanup triggered');
                 this.cleanupImpactEffects();
             }, 1000); // Clean up 1 second after death sequence starts
             this.activeTimeouts.push(deathCleanupTimeout);
@@ -5219,7 +5219,7 @@ class TronPong {
             // Turn off ball light for this ball (will be restored when ball respawns)
             if (this.ballLights[removal.index]) {
                 this.ballLights[removal.index].intensity = 0;
-                console.log(`💡 Ball light ${removal.index} turned off (ball removed)`);
+                log(`💡 Ball light ${removal.index} turned off (ball removed)`);
             }
             
             // Stop ball sound for this ball
@@ -5242,7 +5242,7 @@ class TronPong {
                 
                 // NUCLEAR OPTION: IMMEDIATE timeScale reset - NO EXCEPTIONS
                 this.timeScale = 1.0;
-                console.log('🚀 NUCLEAR: IMMEDIATE speed reset on win - NO EXCEPTIONS');
+                log('🚀 NUCLEAR: IMMEDIATE speed reset on win - NO EXCEPTIONS');
                 
                 // Flash AI goal GREEN (ball went past AI) - WIN!
                 this.flashGoalGreen(this.aiGoal);
@@ -5252,7 +5252,7 @@ class TronPong {
                 
                 // CLEANUP AFTER WIN: Clear all accumulated effects
                 const winCleanupTimeout = setTimeout(() => {
-                    console.log('🧹 Post-win cleanup triggered');
+                    log('🧹 Post-win cleanup triggered');
                     this.cleanupImpactEffects();
                 }, 1000); // Clean up 1 second after win sequence starts
                 this.activeTimeouts.push(winCleanupTimeout);
@@ -5415,13 +5415,13 @@ class TronPong {
             this.cameraTarget.x = 0;
             this.cameraTarget.z = 0;
             this.cameraTarget.zoom = 22;
-            console.log('✅ Camera transition complete - gameplay started!');
+            log('✅ Camera transition complete - gameplay started!');
         }
     }
     
     startCameraTransition() {
         // Begin smooth transition from start menu to gameplay
-        console.log('🎬 Starting camera transition...');
+        log('🎬 Starting camera transition...');
         
         // Deactivate start menu camera
         this.startMenuCamera.active = false;
@@ -5587,7 +5587,7 @@ class TronPong {
                 this.worldLightBoost = 0;
                 this.overheadLight.intensity = 6.75; // Reset to your light base intensity (10% decrease)
                 this.overheadLight2.intensity = 18.5625; // Reset to enemy light base intensity (10% increase)
-                console.log('💡 Light intensities reset - Overhead1:', this.overheadLight.intensity, 'Overhead2:', this.overheadLight2.intensity);
+                log('💡 Light intensities reset - Overhead1:', this.overheadLight.intensity, 'Overhead2:', this.overheadLight2.intensity);
             }
         }
         
@@ -5644,7 +5644,7 @@ class TronPong {
     
     resetBallAfterDeath() {
         // Optimized reset specifically for death scenario - spreads work across frames
-        console.log('🔄 Optimized death reset starting...');
+        log('🔄 Optimized death reset starting...');
         
         // Phase 1: Immediate cleanup (spread across multiple frames)
         this.deathResetPhase = 1;
@@ -5816,7 +5816,7 @@ class TronPong {
             this.deathResetPhase = 0;
             this.deathResetProgress = 0;
             
-            console.log('✅ Optimized death reset complete!');
+            log('✅ Optimized death reset complete!');
         }
     }
 
@@ -5948,8 +5948,8 @@ class TronPong {
     }
     
     fullGameReset() {
-        console.log('🔄 Full game reset initiated...');
-        console.log('🔄 Reset called from:', new Error().stack);
+        log('🔄 Full game reset initiated...');
+        log('🔄 Reset called from:', new Error().stack);
         
         this.playSound('menuSelect'); // Play menu sound on reset
         
@@ -6018,12 +6018,12 @@ class TronPong {
             this.scene.remove(this.celebrationLight);
             this.celebrationLight = null;
             this.celebrationLightActive = false;
-            console.log('✨ Celebration light cleaned up during game reset');
+            log('✨ Celebration light cleaned up during game reset');
         }
         
         // Music keeps playing (don't stop it)
         
-        console.log('✅ Full game reset complete - continuing gameplay!');
+        log('✅ Full game reset complete - continuing gameplay!');
     }
     
     updateScore() {
@@ -6046,7 +6046,7 @@ class TronPong {
             this.currentCombo = this.consecutiveHits / 2;
             this.domElements.combo.textContent = `${this.currentCombo}X COMBO`;
             
-            console.log(`COMBO! ${this.currentCombo}X - consecutiveHits: ${this.consecutiveHits}`);
+            log(`COMBO! ${this.currentCombo}X - consecutiveHits: ${this.consecutiveHits}`);
             
             // Remove and re-add class to retrigger animation
             this.domElements.combo.classList.remove('active');
@@ -6152,7 +6152,7 @@ class TronPong {
         } else if (this.goalBlinkTimer <= 0 && this.goalBlinkTarget) {
             // Timer expired - restore normal speed
             this.timeScale = 1.0;
-            console.log('🚀 Speed restored to normal (timer expired)');
+            log('🚀 Speed restored to normal (timer expired)');
             
             // Don't hard reset - let the fade complete naturally
             // The fade should have already reached neutral values
@@ -6221,7 +6221,7 @@ class TronPong {
                     this.overheadLight2.color.setHex(0xff6600);
             this.overheadLight.intensity = 6.75; // Use your light base intensity (10% decrease)
             this.overheadLight2.intensity = 18.5625; // Use enemy light base intensity (10% increase)
-                    console.log('🎯 Goal fade complete - Overhead1:', this.overheadLight.intensity, 'Overhead2:', this.overheadLight2.intensity);
+                    log('🎯 Goal fade complete - Overhead1:', this.overheadLight.intensity, 'Overhead2:', this.overheadLight2.intensity);
                     // Remove from tracking when complete
                     this.activeIntervals = this.activeIntervals.filter(interval => interval.id !== fadeTimer);
                 }
@@ -6247,7 +6247,7 @@ class TronPong {
         
         // SLOW MOTION on win!
         this.timeScale = 0.3; // Slow down to 30% speed
-        console.log('🐌 Slow motion activated on win');
+        log('🐌 Slow motion activated on win');
         
         // Start fast blink animation!
         this.goalBlinkTimer = 2.5; // Blink for 2.5 seconds
@@ -6261,7 +6261,7 @@ class TronPong {
         // Play repeating alarm sound!
         if (this.sounds.goalAlarm) {
             this.sounds.goalAlarm.currentTime = 0;
-            this.sounds.goalAlarm.play().catch(e => console.log('Could not play goal alarm'));
+            this.sounds.goalAlarm.play().catch(e => log('Could not play goal alarm'));
         }
         
         // Start fade after celebration (2 seconds)
@@ -6306,7 +6306,7 @@ class TronPong {
             
             // Return to normal speed
             this.timeScale = 1.0;
-            console.log('🚀 Speed restored to normal');
+            log('🚀 Speed restored to normal');
             
             // Stop blinking
             this.goalBlinkTimer = 0;
@@ -6346,12 +6346,12 @@ class TronPong {
             // Force normal speed after celebration ends
             if (this.isCelebrating === false && this.timeScale !== 1.0) {
                 this.timeScale = 1.0;
-                console.log('🚀 Speed forced to normal after celebration ended');
+                log('🚀 Speed forced to normal after celebration ended');
             }
             
             if (!allowSlowMotion && this.timeScale !== 1.0) {
                 this.timeScale = 1.0;
-                console.log('🚀 NUCLEAR: timeScale forced to 1.0 - was:', this.timeScale);
+                log('🚀 NUCLEAR: timeScale forced to 1.0 - was:', this.timeScale);
             }
         }
         
@@ -6419,7 +6419,7 @@ class TronPong {
         
         // DEBUG: Log FPS drops to help identify performance issues (DISABLED FOR PERFORMANCE)
         // if (this.fpsCounter.fps < 40 && this.fpsCounter.fps > 0) {
-        //     console.log(`⚠️ FPS DROP DETECTED: ${this.fpsCounter.fps} FPS - Performance mode: ${this.performanceMode}, TimeScale: ${this.timeScale}, Balls: ${this.balls.length}, Trails: ${this.trails.length}, Impact particles: ${this.impactParticles.length}, Active timeouts: ${this.activeTimeouts.length}, Active intervals: ${this.activeIntervals.length}`);
+        //     log(`⚠️ FPS DROP DETECTED: ${this.fpsCounter.fps} FPS - Performance mode: ${this.performanceMode}, TimeScale: ${this.timeScale}, Balls: ${this.balls.length}, Trails: ${this.trails.length}, Impact particles: ${this.impactParticles.length}, Active timeouts: ${this.activeTimeouts.length}, Active intervals: ${this.activeIntervals.length}`);
         // }
         
         // Cleanup math cache periodically
@@ -6455,11 +6455,11 @@ class TronPong {
         //         if (!inSpecialState) {
         //             if (currentColor1 !== orangeColor) {
         //                 this.overheadLight.color.setHex(orangeColor);
-        //                 console.log('🔧 Safety fix: Overhead light 1 forced back to orange');
+        //                 log('🔧 Safety fix: Overhead light 1 forced back to orange');
         //             }
         //             if (currentColor2 !== orangeColor) {
         //                 this.overheadLight2.color.setHex(orangeColor);
-        //                 console.log('🔧 Safety fix: Overhead light 2 forced back to orange');
+        //                 log('🔧 Safety fix: Overhead light 2 forced back to orange');
         //             }
         //         }
         //     }
@@ -6509,25 +6509,25 @@ class TronPong {
 // Initialize game when page loads
 let game;
 window.addEventListener('load', () => {
-    console.log('🚀 Starting Tron Pong game...');
+    log('🚀 Starting Tron Pong game...');
     game = new TronPong();
-    console.log('✅ Game initialized successfully');
+    log('✅ Game initialized successfully');
     
     // Debug function - call from console: forceUpdateEnvMap()
     window.forceUpdateEnvMap = () => {
-        console.log('🔧 Forcing environment map update...');
-        console.log('EnvMap exists:', !!game.envMap);
+        log('🔧 Forcing environment map update...');
+        log('EnvMap exists:', !!game.envMap);
         if (game.envMap) {
-            console.log('EnvMap details:', game.envMap);
+            log('EnvMap details:', game.envMap);
         }
         game.updateMaterialsWithEnvMap();
     };
     
     window.testEnvMap = () => {
-        console.log('🧪 Testing environment map setup...');
-        console.log('Game instance:', game);
-        console.log('EnvMap:', game.envMap);
-        console.log('Scene children:', game.scene.children.length);
+        log('🧪 Testing environment map setup...');
+        log('Game instance:', game);
+        log('EnvMap:', game.envMap);
+        log('Scene children:', game.scene.children.length);
         
         // Find and log materials
         let metalMaterials = 0;
@@ -6535,7 +6535,7 @@ window.addEventListener('load', () => {
             if (object.isMesh && object.material && object.material.isMeshStandardMaterial) {
                 if (object.material.metalness > 0.5) {
                     metalMaterials++;
-                    console.log('Metallic material found:', {
+                    log('Metallic material found:', {
                         metalness: object.material.metalness,
                         roughness: object.material.roughness,
                         hasEnvMap: !!object.material.envMap,
@@ -6544,6 +6544,6 @@ window.addEventListener('load', () => {
                 }
             }
         });
-        console.log(`Total metallic materials: ${metalMaterials}`);
+        log(`Total metallic materials: ${metalMaterials}`);
     };
 });
