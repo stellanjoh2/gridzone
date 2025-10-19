@@ -4032,7 +4032,7 @@ class TronPong {
         
         // Start celebration - begin smooth transition to cyan
         this.isCelebrating = true;
-        this.celebrationTimer = 3000; // 3 seconds celebration
+        this.celebrationTimer = 2500; // 2.5 seconds celebration
         
         // Start smooth color transition to cyan
         this.undergroundLightTransition.active = true;
@@ -4124,7 +4124,7 @@ class TronPong {
         if (this.isCelebrating) {
             this.celebrationTimer -= deltaTime * 1000; // Convert to milliseconds
             
-            if (this.celebrationTimer <= 1000) { // Start transition back 1 second before end
+            if (this.celebrationTimer <= 800) { // Start transition back 0.8 seconds before end
                 if (this.undergroundLightTransition.direction === 1) { // Only start once
                     // Start transition back to purple
                     this.undergroundLightTransition.active = true;
