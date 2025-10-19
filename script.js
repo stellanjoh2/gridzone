@@ -306,6 +306,7 @@ class TronPong {
         this.particleOpacityTimer = 0.0; // Timer for opacity fade-back
         this.particleOpacityFadeSpeed = 2.0; // How fast opacity returns to default
         
+        
         // Environment map for reflections
         this.envMap = null;
         
@@ -450,6 +451,7 @@ class TronPong {
             }
         }
     }
+    
     
     loadSounds() {
         
@@ -3070,7 +3072,9 @@ class TronPong {
         const leftStickX = this.gamepad.axes[0];
         const deadzone = 0.15;
         
-        if (Math.abs(leftStickX) > deadzone) {
+        const isGamepadMoving = Math.abs(leftStickX) > deadzone;
+        
+        if (isGamepadMoving) {
             // Calculate paddle half-width (accounts for bonus effect)
             const scaleFactor = 1.0 + (this.bonusActivePaddle === this.paddle1 ? this.paddleWidthTransition : 0);
             const paddleHalfWidth = 2.5 * scaleFactor; // Normal: 2.5, Bonus: 5.0
@@ -3091,6 +3095,7 @@ class TronPong {
                 this.paddle1.position.x = Math.min(this.paddle1.position.x, maxX);
             }
         }
+        
         
         // Options button (button 9) to pause
         if (this.gamepad.buttons[9] && this.gamepad.buttons[9].pressed) {
@@ -5364,6 +5369,7 @@ class TronPong {
         // Store previous position for tilt calculation
         const previousX = this.paddle1.position.x;
         
+        
         // Calculate paddle half-width (accounts for bonus effect)
         const scaleFactor = 1.0 + (this.bonusActivePaddle === this.paddle1 ? this.paddleWidthTransition : 0);
         const paddleHalfWidth = 2.5 * scaleFactor; // Normal: 2.5, Bonus: 5.0
@@ -5384,6 +5390,7 @@ class TronPong {
             // Clamp to prevent wall intersection
             this.paddle1.position.x = Math.min(this.paddle1.position.x, maxX);
         }
+        
         
         // Calculate paddle velocity for camera tilt
         const paddleVelocity = this.paddle1.position.x - previousX;
@@ -5417,6 +5424,7 @@ class TronPong {
         
         // Store previous position for tilt calculation
         const previousX = this.paddle2.position.x;
+        
         
         // Track closest ball moving towards AI
         let closestBall = null;
@@ -5463,6 +5471,7 @@ class TronPong {
                 // Clamp to prevent wall intersection
                 this.paddle2.position.x = Math.max(this.paddle2.position.x, minX);
             }
+        
         
         // Calculate paddle velocity for tilt
         const paddleVelocity = this.paddle2.position.x - previousX;
