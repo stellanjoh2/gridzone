@@ -3,7 +3,7 @@
 
 // Production mode - disable console logs on live site for better performance
 const isProduction = window.location.hostname === 'gridzone.online' || window.location.hostname === 'stellanjoh2.github.io';
-const log = isProduction ? () => {} : log;
+const log = isProduction ? () => {} : console.log;
 // - Object pooling for impact particles (prevents memory leaks)
 // - Enhanced particle count: 800 particles (optimized with smart updates)
 // - Smart particle updates (alternating frames & particles)
@@ -1270,18 +1270,19 @@ class TronPong {
             `
         };
         
-        this.dofMaterial = new THREE.ShaderMaterial({
-            uniforms: dofShader.uniforms,
-            vertexShader: dofShader.vertexShader,
-            fragmentShader: dofShader.fragmentShader,
-            depthTest: false
-        });
+        // DoF disabled - causing black screen issues
+        // this.dofMaterial = new THREE.ShaderMaterial({
+        //     uniforms: dofShader.uniforms,
+        //     vertexShader: dofShader.vertexShader,
+        //     fragmentShader: dofShader.fragmentShader,
+        //     depthTest: false
+        // });
         
-        this.dofQuad = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), this.dofMaterial);
-        this.dofScene = new THREE.Scene();
-        this.dofScene.add(this.dofQuad);
+        // this.dofQuad = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), this.dofMaterial);
+        // this.dofScene = new THREE.Scene();
+        // this.dofScene.add(this.dofQuad);
         
-        log('✓ Custom bloom & DoF effects enabled!');
+        log('✓ Custom bloom effects enabled! (DoF disabled - was causing black screen)');
     }
     
     setupEnvironmentMap() {
