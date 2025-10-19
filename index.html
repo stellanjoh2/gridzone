@@ -376,6 +376,19 @@
             border: 2px solid #00FEFC;
             box-shadow: 0 0 30px #00FEFC;
             z-index: 150;
+            opacity: 0;
+            animation: pauseMenuFadeIn 0.25s ease-out forwards;
+        }
+        
+        @keyframes pauseMenuFadeIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
         }
         
         #pauseMenu h2 {

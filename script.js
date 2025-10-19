@@ -3122,6 +3122,8 @@ class TronPong {
         
         if (this.isPaused) {
             this.domElements.pauseMenu.style.display = 'block';
+            // Hide score UI during pause
+            this.domElements.ui.style.display = 'none';
             // Play pause sound
             if (this.sounds.pause) {
                 this.sounds.pause.currentTime = 0;
@@ -3151,6 +3153,8 @@ class TronPong {
             }
         } else {
             this.domElements.pauseMenu.style.display = 'none';
+            // Don't show UI element - it contains "PRESS SPACE TO START" text
+            // Score UI is handled separately by the score display
             // Play unpause sound (same sound for consistency)
             if (this.sounds.pause) {
                 this.sounds.pause.currentTime = 0;
