@@ -4376,26 +4376,19 @@ class TronPong {
                     pillar.material.emissiveIntensity = lightIntensity * 2.0; // Scale intensity
                 }
                 
-                // Store the peak intensity for fade-out
                 pillar.userData.peakEmissiveIntensity = lightIntensity * 2.0;
             } else {
-                // Segment is back on ground - fade out emissive over 0.5s
+                // Fade out emissive over 0.5s
                 if (pillar.userData.peakEmissiveIntensity > 0) {
-                    // Calculate fade-out progress (0 = full glow, 1 = completely faded)
-                    const fadeProgress = Math.min(progress * 2.0, 1.0); // 0.5s fade-out (progress goes 0-1 over 3s, so *2 for 1.5s, but we want 0.5s)
-                    const fadeProgress_05s = Math.min((elapsed / 1000) * 2.0, 1.0); // 0.5s fade-out from wave start
-                    
+                    const fadeProgress_05s = Math.min((elapsed / 1000) * 2.0, 1.0); // 0.5s fade-out
                     const currentIntensity = pillar.userData.peakEmissiveIntensity * (1.0 - fadeProgress_05s);
-                    
                     if (currentIntensity > 0.01) {
-                        // Still glowing - keep wave colors with fading intensity
+                        // Keep wave colors with fading intensity
                         if (this.wallWaveAnimation.waveDirection === 1) {
-                            // Player wave - cyan colors
                             pillar.material.color.setHex(0x00FEFC);
                             pillar.material.emissive.setHex(0x00FEFC);
                             pillar.material.emissiveIntensity = currentIntensity;
                         } else {
-                            // Enemy wave - magenta colors
                             pillar.material.color.setHex(0xFF00FF);
                             pillar.material.emissive.setHex(0xFF00FF);
                             pillar.material.emissiveIntensity = currentIntensity;
