@@ -57,8 +57,52 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            background: radial-gradient(ellipse at center, transparent 0%, transparent 35%, rgba(0, 0, 0, 0.4) 65%, rgba(0, 0, 0, 0.8) 100%);
+            background: radial-gradient(ellipse at center, transparent 0%, transparent 35%, rgba(11, 0, 29, 0.4) 65%, rgba(11, 0, 29, 0.8) 100%);
             z-index: 50;
+            opacity: 1;
+            transition: opacity 0.8s ease-in-out;
+        }
+        
+        /* Magenta vignette overlay for death sequence */
+        #vignette::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, transparent 35%, rgba(255, 0, 255, 0.3) 65%, rgba(255, 0, 255, 0.7) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+            pointer-events: none;
+        }
+        
+        #vignette.death::before {
+            opacity: 1;
+        }
+        
+        /* Cyan vignette overlay for win sequence */
+        #vignette::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, transparent 35%, rgba(0, 254, 252, 0.3) 65%, rgba(0, 254, 252, 0.7) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease-out;
+            pointer-events: none;
+        }
+        
+        #vignette.win::after {
+            opacity: 1;
+        }
+        
+        /* Yellow vignette overlay for bonus pickup */
+        #vignette.bonus {
+            background: radial-gradient(ellipse at center, transparent 0%, transparent 35%, rgba(255, 215, 0, 0.4) 65%, rgba(255, 215, 0, 0.8) 100%);
+            transition: background 0.2s ease-in-out;
         }
         
         /* Grain and chromatic aberration overlay */
@@ -516,7 +560,7 @@
             color: #ffffff;
             font-size: 120px;
             font-weight: bold;
-            text-shadow: 0 0 40px #ff0000, 0 0 80px #ff0000, 0 0 120px #ff0000;
+            text-shadow: 0 0 40px #ff00ff, 0 0 80px #ff00ff, 0 0 120px #ff00ff;
             pointer-events: none;
             z-index: 150;
             opacity: 0;

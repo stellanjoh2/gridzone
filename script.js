@@ -87,6 +87,7 @@ class TronPong {
         this.score = { player1: 0, player2: 0 };
         this.gameStarted = false;
         this.isPaused = false;
+        this.isGameFrozen = false; // Game freeze flag for win/death sequences
         this.timeScale = 1.0; // For slow motion effects (1.0 = normal, 0.3 = slow mo)
         
         // Combo system
@@ -655,13 +656,42 @@ class TronPong {
     }
     
     triggerRumble(intensity = 0.3, duration = 100) {
-        if (this.gamepad && this.gamepad.vibrationActuator) {
-            this.gamepad.vibrationActuator.playEffect('dual-rumble', {
+        // Get the latest gamepad state
+        const gamepads = navigator.getGamepads();
+        const gamepad = gamepads[0];
+        
+        if (gamepad && gamepad.vibrationActuator) {
+            log('🎮 Triggering rumble:', { intensity, duration, gamepadId: gamepad.id });
+            
+            // Try the modern Gamepad API vibration
+            gamepad.vibrationActuator.playEffect('dual-rumble', {
                 startDelay: 0,
                 duration: duration,
                 weakMagnitude: intensity * 0.5,
                 strongMagnitude: intensity
-            }).catch(e => log('Rumble not supported'));
+            }).catch(e => {
+                log('❌ Rumble failed:', e);
+                // Fallback to legacy vibration if available
+                if (gamepad.vibrate) {
+                    gamepad.vibrate([intensity * 100, intensity * 100]);
+                }
+            });
+        } else {
+            log('❌ No gamepad or vibrationActuator found:', { 
+                hasGamepad: !!gamepad, 
+                hasVibrationActuator: gamepad ? !!gamepad.vibrationActuator : false,
+                gamepadId: gamepad ? gamepad.id : 'none',
+                gamepadButtons: gamepad ? gamepad.buttons.length : 0,
+                gamepadAxes: gamepad ? gamepad.axes.length : 0
+            });
+            
+            // Try legacy vibration API as fallback
+            if (gamepad && gamepad.vibrate) {
+                log('🔄 Trying legacy vibrate() method');
+                gamepad.vibrate([intensity * 100, intensity * 100]);
+            } else if (gamepad) {
+                log('❌ No vibration support available for this gamepad');
+            }
         }
     }
     
@@ -3302,7 +3332,7 @@ class TronPong {
             const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle1 / 0.3);
             
             const material = this.paddle1.userData.material;
-            const originalColor = 0x00FEFC; // Lime-yellow
+            const originalColor = 0x00FEFC; // Lime-yellow (original working color)
             const whiteColor = 0xffffff;
             
             // Lerp from white back to original green
@@ -3493,6 +3523,26 @@ class TronPong {
                         leftCap.position.x = -2;
                         rightCap.position.x = 2;
                     }
+                    
+                    // RESET PADDLE TO NORMAL COLORS
+                    if (this.bonusActivePaddle === this.paddle1 && this.paddle1.material) {
+                        if (this.paddle1.material.color) {
+                            this.paddle1.material.color.setHex(0x00FEFC); // Back to cyan
+                        }
+                        if (this.paddle1.material.emissive) {
+                            this.paddle1.material.emissive.setHex(0x00FEFC); // Back to cyan emissive
+                        }
+                        if (this.paddle1.material.emissiveIntensity !== undefined) {
+                            this.paddle1.material.emissiveIntensity = 0.2; // Normal emissive intensity
+                        }
+                        
+                        // Reset overhead light to normal
+                        if (this.overheadLight1) {
+                            this.overheadLight1.color.setHex(0x00FEFC); // Back to cyan
+                            this.overheadLight1.intensity = 6.75; // Back to normal intensity
+                        }
+                    }
+                    
                     this.bonusActivePaddle = null;
                     this.bonusTimer = 0;
                     log('⏱️ BONUS EXPIRED - Paddle back to normal');
@@ -3623,9 +3673,9 @@ class TronPong {
                 font-weight: bold;
                 color: #ffffff;
                 text-shadow: 
-                    0 0 40px #00FEFC,
-                    0 0 80px #00FEFC,
-                    0 0 120px #00FEFC;
+                    0 0 40px #FFD700,
+                    0 0 80px #FFD700,
+                    0 0 120px #FFD700;
                 font-family: 'Orbitron', monospace;
                 z-index: 1000;
                 pointer-events: none;
@@ -3638,7 +3688,7 @@ class TronPong {
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                font-size: 80px;
+                font-size: 120px;
                 font-weight: bold;
                 color: #ffffff;
                 text-shadow: 0 0 20px #00FEFC;
@@ -4094,6 +4144,14 @@ class TronPong {
                 this.undergroundLightTransition.direction = 1; // Reset for next celebration
                 this.undergroundLightTransition.startColor = 0x6600cc; // Reset to purple
                 this.undergroundLightTransition.endColor = 0x00FFFF;   // Reset to pure cyan
+                
+                // Remove cyan vignette when celebration ends
+                const vignette = document.getElementById('vignette');
+                vignette.classList.remove('win');
+                
+                // UNFREEZE GAME: Resume normal gameplay after win sequence
+                this.gameSpeed = 1.0;
+                this.isGameFrozen = false;
                 
                 // Re-enable camera tracking after a brief delay
                 setTimeout(() => {
@@ -4737,6 +4795,10 @@ class TronPong {
                 log(`🎯 Bonus collision: Ball ${i} owner = ${this.ballOwners[i]}`);
                 if (this.ballOwners[i] === 'player') {
                     log('✅ Player gets bonus!');
+                    
+                    // Prevent multiple triggers by immediately deactivating
+                    this.bonusCubeActive = false;
+                    
                     this.triggerBonus();
                     // this.triggerRGBSplitBonus(); // RGB split effect for bonus pickup! - COMMENTED OUT
                     // Remove bonus cube immediately on player hit
@@ -4768,6 +4830,13 @@ class TronPong {
         // Play success sound
         this.playSound('multiBall'); // Nice uplifting sound!
         
+        // Flash yellow vignette for bonus pickup
+        const vignette = document.getElementById('vignette');
+        vignette.classList.add('bonus');
+        setTimeout(() => {
+            vignette.classList.remove('bonus');
+        }, 600); // Quick flash: 0.2s ease in + 0.4s ease out = 0.6s total (50% longer)
+        
         // Show 2X WIDTH text
         this.showBonusText();
         
@@ -4784,6 +4853,9 @@ class TronPong {
             duration: 2000, // 2 seconds
             active: true
         };
+        
+        // Keep original green paddle - just focus on width expansion
+        // (Golden transformation removed - keeping original working system)
         
         // BONUS EFFECT: 2x Paddle Width for 5 seconds!
         this.bonusActivePaddle = this.paddle1; // Player paddle
@@ -5040,7 +5112,7 @@ class TronPong {
     }
     
     updatePlayerPaddle() {
-        if (this.isPaused) return;
+        if (this.isPaused || this.isGameFrozen) return;
         
         // Store previous position for tilt calculation
         const previousX = this.paddle1.position.x;
@@ -5094,7 +5166,7 @@ class TronPong {
     }
     
     updateAIPaddle() {
-        if (!this.gameStarted || this.isPaused || this.balls.length === 0) return;
+        if (!this.gameStarted || this.isPaused || this.isGameFrozen || this.balls.length === 0) return;
         
         // Store previous position for tilt calculation
         const previousX = this.paddle2.position.x;
@@ -5161,7 +5233,7 @@ class TronPong {
     }
     
     updateBall() {
-        if (!this.gameStarted || this.isPaused) return;
+        if (!this.gameStarted || this.isPaused || this.isGameFrozen) return;
         
         // Frame skipping for collision detection in performance mode
         if (this.performanceMode) {
@@ -5552,6 +5624,10 @@ class TronPong {
             } else {
                 this.score.player1++;
                 
+                // FREEZE GAME: Stop all ball and paddle movement during win
+                this.gameSpeed = 0; // Freeze game speed
+                this.isGameFrozen = true; // Set freeze flag
+                
                 // Trigger RGB split win celebration!
                 // this.triggerRGBSplit(); // COMMENTED OUT
                 
@@ -5561,6 +5637,11 @@ class TronPong {
                 
                 // Flash AI goal GREEN (ball went past AI) - WIN!
                 this.flashGoalGreen(this.aiGoal);
+                
+                // Add cyan vignette for win celebration
+                const vignette = document.getElementById('vignette');
+                vignette.classList.add('win');
+                
                 this.triggerCelebratoryWave(); // CELEBRATORY WAVE!
                 this.playSound('score');
                 this.showAwesomeText();
@@ -5617,29 +5698,21 @@ class TronPong {
     }
     
     showMultiBallText() {
-        // Reset classes
-        this.domElements.multiBallText.classList.remove('active', 'exit');
-        void this.domElements.multiBallText.offsetWidth; // Force reflow
-        
-        // Enter with 3 hard blinks
-        this.domElements.multiBallText.classList.add('active');
-        
-        // Start exit animation after display time
-        setTimeout(() => {
-            this.domElements.multiBallText.classList.remove('active');
-            this.domElements.multiBallText.classList.add('exit');
-            
-            // Fully hide after exit animation
-            setTimeout(() => {
-                this.domElements.multiBallText.classList.remove('exit');
-            }, 600);
-        }, 1400); // Show for 1.4s before starting exit
+        // Use message queue system to prevent overlapping
+        this.queueMessage('MULTI BALL', 1400, 'default');
     }
     
     showDeathScreen() {
+        // FREEZE GAME: Stop all ball and paddle movement
+        this.gameSpeed = 0; // Freeze game speed
+        this.isGameFrozen = true; // Set freeze flag
+        
+        // Add magenta vignette for death atmosphere
+        const vignette = document.getElementById('vignette');
+        vignette.classList.add('death');
+        
         // Show death screen (transparent background, just for positioning)
         this.domElements.deathScreen.style.display = 'block';
-        
         
         // Use same animation style as "AWESOME" text
         this.domElements.deathText.classList.remove('active', 'exit');
@@ -5657,6 +5730,13 @@ class TronPong {
             setTimeout(() => {
                 this.domElements.deathText.classList.remove('exit');
                 this.domElements.deathScreen.style.display = 'none';
+                
+                // Remove magenta vignette (quick fade back to normal)
+                vignette.classList.remove('death');
+                
+                // UNFREEZE GAME: Resume normal gameplay
+                this.gameSpeed = 1.0;
+                this.isGameFrozen = false;
             }, 600);
         }, 1400); // Show for 1.4s before starting exit
     }
