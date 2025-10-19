@@ -1182,110 +1182,106 @@ class TronPong {
             `
         };
         
-        // DEPTH OF FIELD DISABLED - commented out for better performance
-        // this.blurMaterial = new THREE.ShaderMaterial({
-        //     uniforms: blurShader.uniforms,
-        //     vertexShader: blurShader.vertexShader,
-        //     fragmentShader: blurShader.fragmentShader,
-        //     depthTest: false
-        // });
+        this.blurMaterial = new THREE.ShaderMaterial({
+            uniforms: blurShader.uniforms,
+            vertexShader: blurShader.vertexShader,
+            fragmentShader: blurShader.fragmentShader,
+            depthTest: false
+        });
         
-        // this.blurQuad = new THREE.Mesh(geometry, this.blurMaterial);
+        this.blurQuad = new THREE.Mesh(geometry, this.blurMaterial);
         
-        // // Blur scene/camera
-        // this.blurScene = new THREE.Scene();
-        // this.blurScene.add(this.blurQuad);
-        // this.blurCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        // Blur scene/camera
+        this.blurScene = new THREE.Scene();
+        this.blurScene.add(this.blurQuad);
+        this.blurCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
         
-        // DEPTH OF FIELD DISABLED - commented out for better performance
         // Depth of Field shader
-        // const dofShader = {
-        //     uniforms: {
-        //         tDiffuse: { value: null },
-        //         tDepth: { value: null },
-        //         cameraNear: { value: this.camera.near },
-        //         cameraFar: { value: this.camera.far },
-        //         focusDistance: { value: 25.0 }, // Distance to the game field
-        //         focalLength: { value: 2.5 }, // Higher for more noticeable blur
-        //         aperture: { value: 0.025 } // Stronger blur for distant objects
-        //     },
-        //     vertexShader: `
-        //         varying vec2 vUv;
-        //         void main() {
-        //             vUv = uv;
-        //             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        //         }
-        //     `,
-        //     fragmentShader: `
-        //         uniform sampler2D tDiffuse;
-        //         uniform sampler2D tDepth;
-        //         uniform float cameraNear;
-        //         uniform float cameraFar;
-        //         uniform float focusDistance;
-        //         uniform float focalLength;
-        //         uniform float aperture;
-        //         varying vec2 vUv;
-        //         
-        //         float getDepth(vec2 uv) {
-        //             float depth = texture2D(tDepth, uv).r;
-        //             // Convert to linear depth
-        //             float z = depth * 2.0 - 1.0;
-        //             return (2.0 * cameraNear * cameraFar) / (cameraFar + cameraNear - z * (cameraFar - cameraNear));
-        //         }
-        //         
-        //         void main() {
-        //             float depth = getDepth(vUv);
-        //             
-        //             // Calculate circle of confusion with sharp cutoff for game field
-        //             float depthDiff = abs(depth - focusDistance);
-        //             
-        //             // Very large focus range to keep player 100% sharp
-        //             float focusRange = 25.0; // Massive range - player/ball/walls perfectly sharp
-        //             float coc = 0.0;
-        //             
-        //             if (depthDiff > focusRange) {
-        //                 // Blur things far away with stronger effect
-        //                 float distanceFromRange = depthDiff - focusRange;
-        //                 coc = (aperture * focalLength * distanceFromRange) / 30.0; // Much stronger blur
-        //                 coc = clamp(coc, 0.0, 0.06); // Higher max blur for distant objects
-        //             }
-        //             
-        //             vec4 color = vec4(0.0);
-        //             float totalWeight = 0.0;
-        //             
-        //             // Bokeh blur using hexagonal pattern
-        //             const int samples = 12;
-        //             for(int i = 0; i < samples; i++) {
-        //                 float angle = float(i) * 3.14159265 * 2.0 / float(samples);
-        //                 vec2 offset = vec2(cos(angle), sin(angle)) * coc;
-        //                 
-        //                 color += texture2D(tDiffuse, vUv + offset);
-        //                 totalWeight += 1.0;
-        //             }
-        //             
-        //             // Add center sample with more weight
-        //             color += texture2D(tDiffuse, vUv) * 2.0;
-        //             totalWeight += 2.0;
-        //             
-        //             gl_FragColor = color / totalWeight;
-        //         }
-        //     `
-        // };
+        const dofShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                tDepth: { value: null },
+                cameraNear: { value: this.camera.near },
+                cameraFar: { value: this.camera.far },
+                focusDistance: { value: 25.0 }, // Distance to the game field
+                focalLength: { value: 2.5 }, // Higher for more noticeable blur
+                aperture: { value: 0.025 } // Stronger blur for distant objects
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D tDiffuse;
+                uniform sampler2D tDepth;
+                uniform float cameraNear;
+                uniform float cameraFar;
+                uniform float focusDistance;
+                uniform float focalLength;
+                uniform float aperture;
+                varying vec2 vUv;
+                
+                float getDepth(vec2 uv) {
+                    float depth = texture2D(tDepth, uv).r;
+                    // Convert to linear depth
+                    float z = depth * 2.0 - 1.0;
+                    return (2.0 * cameraNear * cameraFar) / (cameraFar + cameraNear - z * (cameraFar - cameraNear));
+                }
+                
+                void main() {
+                    float depth = getDepth(vUv);
+                    
+                    // Calculate circle of confusion with sharp cutoff for game field
+                    float depthDiff = abs(depth - focusDistance);
+                    
+                    // Very large focus range to keep player 100% sharp
+                    float focusRange = 25.0; // Massive range - player/ball/walls perfectly sharp
+                    float coc = 0.0;
+                    
+                    if (depthDiff > focusRange) {
+                        // Blur things far away with stronger effect
+                        float distanceFromRange = depthDiff - focusRange;
+                        coc = (aperture * focalLength * distanceFromRange) / 30.0; // Much stronger blur
+                        coc = clamp(coc, 0.0, 0.06); // Higher max blur for distant objects
+                    }
+                    
+                    vec4 color = vec4(0.0);
+                    float totalWeight = 0.0;
+                    
+                    // Bokeh blur using hexagonal pattern
+                    const int samples = 12;
+                    for(int i = 0; i < samples; i++) {
+                        float angle = float(i) * 3.14159265 * 2.0 / float(samples);
+                        vec2 offset = vec2(cos(angle), sin(angle)) * coc;
+                        
+                        color += texture2D(tDiffuse, vUv + offset);
+                        totalWeight += 1.0;
+                    }
+                    
+                    // Add center sample with more weight
+                    color += texture2D(tDiffuse, vUv) * 2.0;
+                    totalWeight += 2.0;
+                    
+                    gl_FragColor = color / totalWeight;
+                }
+            `
+        };
         
-        // DEPTH OF FIELD DISABLED - commented out for better performance
-        // this.dofMaterial = new THREE.ShaderMaterial({
-        //     uniforms: dofShader.uniforms,
-        //     vertexShader: dofShader.vertexShader,
-        //     fragmentShader: dofShader.fragmentShader,
-        //     depthTest: false
-        // });
+        this.dofMaterial = new THREE.ShaderMaterial({
+            uniforms: dofShader.uniforms,
+            vertexShader: dofShader.vertexShader,
+            fragmentShader: dofShader.fragmentShader,
+            depthTest: false
+        });
         
-        // DEPTH OF FIELD DISABLED - commented out for better performance
-        // this.dofQuad = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), this.dofMaterial);
-        // this.dofScene = new THREE.Scene();
-        // this.dofScene.add(this.dofQuad);
+        this.dofQuad = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), this.dofMaterial);
+        this.dofScene = new THREE.Scene();
+        this.dofScene.add(this.dofQuad);
         
-        log('✓ Custom bloom effects enabled! (DoF disabled for better performance)');
+        log('✓ Custom bloom & DoF effects enabled!');
     }
     
     setupEnvironmentMap() {
