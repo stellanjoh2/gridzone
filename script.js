@@ -914,8 +914,8 @@ class TronPong {
         // Lens flare render target (full resolution)
         this.lensFlareRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
         
-        // Depth of Field render targets
-        this.dofRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
+        // Depth of Field render targets - DISABLED for performance
+        // this.dofRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
         this.depthRenderTarget = new THREE.WebGLRenderTarget(width, height, {
             minFilter: THREE.NearestFilter,
             magFilter: THREE.NearestFilter,
