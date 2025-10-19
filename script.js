@@ -2492,7 +2492,7 @@ class TronPong {
             // OPTIMIZATION: Focus particles around player paddle area (z = 15)
             // Most particles near player paddle where they're most visible
             const playerAreaZ = 15; // Player paddle Z position
-            const focusRadius = 15; // Focus area around player (closer to camera)
+            const focusRadius = 6; // Focus area around player (extremely close to camera)
             
             let x, y, z;
             
