@@ -493,7 +493,12 @@ class TronPong {
         // Celebration state
         this.isCelebrating = false;
         this.celebrationTimer = 0;
-        this.waveSoundPlayed = false; // Prevent multiple wave sounds
+        this.waveSoundPlayed = false;
+        
+        // RGB Split effect
+        this.rgbSplitActive = false;
+        this.rgbSplitIntensity = 0;
+        this.rgbSplitDuration = 0; // Prevent multiple wave sounds
         
         // Color transition system
         this.undergroundLightTransition = {
@@ -914,6 +919,9 @@ class TronPong {
         // Lens flare render target (full resolution)
         this.lensFlareRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
         
+        // RGB Split effect render target (full resolution)
+        this.rgbSplitRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
+        
         // Depth of Field render targets - DISABLED for performance
         // this.dofRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
         this.depthRenderTarget = new THREE.WebGLRenderTarget(width, height, {
@@ -1282,7 +1290,60 @@ class TronPong {
         // this.dofScene = new THREE.Scene();
         // this.dofScene.add(this.dofQuad);
         
+        // RGB Split effect shader
+        const rgbSplitShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                intensity: { value: 0.0 },
+                time: { value: 0.0 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D tDiffuse;
+                uniform float intensity;
+                uniform float time;
+                varying vec2 vUv;
+                
+                void main() {
+                    // Create RGB split effect by sampling different channels with offset
+                    vec2 redOffset = vec2(-intensity * 0.0125, -intensity * 0.005);
+                    vec2 greenOffset = vec2(0.0, 0.0);
+                    vec2 blueOffset = vec2(intensity * 0.0125, intensity * 0.005);
+                    
+                    // Sample each color channel with different offsets
+                    float r = texture2D(tDiffuse, vUv + redOffset).r;
+                    float g = texture2D(tDiffuse, vUv + greenOffset).g;
+                    float b = texture2D(tDiffuse, vUv + blueOffset).b;
+                    
+                    // Add some glitchy noise for extra effect
+                    float noise = sin(vUv.x * 100.0 + time * 10.0) * 0.1 * intensity;
+                    
+                    gl_FragColor = vec4(r + noise, g + noise, b + noise, 1.0);
+                }
+            `
+        };
+        
+        // RGB Split material and scene
+        this.rgbSplitMaterial = new THREE.ShaderMaterial({
+            uniforms: rgbSplitShader.uniforms,
+            vertexShader: rgbSplitShader.vertexShader,
+            fragmentShader: rgbSplitShader.fragmentShader,
+            depthTest: false
+        });
+        
+        this.rgbSplitQuad = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), this.rgbSplitMaterial);
+        this.rgbSplitScene = new THREE.Scene();
+        this.rgbSplitScene.add(this.rgbSplitQuad);
+        this.rgbSplitCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        
         log('✓ Custom bloom effects enabled! (DoF disabled - was causing black screen)');
+        log('✓ RGB Split effect ready!');
     }
     
     setupEnvironmentMap() {
@@ -2515,6 +2576,11 @@ class TronPong {
                 this.lensFlareRenderTarget.setSize(window.innerWidth, window.innerHeight);
             }
             
+            // Resize RGB split render target
+            if (this.rgbSplitRenderTarget) {
+                this.rgbSplitRenderTarget.setSize(window.innerWidth, window.innerHeight);
+            }
+            
             // Update lens flare aspect ratio
             if (this.lensFlareMaterial) {
                 this.lensFlareMaterial.uniforms.aspectRatio.value = window.innerWidth / window.innerHeight;
@@ -3418,6 +3484,24 @@ class TronPong {
         this.lensFlareOpacity = 1.0;
     }
     
+    triggerRGBSplit() {
+        // Trigger RGB split effect for win celebration
+        this.rgbSplitActive = true;
+        this.rgbSplitIntensity = 1.0;
+        this.rgbSplitDuration = 2000; // 2 seconds duration for win celebration
+        
+        log('🌈 RGB Split win celebration triggered! Duration: 2 seconds');
+    }
+    
+    triggerRGBSplitBonus() {
+        // Trigger RGB split effect for bonus pickup (smoother fade)
+        this.rgbSplitActive = true;
+        this.rgbSplitIntensity = 1.0;
+        this.rgbSplitDuration = 500; // 0.5 seconds duration for bonus pickup
+        
+        log('🌈 RGB Split bonus pickup triggered! Duration: 0.5s');
+    }
+    
     updateLensFlare(deltaTime) {
         // Fade out lens flare over time
         if (this.lensFlareOpacity > 0) {
@@ -3428,6 +3512,33 @@ class TronPong {
         // Update shader uniform
         if (this.lensFlareMaterial) {
             this.lensFlareMaterial.uniforms.flareOpacity.value = this.lensFlareOpacity;
+        }
+    }
+    
+    updateRGBSplit(deltaTime) {
+        // Update RGB split effect
+        if (this.rgbSplitActive && this.rgbSplitDuration > 0) {
+            this.rgbSplitDuration -= deltaTime * 1000; // Convert to milliseconds
+            
+            // Determine fade duration based on effect type
+            const fadeDuration = this.rgbSplitDuration > 1000 ? 2000 : 500; // 2s for wins, 0.5s for bonus
+            
+            // Smooth fade out
+            this.rgbSplitIntensity = Math.max(0, this.rgbSplitDuration / fadeDuration);
+            
+            if (this.rgbSplitDuration <= 0) {
+                this.rgbSplitActive = false;
+                this.rgbSplitIntensity = 0;
+                log('🌈 RGB Split effect ended');
+            }
+            
+            // Update shader uniforms
+            if (this.rgbSplitMaterial) {
+                this.rgbSplitMaterial.uniforms.intensity.value = this.rgbSplitIntensity;
+                this.rgbSplitMaterial.uniforms.time.value = performance.now() * 0.001;
+            } else {
+                log('❌ RGB Split material not found!');
+            }
         }
     }
     
@@ -3909,6 +4020,9 @@ class TronPong {
         }
         if (this.lensFlareRenderTarget) {
             this.lensFlareRenderTarget.setSize(width, height);
+        }
+        if (this.rgbSplitRenderTarget) {
+            this.rgbSplitRenderTarget.setSize(width, height);
         }
         if (this.blurRenderTarget) {
             this.blurRenderTarget.setSize(width, height);
@@ -4398,6 +4512,7 @@ class TronPong {
                 if (this.ballOwners[i] === 'player') {
                     log('✅ Player gets bonus!');
                     this.triggerBonus();
+                    this.triggerRGBSplitBonus(); // RGB split effect for bonus pickup!
                     // Remove bonus cube immediately on player hit
                     // Remove ambient light
                     if (this.bonusCube.userData.ambientLight) {
@@ -5238,6 +5353,9 @@ class TronPong {
                 this.flashGoalMagenta(this.playerGoal);
             } else {
                 this.score.player1++;
+                
+                // Trigger RGB split win celebration!
+                this.triggerRGBSplit();
                 
                 // NUCLEAR OPTION: IMMEDIATE timeScale reset - NO EXCEPTIONS
                 this.timeScale = 1.0;
@@ -6451,6 +6569,7 @@ class TronPong {
                 this.updateBonusEffect(deltaTime);
                 this.updateBonusCube(deltaTime);
                 this.updateLensFlare(deltaTime); // Lens flare fade
+                this.updateRGBSplit(deltaTime); // RGB split effect
                 this.updateWallWaveAnimation(deltaTime); // Wall wave animation
                 this.updateWaveLights(); // Traveling wave lights (win sequence)
                 this.updateCelebration(deltaTime); // Celebration system
@@ -6528,30 +6647,53 @@ class TronPong {
             this.renderer.render(this.scene, this.camera);
         } else {
             // Quality mode: full post-processing pipeline
-            // 1. Render scene to bloom render target with moderate exposure
+            // 1. Render scene to base render target
             this.renderer.setRenderTarget(this.bloomRenderTarget);
             this.renderer.toneMappingExposure = 2.678; // Another 10% darker (was 2.975)
             this.renderer.clear();
             this.renderer.render(this.scene, this.camera);
             
-            // 2. Render scene to fisheye render target (intermediate buffer)
+            // 2. Apply RGB split effect to geometry if active (BEFORE bloom)
+            if (this.rgbSplitActive && this.rgbSplitIntensity > 0) {
+                log('🌈 Rendering RGB split effect - Intensity:', this.rgbSplitIntensity);
+                this.renderer.setRenderTarget(this.rgbSplitRenderTarget);
+                this.rgbSplitMaterial.uniforms.tDiffuse.value = this.bloomRenderTarget.texture;
+                this.renderer.clear();
+                this.renderer.render(this.rgbSplitScene, this.rgbSplitCamera);
+                
+                // Use RGB split result for subsequent passes
+                var baseTexture = this.rgbSplitRenderTarget.texture;
+            } else {
+                // Use original scene for subsequent passes
+                var baseTexture = this.bloomRenderTarget.texture;
+            }
+            
+            // 3. Render to fisheye render target (intermediate buffer) - use RGB split result if active
             this.renderer.setRenderTarget(this.fisheyeRenderTarget);
             this.renderer.toneMappingExposure = 3.825; // Another 10% darker (was 4.25)
             this.renderer.clear();
-            this.renderer.render(this.scene, this.camera);
             
-            // 3. Render bloom on top of fisheye target with additive blending
+            if (this.rgbSplitActive && this.rgbSplitIntensity > 0) {
+                // Use RGB split result instead of re-rendering scene
+                this.fisheyeMaterial.uniforms.tDiffuse.value = baseTexture;
+                this.renderer.render(this.fisheyeScene, this.fisheyeCamera);
+            } else {
+                // Normal scene render
+                this.renderer.render(this.scene, this.camera);
+            }
+            
+            // 4. Render bloom on top of fisheye target with additive blending
+            // Use original scene for bloom (not RGB-split version)
             this.bloomMaterial.uniforms.tDiffuse.value = this.bloomRenderTarget.texture;
             this.renderer.render(this.bloomScene, this.bloomCamera);
             
-            // 4. Apply lens flare effect (creates streaks from bright lights)
+            // 5. Apply lens flare effect (creates streaks from bright lights)
             this.renderer.setRenderTarget(this.lensFlareRenderTarget);
             this.lensFlareMaterial.uniforms.tDiffuse.value = this.fisheyeRenderTarget.texture;
             this.renderer.clear();
             this.renderer.render(this.lensFlareScene, this.lensFlareCamera);
             
-            // 5. Apply fisheye distortion (no blur in pause menu)
-            // Always apply fisheye directly to screen (removed gaussian blur)
+            // 6. Apply fisheye distortion (final output)
             this.renderer.setRenderTarget(null);
             this.fisheyeMaterial.uniforms.tDiffuse.value = this.lensFlareRenderTarget.texture;
             this.renderer.clear();
