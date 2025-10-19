@@ -342,7 +342,8 @@ class TronPong {
             multiBall: null,
             goalAlarm: null,
             menuSelect: null,
-            pause: null  // New pause sound
+            pause: null,  // New pause sound
+            electroFlow: null  // New electro-flow sound for wall wave celebration
         };
         
         // Spatial audio system
@@ -436,6 +437,7 @@ class TronPong {
             this.sounds.waveBuzz = new Audio('SoundEffects/Robotic_low_buzz.wav');
             this.sounds.bonusSpawn = new Audio('SoundEffects/coin-6.wav');
             this.sounds.paddleWiden = new Audio('SoundEffects/Robotic_twang.wav'); // Use existing file
+            this.sounds.electroFlow = new Audio('SoundEffects/Robotic_low_buzz.wav'); // Wall wave celebration sound
             this.sounds.bonusAppear = new Audio('SoundEffects/coin-6.wav');
             this.sounds.pause = new Audio('SoundEffects/collect-2.wav');
             log('🎵 Loaded bonusAppear sound:', this.sounds.bonusAppear);
@@ -479,6 +481,7 @@ class TronPong {
             this.sounds.bonusSpawn.volume = 0.6;
             this.sounds.paddleWiden.volume = 0.7;
             this.sounds.bonusAppear.volume = 0.8;
+            this.sounds.electroFlow.volume = 0.8; // Wall wave celebration sound
             this.sounds.pause.volume = 0.6;
             
             // Music settings
@@ -3382,6 +3385,9 @@ class TronPong {
         
         // Update individual pillar blinks for left wall with wave propagation
         for (let pillar of this.leftWallCubes) {
+            // Skip individual blinks during celebratory wave (to prevent secondary light waves)
+            if (this.isCelebrating) continue;
+            
             // Handle delay countdown first (wave propagation)
             if (pillar.userData.blinkDelay > 0) {
                 pillar.userData.blinkDelay -= deltaTime;
@@ -3438,6 +3444,9 @@ class TronPong {
         
         // Update individual pillar blinks for right wall with wave propagation
         for (let pillar of this.rightWallCubes) {
+            // Skip individual blinks during celebratory wave (to prevent secondary light waves)
+            if (this.isCelebrating) continue;
+            
             // Handle delay countdown first (wave propagation)
             if (pillar.userData.blinkDelay > 0) {
                 pillar.userData.blinkDelay -= deltaTime;
@@ -4030,6 +4039,12 @@ class TronPong {
             pillar.userData.targetDisplacement = 0;
         }
         
+        // Clear any existing individual blink systems to prevent secondary light waves
+        for (let pillar of allWalls) {
+            pillar.userData.blinkDelay = 0;
+            pillar.userData.blinkTimer = 0;
+        }
+        
         // Start celebration - begin smooth transition to cyan
         this.isCelebrating = true;
         this.celebrationTimer = 2500; // 2.5 seconds celebration
@@ -4042,13 +4057,7 @@ class TronPong {
         // Create traveling celebration light
         this.createCelebrationLight();
         
-        // Play wave sound effect (only once, with time-based protection)
-        const currentTime = performance.now();
-        if (!this.waveSoundPlayed && (currentTime - this.lastWaveSoundTime) > 2000) {
-        this.playSound('waveBuzz');
-            this.waveSoundPlayed = true;
-            this.lastWaveSoundTime = currentTime;
-        }
+        // Wave sound is now handled in startWallWaveAnimation() - no need for duplicate sound
         
         log('🎉 CELEBRATORY WAVE TRIGGERED!');
     }
@@ -4130,7 +4139,15 @@ class TronPong {
                     this.undergroundLightTransition.active = true;
                     this.undergroundLightTransition.progress = 0;
                     this.undergroundLightTransition.direction = -1; // To purple
-                    this.undergroundLightTransition.startColor = 0x00FFFF; // From pure cyan
+                    
+                    // Determine start color based on wave direction (player vs enemy)
+                    if (this.wallWaveAnimation.waveDirection === 1) {
+                        // Player wave - transition from cyan to purple
+                        this.undergroundLightTransition.startColor = 0x00FFFF; // From pure cyan
+                    } else {
+                        // Enemy wave - transition from magenta to purple
+                        this.undergroundLightTransition.startColor = 0xFF00FF; // From pure magenta
+                    }
                     this.undergroundLightTransition.endColor = 0x6600cc;   // To purple
                 }
             }
@@ -4190,6 +4207,86 @@ class TronPong {
         }
         
         log('🌊 Starting wall wave animation (towards player)...');
+        
+        // Play electro-flow sound for wall wave celebration
+        this.playSound('electroFlow');
+    }
+    
+    startEnemyWallWaveAnimation() {
+        // Start enemy wall wave animation (inverse direction)
+        this.wallWaveAnimation.active = true;
+        this.wallWaveAnimation.startTime = performance.now();
+        this.wallWaveAnimation.originalHeights.clear();
+        this.wallWaveAnimation.wavePhase = 0;
+        this.wallWaveAnimation.waveDirection = -1; // Towards enemy (opposite direction)
+        
+        // Store original heights for all wall segments
+        const allWalls = [...this.leftWallCubes, ...this.rightWallCubes];
+        for (let pillar of allWalls) {
+            this.wallWaveAnimation.originalHeights.set(pillar, pillar.scale.y);
+        }
+        
+        log('🌊 Starting enemy wall wave animation (towards enemy)...');
+        
+        // Play electro-flow sound for enemy wall wave celebration
+        this.playSound('electroFlow');
+    }
+    
+    triggerEnemyCelebratoryWave() {
+        // Prevent multiple celebrations from running simultaneously
+        if (this.isCelebrating) {
+            log('🎉 Celebration already active - skipping duplicate wave');
+            return;
+        }
+        
+        // ENEMY CELEBRATORY WAVE - travels from PLAYER goal toward ENEMY!
+        // Creates a wave of MAGENTA laser light that flows down both walls (opposite direction)
+        const waveSpeed = 0.05; // Time delay per unit distance
+        const playerGoalZ = 19; // Starting point (player goal end)
+        
+        // Start wall wave animation FIRST (inverse direction)
+        this.startEnemyWallWaveAnimation();
+        
+        // Trigger wave on BOTH walls (traveling away from camera)
+        const allWalls = [...this.leftWallCubes, ...this.rightWallCubes];
+        
+        for (let pillar of allWalls) {
+            // Calculate distance from PLAYER goal (wave origin - opposite direction)
+            const distanceFromOrigin = Math.abs(pillar.userData.zPosition - playerGoalZ);
+            
+            // Delay based on distance from PLAYER goal (wave travels toward ENEMY)
+            pillar.userData.blinkDelay = distanceFromOrigin * waveSpeed;
+            
+            // MAGENTA LASER - enemy colors!
+            pillar.userData.targetColor = 0xFF00FF; // Bright magenta
+            pillar.userData.targetEmissive = 0xFF00FF; // Magenta emissive
+            pillar.userData.targetIntensity = 0.6; // Lower intensity - pure magenta, no white bloom
+            
+            // Wave duration - consistent across all pillars
+            pillar.userData.blinkDuration = 1.5; // 1.5 second glow
+            
+            // No displacement for enemy celebratory wave - keep segments in place
+            pillar.userData.targetDisplacement = 0;
+        }
+        
+        // Clear any existing individual blink systems to prevent secondary light waves
+        for (let pillar of allWalls) {
+            pillar.userData.blinkDelay = 0;
+            pillar.userData.blinkTimer = 0;
+        }
+        
+        // Start celebration - begin smooth transition to magenta
+        this.isCelebrating = true;
+        this.celebrationTimer = 2500; // 2.5 seconds celebration
+        
+        // Start smooth color transition to magenta
+        this.undergroundLightTransition.active = true;
+        this.undergroundLightTransition.progress = 0;
+        this.undergroundLightTransition.direction = 1; // To magenta
+        this.undergroundLightTransition.startColor = 0x6600cc; // From purple
+        this.undergroundLightTransition.endColor = 0xFF00FF;   // To pure magenta
+        
+        log('🎉 Enemy celebratory wave triggered (towards enemy)!');
     }
     
     updateWallWaveAnimation(deltaTime) {
@@ -4210,10 +4307,17 @@ class TronPong {
             const wallLength = 38; // Total wall length (-19 to +19)
             const normalizedPos = (pillarZ + 19) / wallLength; // 0 to 1 (0=enemy, 1=player)
             
-            // Wave travels from enemy end (z=-19) towards player end (z=+19)
-            const waveSpeed = 0.05; // Same as light wave speed
+            // Wave direction based on waveDirection flag
+            let waveDelay;
+            if (this.wallWaveAnimation.waveDirection === 1) {
+                // Player wave: travels from enemy end (z=-19) towards player end (z=+19)
             const distanceFromEnemy = Math.abs(pillarZ - (-19)); // Distance from enemy goal
-            const waveDelay = distanceFromEnemy * waveSpeed; // Delay based on distance
+                waveDelay = distanceFromEnemy * 0.05; // Delay based on distance
+            } else {
+                // Enemy wave: travels from player end (z=+19) towards enemy end (z=-19)
+                const distanceFromPlayer = Math.abs(pillarZ - 19); // Distance from player goal
+                waveDelay = distanceFromPlayer * 0.05; // Delay based on distance
+            }
             
             // Calculate wave timing (wave reaches this pillar after delay)
             const waveProgress = Math.max(0, Math.min(1, (elapsed / 1000 - waveDelay) / 0.75)); // 0.75s wave duration
@@ -4226,7 +4330,7 @@ class TronPong {
             if (waveProgress > 0 && waveProgress < 1) {
                 // Wave is passing through this pillar - simple sine wave
                 const waveShape = this.cachedSin(waveProgress * Math.PI); // 0 to 1 to 0
-                elevationAmount = waveShape * 1.5; // Rise up to 1.5 units maximum
+                elevationAmount = waveShape * 2.25; // Rise up to 2.25 units maximum (50% higher than 1.5)
             }
             
             // ONLY change Y position - preserve exact original X and Z positions
@@ -4237,6 +4341,63 @@ class TronPong {
             
             // Clear any displacement targets to prevent interference
             pillar.userData.targetDisplacement = 0;
+            
+            // SYNC ILLUMINATION WITH PHYSICAL WAVE ELEVATION
+            // Light intensity directly tied to how high the segment is elevated
+            if (elevationAmount > 0) {
+                // Segment is elevated - make it glow with wave colors
+                const lightIntensity = Math.min(elevationAmount / 2.25, 1.0); // Normalize to 0-1 based on max elevation
+                
+                if (this.wallWaveAnimation.waveDirection === 1) {
+                    // Player wave - cyan colors
+                    pillar.material.color.setHex(0x00FEFC);
+                    pillar.material.emissive.setHex(0x00FEFC);
+                    pillar.material.emissiveIntensity = lightIntensity * 2.0; // Scale intensity
+                } else {
+                    // Enemy wave - magenta colors
+                    pillar.material.color.setHex(0xFF00FF);
+                    pillar.material.emissive.setHex(0xFF00FF);
+                    pillar.material.emissiveIntensity = lightIntensity * 2.0; // Scale intensity
+                }
+                
+                // Store the peak intensity for fade-out
+                pillar.userData.peakEmissiveIntensity = lightIntensity * 2.0;
+            } else {
+                // Segment is back on ground - fade out emissive over 0.5s
+                if (pillar.userData.peakEmissiveIntensity > 0) {
+                    // Calculate fade-out progress (0 = full glow, 1 = completely faded)
+                    const fadeProgress = Math.min(progress * 2.0, 1.0); // 0.5s fade-out (progress goes 0-1 over 3s, so *2 for 1.5s, but we want 0.5s)
+                    const fadeProgress_05s = Math.min((elapsed / 1000) * 2.0, 1.0); // 0.5s fade-out from wave start
+                    
+                    const currentIntensity = pillar.userData.peakEmissiveIntensity * (1.0 - fadeProgress_05s);
+                    
+                    if (currentIntensity > 0.01) {
+                        // Still glowing - keep wave colors with fading intensity
+                        if (this.wallWaveAnimation.waveDirection === 1) {
+                            // Player wave - cyan colors
+                            pillar.material.color.setHex(0x00FEFC);
+                            pillar.material.emissive.setHex(0x00FEFC);
+                            pillar.material.emissiveIntensity = currentIntensity;
+                        } else {
+                            // Enemy wave - magenta colors
+                            pillar.material.color.setHex(0xFF00FF);
+                            pillar.material.emissive.setHex(0xFF00FF);
+                            pillar.material.emissiveIntensity = currentIntensity;
+                        }
+                    } else {
+                        // Fully faded - return to original colors
+                        pillar.material.color.setHex(pillar.userData.originalColor || 0x666666);
+                        pillar.material.emissive.setHex(pillar.userData.originalEmissive || 0x000000);
+                        pillar.material.emissiveIntensity = pillar.userData.originalEmissiveIntensity || 0;
+                        pillar.userData.peakEmissiveIntensity = 0;
+                    }
+                } else {
+                    // No previous peak - return to original colors
+                    pillar.material.color.setHex(pillar.userData.originalColor || 0x666666);
+                    pillar.material.emissive.setHex(pillar.userData.originalEmissive || 0x000000);
+                    pillar.material.emissiveIntensity = pillar.userData.originalEmissiveIntensity || 0;
+                }
+            }
         }
         
         // End animation when complete - let it fade out smoothly
@@ -5620,6 +5781,9 @@ class TronPong {
             this.score.player2++;
                 // Flash player goal MAGENTA (ball went past player - enemy scored!)
                 this.flashGoalMagenta(this.playerGoal);
+                
+                // Trigger enemy celebratory wave (inverse direction with magenta colors)
+                this.triggerEnemyCelebratoryWave();
             } else {
                 this.score.player1++;
                 
