@@ -2531,19 +2531,47 @@ class TronPong {
                 this.performanceModeKeyPressed = true;
                 this.togglePerformanceMode();
             }
+            
+            // FPS counter toggle on 'F' key
+            if (e.key.toLowerCase() === 'f' && !this.lastFPSTogglePress) {
+                this.lastFPSTogglePress = true;
+                this.toggleFPSCounter();
+            }
+            
+            // Track controls
+            if (e.key === '[' || e.key === '{') {
+                this.changeTrack(-1); // Previous track
+            }
+            if (e.key === ']' || e.key === '}') {
+                this.changeTrack(1); // Next track
+            }
+            
+            // Reset game on 'R' key when paused
+            if (e.key.toLowerCase() === 'r' && this.isPaused && !this.lastResetPress) {
+                this.lastResetPress = true;
+                this.superHardReset();
+            }
         });
         
         window.addEventListener('keyup', (e) => {
             this.keys[e.key.toLowerCase()] = false;
             
-            // Reset performance mode key state
+            // Reset key states
             if (e.key.toLowerCase() === 'p') {
                 this.performanceModeKeyPressed = false;
+            }
+            if (e.key.toLowerCase() === 'f') {
+                this.lastFPSTogglePress = false;
+            }
+            if (e.key.toLowerCase() === 'r') {
+                this.lastResetPress = false;
             }
         });
         
         // Gamepad support
         this.lastStartPress = false; // Debounce for start button
+        this.lastFPSTogglePress = false; // Debounce for FPS toggle
+        this.lastResetPress = false; // Debounce for reset
         
         window.addEventListener('gamepadconnected', (e) => {
             log('🎮 Gamepad connected:', e.gamepad.id);

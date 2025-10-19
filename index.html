@@ -320,7 +320,22 @@
             color: #ff00ff;
             font-size: 18px;
             text-shadow: 0 0 10px #ff00ff;
-            margin: 10px 0;
+            margin: 8px 0;
+            text-align: left;
+        }
+        
+        .controls-section {
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .controls-section h3 {
+            color: #00FEFC;
+            font-size: 20px;
+            text-shadow: 0 0 15px #00FEFC;
+            margin: 0 0 10px 0;
+            border-bottom: 1px solid #00FEFC;
+            padding-bottom: 5px;
         }
         
         #score {
@@ -605,11 +620,33 @@
     
     <div id="pauseMenu">
         <h2>PAUSED</h2>
-        <p>Press ESC / OPTIONS to resume</p>
-        <p>A/D or ARROW KEYS / Left Stick to move</p>
-        <p>SPACE / X to start</p>
+        
+        <div class="controls-section">
+            <h3>MOVEMENT</h3>
+            <p>Keyboard: A/D or Arrow Keys</p>
+            <p>Controller: Left Stick</p>
+        </div>
+        
+        <div class="controls-section">
+            <h3>GAME CONTROLS</h3>
+            <p>Start Game: SPACE / X Button</p>
+            <p>Pause/Resume: ESC / OPTIONS Button</p>
+            <p>Reset Game: R / SQUARE Button</p>
+        </div>
+        
+        <div class="controls-section">
+            <h3>MUSIC CONTROLS</h3>
+            <p>Previous Track: [ / LB Button</p>
+            <p>Next Track: ] / RB Button</p>
+        </div>
+        
+        <div class="controls-section">
+            <h3>DISPLAY OPTIONS</h3>
+            <p>FPS Counter: F / Triangle Button</p>
+            <p>Performance Mode: P / Circle Button</p>
+        </div>
+        
         <button id="resetButton" style="margin-top: 20px; padding: 12px 24px; font-family: 'Orbitron', sans-serif; font-size: 16px; background: #ff0033; color: white; border: 2px solid #ff0033; border-radius: 5px; cursor: pointer; text-shadow: 0 0 10px #ff0033; box-shadow: 0 0 20px #ff0033; transition: all 0.2s ease;">SUPER RESET</button>
-        <p style="margin-top: 15px; font-size: 14px; color: #00FEFC;">SQUARE / ⬜ to reset</p>
     </div>
     
     <!-- Vignette overlay -->
