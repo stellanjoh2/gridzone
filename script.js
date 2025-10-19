@@ -301,6 +301,11 @@ class TronPong {
         this.particleOriginalPositions = [];
         this.particleVelocities = [];
         
+        // Dynamic particle opacity system
+        this.particleOpacityBoost = 0.0; // 0.0 = default 25%, 1.0 = full opacity
+        this.particleOpacityTimer = 0.0; // Timer for opacity fade-back
+        this.particleOpacityFadeSpeed = 2.0; // How fast opacity returns to default
+        
         // Environment map for reflections
         this.envMap = null;
         
@@ -418,7 +423,32 @@ class TronPong {
     playStereoWallHit(side) {
         // Simple wall hit sound - no stereo effects
         this.playSound('wallHit');
+        this.boostParticleOpacity(); // Boost particles on wall hit
         log(`🎵 Wall hit: ${side} side`);
+    }
+    
+    boostParticleOpacity() {
+        // Boost particles to full opacity on impact
+        this.particleOpacityBoost = 1.0;
+        this.particleOpacityTimer = 0.0; // Reset timer
+        log('✨ Particle opacity boosted to full intensity!');
+    }
+    
+    updateParticleOpacity(deltaTime) {
+        // Update particle opacity based on boost and timer
+        if (this.particleOpacityBoost > 0) {
+            this.particleOpacityTimer += deltaTime;
+            
+            // Fade back to default opacity over time
+            this.particleOpacityBoost = Math.max(0, 1.0 - (this.particleOpacityTimer * this.particleOpacityFadeSpeed));
+            
+            // Update actual particle material opacity
+            if (this.particles && this.particles.material) {
+                // Blend between 25% (0.15) and full (0.6) opacity
+                const targetOpacity = 0.15 + (this.particleOpacityBoost * 0.45); // 0.15 to 0.6
+                this.particles.material.opacity = targetOpacity;
+            }
+        }
     }
     
     loadSounds() {
@@ -2492,20 +2522,20 @@ class TronPong {
             // OPTIMIZATION: Focus particles around player paddle area (z = 15)
             // Most particles near player paddle where they're most visible
             const playerAreaZ = 15; // Player paddle Z position
-            const focusRadius = 6; // Focus area around player (extremely close to camera)
+            const focusRadius = 4; // Focus area around player (ultra close to camera)
             
             let x, y, z;
             
-            // 80% of particles in camera view area (closer to camera)
+            // 80% of particles in camera view area (closer to camera) - 20% larger spread
             if (Math.random() < 0.8) {
-                x = (Math.random() - 0.5) * 25; // Narrower X spread near camera
-                y = Math.random() * 10 + 5; // Height range 5-15 (closer to camera level)
-                z = playerAreaZ + (Math.random() - 0.5) * 20; // Tighter focus around player Z
+                x = (Math.random() - 0.5) * 30; // Increased from 25 to 30 (20% larger X spread)
+                y = Math.random() * 12 + 5; // Height range 5-17 (increased from 10 to 12)
+                z = playerAreaZ + (Math.random() - 0.5) * 24; // Increased from 20 to 24 (20% larger Z spread)
             } else {
-                // 20% scattered elsewhere for atmosphere
-                x = (Math.random() - 0.5) * 35;
-                y = Math.random() * 8 + 3;
-                z = (Math.random() - 0.5) * 50;
+                // 20% scattered elsewhere for atmosphere - 20% larger spread
+                x = (Math.random() - 0.5) * 42; // Increased from 35 to 42 (20% larger)
+                y = Math.random() * 9.6 + 3; // Increased from 8 to 9.6 (20% larger)
+                z = (Math.random() - 0.5) * 60; // Increased from 50 to 60 (20% larger)
             }
             
             positions[i * 3] = x;
@@ -2532,17 +2562,17 @@ class TronPong {
                 colors[i * 3 + 2] = 1.0;   // Blue: 0xff = 1.0
             }
             
-            // Random sizes with variation - some much bigger
+            // Random sizes with variation - some much bigger (increased by 20%)
             const sizeVariation = Math.random();
             if (sizeVariation < 0.1) {
                 // 10% chance of large particles
-                sizes[i] = 0.15 + Math.random() * 0.15; // 0.15 to 0.3
+                sizes[i] = 0.18 + Math.random() * 0.18; // 0.18 to 0.36 (20% increase)
             } else if (sizeVariation < 0.3) {
                 // 20% chance of medium particles
-                sizes[i] = 0.08 + Math.random() * 0.07; // 0.08 to 0.15
+                sizes[i] = 0.096 + Math.random() * 0.084; // 0.096 to 0.18 (20% increase)
             } else {
                 // 70% chance of small particles
-                sizes[i] = 0.025 + Math.random() * 0.05; // 0.025 to 0.075
+                sizes[i] = 0.03 + Math.random() * 0.06; // 0.03 to 0.09 (20% increase)
             }
         }
         
@@ -2555,7 +2585,7 @@ class TronPong {
             size: 0.075, // 50% smaller (was 0.15)
             vertexColors: true,
             transparent: true,
-            opacity: 0.6,
+            opacity: 0.15, // Start at 25% opacity (0.6 * 0.25 = 0.15)
             blending: THREE.AdditiveBlending,
             sizeAttenuation: true
         });
@@ -2961,6 +2991,7 @@ class TronPong {
         document.getElementById('logo').style.display = 'none';
         document.getElementById('presents').style.display = 'none';
         document.getElementById('copyright').style.display = 'none';
+        document.getElementById('fullscreenHint').style.display = 'none';
         
         // Hide world logo and lights when game starts
         if (this.worldLogo) {
@@ -5663,6 +5694,7 @@ class TronPong {
                     this.worldLightBoost = 15.0;
                     this.playStereoWallHit('left');
                     this.triggerLensFlare(); // Lens flare on obstacle impact!
+                    this.boostParticleOpacity(); // Boost particles on obstacle impact
                     
                     // Flash the obstacle BRIGHT RED
                     obstacleCube.material.emissiveIntensity = 1.2;
@@ -5691,6 +5723,7 @@ class TronPong {
                 this.triggerRumble(0.4, 120);
                 this.createImpactEffect(ball.position.clone(), 0x00FEFC); // Lime green
                 this.playSound('paddleHit');
+                this.boostParticleOpacity(); // Boost particles on paddle hit
                 
                 // Paddle pushback!
                 this.paddle1Pushback = 1.5; // Push back 1.5 units (increased from 0.8)
@@ -5760,6 +5793,7 @@ class TronPong {
                 this.worldLightBoost = 12.0;
             this.playSound('paddleHit');
             this.triggerLensFlare(); // Lens flare on impact!
+            this.boostParticleOpacity(); // Boost particles on paddle hit
             
                 // Paddle pushback!
                 this.paddle2Pushback = 1.5; // Push back 1.5 units (increased from 0.8)
@@ -7153,6 +7187,7 @@ class TronPong {
                 this.updateWaveLights(); // Traveling wave lights (win sequence)
                 this.updateCelebration(deltaTime); // Celebration system
                 this.updateParticles();
+                this.updateParticleOpacity(deltaTime); // Dynamic particle opacity system
                 this.updateFloorGlow();
                 this.updateObstacles();
             }

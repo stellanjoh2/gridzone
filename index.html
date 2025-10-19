@@ -242,6 +242,22 @@
             animation: fadeInUI 0.5s ease-out 3.75s forwards, uiBlink 0.75s ease-in-out infinite 4.25s;
         }
         
+        #fullscreenHint {
+            position: absolute;
+            top: 85%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #00FEFC;
+            font-size: 18px;
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 10px #00FEFC, 2px 2px 0px rgba(0, 20, 20, 1);
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeInFullscreenHint 0.5s ease-out 4s forwards;
+        }
+        
         #presents {
             position: fixed;
             top: 10%;
@@ -308,6 +324,17 @@
         }
         
         @keyframes fadeInUI {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) translateY(0);
+            }
+        }
+        
+        @keyframes fadeInFullscreenHint {
             from {
                 opacity: 0;
                 transform: translate(-50%, -50%) translateY(10px);
@@ -693,6 +720,7 @@
     <div id="multiBallText">MULTI-BALL!!!</div>
     <div id="logo"><img src="assets/images/gridzone-logo.svg" alt="GridZone" style="fill: #00FEFC;"></div>
     <div id="ui">PRESS SPACE TO START</div>
+    <div id="fullscreenHint">BEST EXPERIENCED IN FULLSCREEN (F11) + A GAMEPAD</div>
     <div id="presents">Stellar Corp. Publishing Presents</div>
     <div id="copyright">© 2025 Stellar Corp. All rights reserved. GRIDZONE™ is a synthetic entertainment simulation — unauthorized duplication may destabilize reality. By continuing, you consent to full immersion and potential data resonance within The Zone.</div>
     
