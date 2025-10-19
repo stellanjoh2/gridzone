@@ -1936,8 +1936,24 @@ class TronPong {
         } else {
             // Restore intensity for existing light (in case it was turned off)
             if (this.ballLights[ballIndex]) {
+                // Ensure the light is still in the scene
+                if (!this.scene.children.includes(this.ballLights[ballIndex])) {
+                    this.scene.add(this.ballLights[ballIndex]);
+                    log(`💡 Re-added ball light ${ballIndex} to scene`);
+                }
                 this.ballLights[ballIndex].intensity = 0.15;
                 log(`💡 Restored ball light ${ballIndex} intensity to 0.15`);
+            } else {
+                // Light doesn't exist, create a new one
+                const ballLight = new THREE.PointLight(0x00FEFC, 0.15, 75);
+                ballLight.castShadow = true;
+                ballLight.shadow.mapSize.width = 256;
+                ballLight.shadow.mapSize.height = 256;
+                ballLight.shadow.bias = -0.001;
+                ballLight.layers.set(0);
+                this.scene.add(ballLight);
+                this.ballLights[ballIndex] = ballLight;
+                log(`💡 Recreated missing ball light ${ballIndex}`);
             }
         }
         
@@ -5410,8 +5426,19 @@ class TronPong {
                 
                 // Update ball lights
                 for (let i = 0; i < this.balls.length && i < this.ballLights.length; i++) {
+                    if (this.ballLights[i]) {
+                        // Ensure light is in scene and has proper intensity
+                        if (!this.scene.children.includes(this.ballLights[i])) {
+                            this.scene.add(this.ballLights[i]);
+                            log(`💡 Re-added missing ball light ${i} to scene during performance update`);
+                        }
+                        if (this.ballLights[i].intensity === 0) {
+                            this.ballLights[i].intensity = 0.15;
+                            log(`💡 Restored ball light ${i} intensity during performance update`);
+                        }
                     this.ballLights[i].position.copy(this.balls[i].position);
                     this.ballLights[i].position.y += 2;
+                    }
                 }
                 return;
             }
@@ -5422,8 +5449,19 @@ class TronPong {
         
         // Update ball lights to follow their respective balls
         for (let i = 0; i < this.balls.length && i < this.ballLights.length; i++) {
+            if (this.ballLights[i]) {
+                // Ensure light is in scene and has proper intensity
+                if (!this.scene.children.includes(this.ballLights[i])) {
+                    this.scene.add(this.ballLights[i]);
+                    log(`💡 Re-added missing ball light ${i} to scene during update`);
+                }
+                if (this.ballLights[i].intensity === 0) {
+                    this.ballLights[i].intensity = 0.15;
+                    log(`💡 Restored ball light ${i} intensity during update`);
+                }
             this.ballLights[i].position.copy(this.balls[i].position);
             this.ballLights[i].position.y += 2;
+            }
         }
         
         // Update spatial audio volume based on distance to player
