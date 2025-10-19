@@ -2654,7 +2654,6 @@ class TronPong {
                 if (Math.abs(stickX) > 0.1 || Math.abs(stickY) > 0.1) {
                     targetRotateY = stickX * 8;
                     targetRotateX = -stickY * 6;
-                    log('🎮 Logo rotation:', targetRotateX, targetRotateY);
                 } else {
                     targetRotateY = 0;
                     targetRotateX = 0;
