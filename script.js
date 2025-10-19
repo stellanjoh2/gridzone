@@ -417,7 +417,7 @@ class TronPong {
         this.playSound('wallHit');
         log(`🎵 Wall hit: ${side} side`);
     }
-
+    
     loadSounds() {
         
         // Load sound files
@@ -2530,7 +2530,7 @@ class TronPong {
         const resetButton = document.getElementById('resetButton');
         if (resetButton) {
             resetButton.addEventListener('click', () => {
-                this.fullGameReset();
+                this.superHardReset();
             });
         }
     }
@@ -3475,11 +3475,11 @@ class TronPong {
             // Immediate red blinking - no yellow delay
             const blinkCycle = (this.bonusCubeFlickerTimer % 0.15) / 0.15; // 0-1 per blink
             if (blinkCycle < 0.6) { // 60% on, 40% off
-                color = 0xff0000; // Red
-                intensity = 8.0;
-            } else {
-                color = 0x000000; // Off
-                intensity = 0.0;
+                    color = 0xff0000; // Red
+                    intensity = 8.0;
+                } else {
+                    color = 0x000000; // Off
+                    intensity = 0.0;
             }
             
             if (this.bonusCube.userData.material && this.bonusCube.userData.material.uniforms) {
@@ -3673,7 +3673,7 @@ class TronPong {
         
         // Play wave sound effect (only once)
         if (!this.waveSoundPlayed) {
-            this.playSound('waveBuzz');
+        this.playSound('waveBuzz');
             this.waveSoundPlayed = true;
         }
         
@@ -5117,8 +5117,8 @@ class TronPong {
             
                 this.setBallColor(i, 'player');
                 this.worldLightBoost = 12.0;
-                this.triggerLensFlare(); // Lens flare on impact!
-            }
+            this.triggerLensFlare(); // Lens flare on impact!
+        }
         
         // AI paddle collision (top) - ANTI-STUCK system
             if (ball.position.z <= -14.5 && 
@@ -5141,8 +5141,8 @@ class TronPong {
                 this.createImpactEffect(ball.position.clone(), 0xff00ff);
                 this.setBallColor(i, 'ai');
                 this.worldLightBoost = 12.0;
-                this.playSound('paddleHit');
-                this.triggerLensFlare(); // Lens flare on impact!
+            this.playSound('paddleHit');
+            this.triggerLensFlare(); // Lens flare on impact!
             
                 // Paddle pushback!
                 this.paddle2Pushback = 1.5; // Push back 1.5 units (increased from 0.8)
@@ -5221,8 +5221,8 @@ class TronPong {
             }
             
             // Turn off ball light for this ball (will be restored when ball respawns)
-            if (this.ballLights[removal.index]) {
-                this.ballLights[removal.index].intensity = 0;
+                if (this.ballLights[removal.index]) {
+                    this.ballLights[removal.index].intensity = 0;
                 log(`💡 Ball light ${removal.index} turned off (ball removed)`);
             }
             
@@ -5387,7 +5387,7 @@ class TronPong {
             this.listener.upZ.value = 0;
         }
     }
-
+    
     updateCameraTransition() {
         // Smooth transition from start menu camera to gameplay camera
         if (!this.cameraTransition.active) return;
@@ -6028,6 +6028,61 @@ class TronPong {
         // Music keeps playing (don't stop it)
         
         log('✅ Full game reset complete - continuing gameplay!');
+    }
+    
+    superHardReset() {
+        log('💥 SUPER HARD RESET - Page reload!');
+        
+        // Play reset sound
+        this.playSound('menuSelect');
+        
+        // Hide pause menu first
+        this.domElements.pauseMenu.style.display = 'none';
+        
+        // Small delay to let the sound play and UI hide
+        setTimeout(() => {
+            // Super hard reset = page reload (guaranteed clean slate)
+            window.location.reload();
+        }, 200); // 200ms delay for smooth transition
+    }
+    
+    destroy() {
+        log('💥 Destroying game instance...');
+        
+        // Stop all animations and intervals
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+        }
+        
+        // Clear all timeouts and intervals
+        this.activeTimeouts.forEach(timeout => clearTimeout(timeout));
+        this.activeIntervals.forEach(interval => clearInterval(interval));
+        this.activeTimeouts = [];
+        this.activeIntervals = [];
+        
+        // Dispose of Three.js resources
+        if (this.renderer) {
+            this.renderer.dispose();
+        }
+        
+        // Clear scene
+        if (this.scene) {
+            this.scene.clear();
+        }
+        
+        // Dispose of geometries and materials
+        if (this.ballGeometry) this.ballGeometry.dispose();
+        if (this.trailGeometry) this.trailGeometry.dispose();
+        if (this.particleGeometry) this.particleGeometry.dispose();
+        
+        // Clear all references
+        this.balls = [];
+        this.trails = [];
+        this.impactParticles = [];
+        this.ballLights = [];
+        this.waveLights = [];
+        
+        log('✅ Game instance destroyed');
     }
     
     updateScore() {
