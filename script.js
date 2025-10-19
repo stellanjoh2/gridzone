@@ -925,8 +925,6 @@ class TronPong {
         // RGB Split effect render target (full resolution)
         this.rgbSplitRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
         
-        // Lens Dirt effect render target (full resolution)
-        this.lensDirtRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
         
         // Depth of Field render targets - DISABLED for performance
         // this.dofRenderTarget = new THREE.WebGLRenderTarget(width, height, renderTargetParameters);
@@ -2587,10 +2585,6 @@ class TronPong {
                 this.rgbSplitRenderTarget.setSize(window.innerWidth, window.innerHeight);
             }
             
-            // Resize lens dirt render target
-            if (this.lensDirtRenderTarget) {
-                this.lensDirtRenderTarget.setSize(window.innerWidth, window.innerHeight);
-            }
             
             // Update lens flare aspect ratio
             if (this.lensFlareMaterial) {
@@ -2728,6 +2722,7 @@ class TronPong {
             
             // Create main logo mesh
             this.worldLogo = new THREE.Mesh(logoGeometry, mainMaterial);
+            
             
             // Comment out stroke layer for now
             // this.worldLogoStroke = new THREE.Mesh(logoGeometry, strokeMaterial);
@@ -3673,8 +3668,8 @@ class TronPong {
         
         // Safety check: If bonus cube is gone but light still exists, clean it up
         if (this.bonusLight && !this.bonusCube) {
-            this.scene.remove(this.bonusLight.light);
-            this.bonusLight = null;
+                this.scene.remove(this.bonusLight.light);
+                this.bonusLight = null;
             log('🔴 Safety cleanup: Bonus light removed (cube was already gone)');
         }
         
@@ -4048,9 +4043,6 @@ class TronPong {
         }
         if (this.rgbSplitRenderTarget) {
             this.rgbSplitRenderTarget.setSize(width, height);
-        }
-        if (this.lensDirtRenderTarget) {
-            this.lensDirtRenderTarget.setSize(width, height);
         }
         if (this.blurRenderTarget) {
             this.blurRenderTarget.setSize(width, height);
@@ -6717,7 +6709,7 @@ class TronPong {
                 this.renderer.render(this.fisheyeScene, this.fisheyeCamera);
             } else {
                 // Normal scene render
-                this.renderer.render(this.scene, this.camera);
+            this.renderer.render(this.scene, this.camera);
             }
             
             // 4. Render bloom on top of fisheye target with additive blending
@@ -6731,20 +6723,8 @@ class TronPong {
             this.renderer.clear();
             this.renderer.render(this.lensFlareScene, this.lensFlareCamera);
             
-            // 6. Apply lens dirt effect (camera imperfections on bright areas)
-            if (this.lensDirtMaterial && this.lensDirtTexture) {
-                log('📸 Applying lens dirt effect - material and texture exist');
-                this.renderer.setRenderTarget(this.lensDirtRenderTarget);
-                this.lensDirtMaterial.uniforms.tDiffuse.value = this.lensFlareRenderTarget.texture;
-                this.lensDirtMaterial.uniforms.time.value = performance.now() * 0.001; // Animate if needed
-                this.renderer.clear();
-                this.renderer.render(this.lensDirtScene, this.lensDirtCamera);
-                var finalTexture = this.lensDirtRenderTarget.texture;
-                log('📸 Lens dirt effect applied successfully');
-            } else {
-                log('📸 Lens dirt effect skipped - material:', !!this.lensDirtMaterial, 'texture:', !!this.lensDirtTexture);
-                var finalTexture = this.lensFlareRenderTarget.texture;
-            }
+            // 6. Use lens flare result as final texture
+            var finalTexture = this.lensFlareRenderTarget.texture;
             
             // 7. Apply fisheye distortion (final output)
             this.renderer.setRenderTarget(null);
