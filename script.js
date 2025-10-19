@@ -531,7 +531,7 @@ class TronPong {
         this.wallWaveAnimation = {
             active: false,
             startTime: 0,
-            duration: 4000, // 4 seconds (more time for natural wave completion)
+            duration: 3000, // 3 seconds (compressed for faster animation)
             originalHeights: new Map(), // Store original wall heights
             wavePhase: 0, // Wave phase offset for smooth animation
             waveDirection: 1 // 1 = towards player, -1 = towards enemy
@@ -3943,7 +3943,7 @@ class TronPong {
         // Create shockwave effect - impact center sends wave outward to nearby pillars
         // Energy dissipates as wave travels: weaker light + slower fadeout at distance
         const shockwaveRadius = 4.5; // Reduced radius to affect exactly 5 segments total
-        const waveSpeed = 0.04; // Time delay per unit distance (slower = more visible wave)
+        const waveSpeed = 0.0125; // Time delay per unit distance (ultra fast wave for 0.5s total)
         
         for (let pillar of wallPillars) {
             const dist = Math.abs(pillar.userData.zPosition - ballZ);
@@ -3980,9 +3980,9 @@ class TronPong {
                 pillar.userData.targetIntensity = 0.3 + (intensity * 2.7);
                 
                 // REVERSED DURATION: Farther pillars fade out SLOWER (energy lingers)
-                // Close: 0.8s (slow, smooth)
-                // Far: 1.4s (very long, gentle fade)
-                pillar.userData.blinkDuration = 0.8 + ((1.0 - intensity) * 0.6);
+                // Close: 0.25s (ultra fast, snappy)
+                // Far: 0.4s (very quick, gentle fade)
+                pillar.userData.blinkDuration = 0.25 + ((1.0 - intensity) * 0.15);
                 
                 // PHYSICAL DISPLACEMENT: Push pillar inward MUCH more based on intensity
                 // Maximum push at center (1.875 units), minimal at edge (0.25 units) - 25% stronger!
@@ -4217,7 +4217,7 @@ class TronPong {
             const waveDelay = distanceFromEnemy * waveSpeed; // Delay based on distance
             
             // Calculate wave timing (wave reaches this pillar after delay)
-            const waveProgress = Math.max(0, Math.min(1, (elapsed / 1000 - waveDelay) / 1.0)); // 1s wave duration
+            const waveProgress = Math.max(0, Math.min(1, (elapsed / 1000 - waveDelay) / 0.75)); // 0.75s wave duration (compressed from 1s)
             
             // Simple wave multiplier - starts at 1.0, peaks, then returns to 1.0
             let waveMultiplier = 1.0; // Default height
