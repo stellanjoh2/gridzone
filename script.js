@@ -262,6 +262,7 @@ class TronPong {
         // Camera system
         this.cameraTarget = { x: 0, y: 0, z: 0, zoom: 22 };
         this.cameraSmooth = 0.05; // Smooth lerp factor for camera movement
+        this.cameraTrackingDisabled = false; // Flag to temporarily disable ball tracking
         
         // Controls
         this.keys = {};
@@ -496,9 +497,9 @@ class TronPong {
         this.waveSoundPlayed = false;
         this.lastWaveSoundTime = 0; // Track when wave sound was last played
         
-        // RGB Split effect
-        this.rgbSplitActive = false;
-        this.rgbSplitIntensity = 0;
+        // RGB Split effect - always active at low level to prevent rendering pipeline changes
+        this.rgbSplitActive = true; // Always active
+        this.rgbSplitIntensity = 0.05; // Always at 5% base level
         this.rgbSplitDuration = 0;
         this.rgbSplitOriginalDuration = 0;
         
@@ -3525,30 +3526,32 @@ class TronPong {
     }
     
     triggerRGBSplit() {
-        // Trigger RGB split effect for win celebration
-        this.rgbSplitActive = true;
-        this.rgbSplitIntensity = 0.0; // Start at 0 intensity for smooth ease-in
+        // Boost RGB split effect for win celebration (always active at 5% base)
+        this.rgbSplitIntensity = 0.0; // Start boost at 0 intensity for smooth ease-in
         this.rgbSplitDuration = 1200; // 1.2 seconds duration for win celebration (no hold, just ease-in and fade-out)
         this.rgbSplitOriginalDuration = 1200; // Store original duration
         this.rgbSplitPhase = 'ease-in'; // Start with ease-in phase
         this.rgbSplitEaseInDuration = 300; // 300ms ease-in duration
         this.rgbSplitEaseInStartTime = performance.now();
         
-        log('🌈 RGB Split win celebration triggered! Duration: 1.2 seconds with ease-in and smooth fade-out');
+        log('🌈 RGB Split win celebration boosted! Duration: 1.2 seconds with ease-in and smooth fade-out');
     }
     
     triggerRGBSplitBonus() {
-        // Trigger RGB split effect for bonus pickup (smooth ease-in and fade-out)
-        this.rgbSplitActive = true;
-        this.rgbSplitIntensity = 0.0; // Start at 0 intensity for smooth ease-in
-        this.rgbSplitDuration = 800; // 0.8 seconds duration for bonus pickup (no hold, just ease-in and fade-out)
-        this.rgbSplitOriginalDuration = 800; // Store original duration
+        // Boost RGB split effect for bonus pickup (always active at 5% base)
+        // NOTE: This is PURELY a visual effect - NO camera interaction whatsoever
+        this.rgbSplitIntensity = 0.0; // Start boost at 0 intensity for smooth ease-in
+        this.rgbSplitDuration = 300; // 0.3 seconds duration for bonus pickup (much shorter)
+        this.rgbSplitOriginalDuration = 300; // Store original duration
         this.rgbSplitPhase = 'ease-in'; // Start with ease-in phase
         this.rgbSplitEaseInDuration = 150; // 150ms quick ease-in duration
         this.rgbSplitEaseInStartTime = performance.now();
         
+        // EXPLICITLY ensure camera tracking is NOT disabled for bonus pickup
+        // Camera should continue normal ball tracking during bonus pickup
+        this.cameraTrackingDisabled = false;
         
-        log('🌈 RGB Split bonus pickup triggered! Duration: 0.8s with smooth ease-in and fade-out');
+        log('🌈 RGB Split bonus pickup boosted! Duration: 0.3s with smooth ease-in and fade-out (NO camera interaction)');
     }
     
     updateLensFlare(deltaTime) {
@@ -3587,7 +3590,7 @@ class TronPong {
             else if (this.rgbSplitPhase === 'fade-out') {
                 // Calculate fade-out progress based on remaining time vs fade-out duration
                 // Use different fade-out durations for win celebration vs bonus pickup
-                const fadeOutDuration = this.rgbSplitOriginalDuration === 1200 ? 600 : 400; // 600ms for win, 400ms for bonus
+                const fadeOutDuration = this.rgbSplitOriginalDuration === 1200 ? 600 : 150; // 600ms for win, 150ms for bonus
                 const fadeProgress = Math.max(0, this.rgbSplitDuration / fadeOutDuration);
                 
                 // Smooth fade out with easing (prevents pop at end)
@@ -3601,8 +3604,8 @@ class TronPong {
                     // Win celebration: 600ms fade-out
                     fadeStartTime = 600;
                 } else {
-                    // Bonus pickup: 400ms fade-out
-                    fadeStartTime = 400;
+                    // Bonus pickup: 150ms fade-out (much shorter)
+                    fadeStartTime = 150;
                 }
                 
                 if (this.rgbSplitDuration <= fadeStartTime) {
@@ -3611,14 +3614,20 @@ class TronPong {
             }
             
             if (this.rgbSplitDuration <= 0) {
-                this.rgbSplitActive = false;
-                this.rgbSplitIntensity = 0;
-                log('🌈 RGB Split effect ended');
+                // Smoothly fade out intensity to prevent visual pop
+                this.rgbSplitIntensity = Math.max(0, this.rgbSplitIntensity - 0.02); // Slower fade-out
+                
+                // Only deactivate when intensity is very low to prevent pop
+                if (this.rgbSplitIntensity <= 0.001) {
+                    this.rgbSplitActive = false;
+                    this.rgbSplitIntensity = 0;
+                    log('🌈 RGB Split effect ended');
+                }
             }
             
-            // Update shader uniforms
+            // Update shader uniforms (add base intensity of 5%)
             if (this.rgbSplitMaterial) {
-                this.rgbSplitMaterial.uniforms.intensity.value = this.rgbSplitIntensity;
+                this.rgbSplitMaterial.uniforms.intensity.value = this.rgbSplitIntensity + 0.05; // Always add 5% base
                 this.rgbSplitMaterial.uniforms.time.value = performance.now() * 0.001;
             } else {
                 log('❌ RGB Split material not found!');
@@ -3962,13 +3971,19 @@ class TronPong {
             }
             
             if (this.celebrationTimer <= 0) {
-                // Celebration ended
+                // Celebration ended - keep camera tracking disabled briefly to prevent pop
                 this.isCelebrating = false;
+                this.cameraTrackingDisabled = true; // Prevent sudden camera jump
                 this.waveSoundPlayed = false; // Reset sound flag for next celebration
                 this.undergroundLightTransition.active = false;
                 this.undergroundLightTransition.direction = 1; // Reset for next celebration
                 this.undergroundLightTransition.startColor = 0x6600cc; // Reset to purple
                 this.undergroundLightTransition.endColor = 0x00FFFF;   // Reset to pure cyan
+                
+                // Re-enable camera tracking after a brief delay
+                setTimeout(() => {
+                    this.cameraTrackingDisabled = false;
+                }, 300); // 300ms delay to let camera settle
                 
                 // NO CAMERA RESET - just let normal gameplay camera continue
                 // Camera will naturally return to normal gameplay behavior
@@ -4608,7 +4623,7 @@ class TronPong {
                 if (this.ballOwners[i] === 'player') {
                     log('✅ Player gets bonus!');
                     this.triggerBonus();
-                    this.triggerRGBSplitBonus(); // RGB split effect for bonus pickup!
+                    // this.triggerRGBSplitBonus(); // RGB split effect for bonus pickup! - COMMENTED OUT
                     // Remove bonus cube immediately on player hit
                     // Remove ambient light
                     if (this.bonusCube.userData.ambientLight) {
@@ -5450,7 +5465,7 @@ class TronPong {
                 this.score.player1++;
                 
                 // Trigger RGB split win celebration!
-                this.triggerRGBSplit();
+                // this.triggerRGBSplit(); // COMMENTED OUT
                 
                 // NUCLEAR OPTION: IMMEDIATE timeScale reset - NO EXCEPTIONS
                 this.timeScale = 1.0;
@@ -5481,7 +5496,14 @@ class TronPong {
                     log('✨ Celebration light cleaned up before new ball spawn');
                 }
                 
+                // Keep camera tracking disabled to prevent any pops during restart
+                this.cameraTrackingDisabled = true;
                 this.spawnBall(0, 0, 0, { x: 0, y: 0, z: -this.baseBallSpeed });
+                
+                // Keep camera tracking disabled for longer to ensure smooth restart
+                setTimeout(() => {
+                    this.cameraTrackingDisabled = false;
+                }, 1000); // 1 second delay to ensure smooth restart
             }, 2500);
             this.activeTimeouts.push(ballSpawnTimeout);
             }
@@ -5755,17 +5777,26 @@ class TronPong {
         
         
         
-        // Subtle ball tracking during normal gameplay (disabled during dramatic events)
-        if (this.balls.length > 0 && !this.rgbSplitActive && !this.isCelebrating && !this.deathResetPhase) {
-            // Gentle ball tracking - 10% more movement for better feel
+        // Smart camera positioning based on game state
+        // NOTE: RGB split for bonus pickup does NOT affect camera - only win celebrations do
+        if (this.balls.length > 0 && !this.isCelebrating && !this.deathResetPhase && !this.cameraTrackingDisabled) {
+            // Normal gameplay: Gentle ball tracking
             this.cameraTarget.x = this.balls[0].position.x * 0.088; // 10% increase from 0.08
             this.cameraTarget.z = this.balls[0].position.z * 0.055; // 10% increase from 0.05
             
             // Very gentle zoom based on ball speed
             const ballSpeed = Math.sqrt(this.ballVelocities[0].x ** 2 + this.ballVelocities[0].z ** 2);
             this.cameraTarget.zoom = 22 + ballSpeed * 0.88; // 10% increase from 0.8
+        } else if (this.isCelebrating) {
+            // During win celebration: Smoothly move camera to center
+            this.cameraTarget.x += (0 - this.cameraTarget.x) * 0.03; // Very gentle transition to center
+            this.cameraTarget.z += (0 - this.cameraTarget.z) * 0.03; // Very gentle transition to center
+            this.cameraTarget.zoom += (22 - this.cameraTarget.zoom) * 0.03; // Very gentle transition to default zoom
+        } else if (this.cameraTrackingDisabled) {
+            // When tracking is disabled: Stay at current position (no movement)
+            // Do nothing - keep camera exactly where it is
         } else {
-            // Smoothly transition to default position during dramatic events (no instant snap)
+            // Other dramatic events: Smoothly transition to default position
             this.cameraTarget.x += (0 - this.cameraTarget.x) * 0.1; // Smooth transition to 0
             this.cameraTarget.z += (0 - this.cameraTarget.z) * 0.1; // Smooth transition to 0
             this.cameraTarget.zoom += (22 - this.cameraTarget.zoom) * 0.1; // Smooth transition to 22
@@ -6802,54 +6833,35 @@ class TronPong {
             this.renderer.clear();
             this.renderer.render(this.scene, this.camera);
             
-            // 2. Apply RGB split effect to geometry if active (BEFORE bloom)
-            if (this.rgbSplitActive && this.rgbSplitIntensity > 0) {
-                log('🌈 Rendering RGB split effect - Intensity:', this.rgbSplitIntensity);
-                this.renderer.setRenderTarget(this.rgbSplitRenderTarget);
-                this.rgbSplitMaterial.uniforms.tDiffuse.value = this.bloomRenderTarget.texture;
-                this.renderer.clear();
-                this.renderer.render(this.rgbSplitScene, this.rgbSplitCamera);
-                
-                // Use RGB split result for subsequent passes
-                var baseTexture = this.rgbSplitRenderTarget.texture;
-            } else {
-                // Use original scene for subsequent passes
-                var baseTexture = this.bloomRenderTarget.texture;
-            }
-            
-            // 3. Render to fisheye render target (intermediate buffer) - use RGB split result if active
+            // 2. Apply fisheye distortion (intermediate buffer)
             this.renderer.setRenderTarget(this.fisheyeRenderTarget);
             this.renderer.toneMappingExposure = 3.825; // Another 10% darker (was 4.25)
             this.renderer.clear();
-            
-            if (this.rgbSplitActive && this.rgbSplitIntensity > 0) {
-                // Use RGB split result instead of re-rendering scene
-                this.fisheyeMaterial.uniforms.tDiffuse.value = baseTexture;
-                this.renderer.render(this.fisheyeScene, this.fisheyeCamera);
-            } else {
-                // Normal scene render
             this.renderer.render(this.scene, this.camera);
-            }
             
-            // 4. Render bloom on top of fisheye target with additive blending
-            // Use original scene for bloom (not RGB-split version)
+            // 3. Render bloom on top of fisheye target with additive blending
             this.bloomMaterial.uniforms.tDiffuse.value = this.bloomRenderTarget.texture;
             this.renderer.render(this.bloomScene, this.bloomCamera);
             
-            // 5. Apply lens flare effect (creates streaks from bright lights)
+            // 4. Apply lens flare effect (creates streaks from bright lights)
             this.renderer.setRenderTarget(this.lensFlareRenderTarget);
             this.lensFlareMaterial.uniforms.tDiffuse.value = this.fisheyeRenderTarget.texture;
             this.renderer.clear();
             this.renderer.render(this.lensFlareScene, this.lensFlareCamera);
             
-            // 6. Use lens flare result as final texture
-            var finalTexture = this.lensFlareRenderTarget.texture;
-            
-            // 7. Apply fisheye distortion (final output)
+            // 5. Final render to screen
             this.renderer.setRenderTarget(null);
-            this.fisheyeMaterial.uniforms.tDiffuse.value = finalTexture;
-            this.renderer.clear();
-            this.renderer.render(this.fisheyeScene, this.fisheyeCamera);
+            this.renderer.render(this.lensFlareScene, this.lensFlareCamera);
+            
+            // 8. Apply RGB split as final overlay (always active, intensity varies) - COMMENTED OUT
+            // this.renderer.setRenderTarget(this.rgbSplitRenderTarget);
+            // this.rgbSplitMaterial.uniforms.tDiffuse.value = this.fisheyeRenderTarget.texture;
+            // this.renderer.clear();
+            // this.renderer.render(this.rgbSplitScene, this.rgbSplitCamera);
+            // 
+            // // Render RGB split result to screen
+            // this.renderer.setRenderTarget(null);
+            // this.renderer.render(this.rgbSplitScene, this.rgbSplitCamera);
         }
     }
 }
