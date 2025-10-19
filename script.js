@@ -4026,8 +4026,8 @@ class TronPong {
             // Wave duration - consistent across all pillars
             pillar.userData.blinkDuration = 1.5; // 1.5 second glow
             
-            // Subtle displacement - push outward slightly
-            pillar.userData.targetDisplacement = 0.8;
+            // No displacement for celebratory wave - keep segments in place
+            pillar.userData.targetDisplacement = 0;
         }
         
         // Start celebration - begin smooth transition to cyan
@@ -4210,32 +4210,33 @@ class TronPong {
             const wallLength = 38; // Total wall length (-19 to +19)
             const normalizedPos = (pillarZ + 19) / wallLength; // 0 to 1 (0=enemy, 1=player)
             
-            // Simple wave: peak at first illuminated pillar, then fall back down
             // Wave travels from enemy end (z=-19) towards player end (z=+19)
             const waveSpeed = 0.05; // Same as light wave speed
             const distanceFromEnemy = Math.abs(pillarZ - (-19)); // Distance from enemy goal
             const waveDelay = distanceFromEnemy * waveSpeed; // Delay based on distance
             
             // Calculate wave timing (wave reaches this pillar after delay)
-            const waveProgress = Math.max(0, Math.min(1, (elapsed / 1000 - waveDelay) / 0.75)); // 0.75s wave duration (compressed from 1s)
+            const waveProgress = Math.max(0, Math.min(1, (elapsed / 1000 - waveDelay) / 0.75)); // 0.75s wave duration
             
-            // Simple wave multiplier - starts at 1.0, peaks, then returns to 1.0
-            let waveMultiplier = 1.0; // Default height
+            // Keep original scale (no stretching) - just elevate the entire box upward
+            pillar.scale.y = originalHeight; // Keep original shape intact
             
+            // Pure vertical wave elevation: segments only move up and down
+            let elevationAmount = 0;
             if (waveProgress > 0 && waveProgress < 1) {
-                // Wave is passing through this pillar
-                // Simple sine wave: 0 to 1 to 0 (peak in middle)
+                // Wave is passing through this pillar - simple sine wave
                 const waveShape = this.cachedSin(waveProgress * Math.PI); // 0 to 1 to 0
-                waveMultiplier = 1.0 + waveShape * 0.6; // Peak at 1.6x height (not too dramatic)
+                elevationAmount = waveShape * 1.5; // Rise up to 1.5 units maximum
             }
             
-            // Apply height directly (no complex transition)
-            const currentHeight = originalHeight * waveMultiplier;
+            // ONLY change Y position - preserve exact original X and Z positions
+            // Override any displacement from other systems during wave animation
+            pillar.position.x = pillar.userData.originalX; // Keep original X position
+            pillar.position.z = pillar.userData.zPosition; // Keep original Z position  
+            pillar.position.y = elevationAmount; // Only change Y position
             
-            pillar.scale.y = currentHeight;
-            
-            // Adjust Y position to keep base grounded
-            pillar.position.y = (currentHeight - 1) * 0.5;
+            // Clear any displacement targets to prevent interference
+            pillar.userData.targetDisplacement = 0;
         }
         
         // End animation when complete - let it fade out smoothly
