@@ -2492,7 +2492,7 @@ class TronPong {
             // OPTIMIZATION: Focus particles around player paddle area (z = 15)
             // Most particles near player paddle where they're most visible
             const playerAreaZ = 15; // Player paddle Z position
-            const focusRadius = 25; // Focus area around player
+            const focusRadius = 15; // Focus area around player (closer to camera)
             
             let x, y, z;
             
@@ -2606,6 +2606,12 @@ class TronPong {
                 this.lastResetPress = true;
                 this.superHardReset();
             }
+            
+            // Toggle fullscreen on 'J' key
+            if (e.key.toLowerCase() === 'j' && !this.lastFullscreenTogglePress) {
+                this.lastFullscreenTogglePress = true;
+                this.toggleFullscreen();
+            }
         });
         
         window.addEventListener('keyup', (e) => {
@@ -2618,6 +2624,9 @@ class TronPong {
             if (e.key.toLowerCase() === 'f') {
                 this.lastFPSTogglePress = false;
             }
+            if (e.key.toLowerCase() === 'j') {
+                this.lastFullscreenTogglePress = false;
+            }
             if (e.key.toLowerCase() === 'r') {
                 this.lastResetPress = false;
             }
@@ -2627,6 +2636,7 @@ class TronPong {
         this.lastStartPress = false; // Debounce for start button
         this.lastFPSTogglePress = false; // Debounce for FPS toggle
         this.lastResetPress = false; // Debounce for reset
+        this.lastFullscreenTogglePress = false; // Debounce for fullscreen toggle
         
         window.addEventListener('gamepadconnected', (e) => {
             log('🎮 Gamepad connected:', e.gamepad.id);
@@ -3690,6 +3700,7 @@ class TronPong {
                 font-family: 'Orbitron', monospace;
                 z-index: 1000;
                 pointer-events: none;
+                white-space: nowrap;
                 animation: hardBlinkEnter 0.6s ease-out forwards;
             `;
         } else if (message.style === 'bonus') {
@@ -3708,6 +3719,7 @@ class TronPong {
                 font-family: 'Orbitron', monospace;
                 z-index: 1000;
                 pointer-events: none;
+                white-space: nowrap;
                 animation: hardBlinkEnter 0.6s ease-out forwards;
             `;
         } else {
@@ -3724,6 +3736,7 @@ class TronPong {
                 font-family: 'Orbitron', monospace;
                 z-index: 1000;
                 pointer-events: none;
+                white-space: nowrap;
                 animation: hardBlinkEnter 0.6s ease-out forwards;
             `;
         }
@@ -4775,6 +4788,34 @@ class TronPong {
             this.fpsCounter.element.style.display = this.fpsCounter.visible ? 'block' : 'none';
         }
         log(`📊 FPS counter ${this.fpsCounter.visible ? 'shown' : 'hidden'}`);
+    }
+    
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            // Enter fullscreen
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+                log('🖥️ Entered fullscreen mode');
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
+                log('🖥️ Entered fullscreen mode (webkit)');
+            } else if (document.documentElement.msRequestFullscreen) {
+                document.documentElement.msRequestFullscreen();
+                log('🖥️ Entered fullscreen mode (ms)');
+            }
+        } else {
+            // Exit fullscreen
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+                log('🖥️ Exited fullscreen mode');
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+                log('🖥️ Exited fullscreen mode (webkit)');
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+                log('🖥️ Exited fullscreen mode (ms)');
+            }
+        }
     }
     
     updateFPSCounter() {
@@ -5902,7 +5943,7 @@ class TronPong {
     
     showMultiBallText() {
         // Use message queue system to prevent overlapping
-        this.queueMessage('MULTI BALL', 1400, 'default');
+        this.queueMessage('MULTI-BALL', 1400, 'default');
     }
     
     showDeathScreen() {
