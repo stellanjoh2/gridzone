@@ -3541,13 +3541,13 @@ class TronPong {
         // Trigger RGB split effect for bonus pickup (smooth ease-in and fade-out)
         this.rgbSplitActive = true;
         this.rgbSplitIntensity = 0.0; // Start at 0 intensity for smooth ease-in
-        this.rgbSplitDuration = 800; // 0.8 seconds duration for bonus pickup (more time for smooth fade)
-        this.rgbSplitOriginalDuration = 800; // Store original duration
+        this.rgbSplitDuration = 1500; // 1.5 seconds duration for bonus pickup (more time for smooth fade)
+        this.rgbSplitOriginalDuration = 1500; // Store original duration
         this.rgbSplitPhase = 'ease-in'; // Start with ease-in phase
         this.rgbSplitEaseInDuration = 150; // 150ms quick ease-in duration
         this.rgbSplitEaseInStartTime = performance.now();
         
-        log('🌈 RGB Split bonus pickup triggered! Duration: 0.8s with smooth ease-in and fade-out');
+        log('🌈 RGB Split bonus pickup triggered! Duration: 1.5s with smooth ease-in and fade-out');
     }
     
     updateLensFlare(deltaTime) {
@@ -3586,7 +3586,7 @@ class TronPong {
             else if (this.rgbSplitPhase === 'fade-out') {
                 // Calculate fade-out progress based on remaining time vs fade-out duration
                 // Use different fade-out durations for win celebration vs bonus pickup
-                const fadeOutDuration = this.rgbSplitOriginalDuration === 2500 ? 800 : 300; // 800ms for win, 300ms for bonus
+                const fadeOutDuration = this.rgbSplitOriginalDuration === 2500 ? 800 : 600; // 800ms for win, 600ms for bonus
                 const fadeProgress = Math.max(0, this.rgbSplitDuration / fadeOutDuration);
                 
                 // Smooth fade out with easing (prevents pop at end)
@@ -3600,8 +3600,8 @@ class TronPong {
                     // Win celebration: 800ms fade-out
                     fadeStartTime = 800;
                 } else {
-                    // Bonus pickup: 300ms fade-out
-                    fadeStartTime = 300;
+                    // Bonus pickup: 600ms fade-out
+                    fadeStartTime = 600;
                 }
                 
                 if (this.rgbSplitDuration <= fadeStartTime) {
