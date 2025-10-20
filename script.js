@@ -219,6 +219,7 @@ class TronPong {
             lookAtHeight: 1 // Look at center of arena
         };
         
+        
         // Multi-ball camera zoom (dramatic effect when new ball spawns)
         this.multiBallZoom = {
             active: false,
@@ -242,16 +243,6 @@ class TronPong {
             targetZoom: 0 // Target y offset
         };
         
-        // Camera transition (from start menu to gameplay)
-        this.cameraTransition = {
-            active: false,
-            startTime: 0,
-            duration: 2000, // 2 second smooth transition
-            startPos: { x: 0, y: 0, z: 0 },
-            startRot: { x: 0, y: 0, z: 0 },
-            targetPos: { x: 0, y: 20, z: 22 }, // z=22 matches camera system default
-            targetLookAt: { x: 0, y: 1, z: 0 }
-        };
         
         // Paddle tilt and look effect
         this.paddlePreviousX = 0;
@@ -268,8 +259,8 @@ class TronPong {
         
         // Camera system
         this.cameraTarget = { x: 0, y: 0, z: 0, zoom: 22 };
-        this.cameraSmooth = 0.05; // Smooth lerp factor for camera movement
-        this.cameraTrackingDisabled = false; // Flag to temporarily disable ball tracking
+        this.cameraSmooth = 0.015; // Much more gradual camera movement (was 0.05)
+        this.cameraTrackingRampUp = 0; // Gradual ramp-up for ball tracking
         
         // Controls
         this.keys = {};
@@ -3335,8 +3326,19 @@ class TronPong {
             this.logoLights.forEach(light => light.visible = false);
         }
         
-        // Start cinematic camera transition FIRST!
-        this.startCameraTransition();
+            // Set camera to gameplay position once at start
+            this.camera.position.set(0, 18, 22);
+            this.camera.lookAt(0, -4, 0);
+            this.camera.fov = 75;
+            this.camera.updateProjectionMatrix();
+            
+            // Initialize camera target for normal gameplay
+            this.cameraTarget.x = 0;
+            this.cameraTarget.z = 0;
+            this.cameraTarget.zoom = 22;
+            
+            // Reset camera tracking ramp-up for gradual tracking
+            this.cameraTrackingRampUp = 0;
         
         // Delay ball spawn slightly to let camera transition start smoothly
         // This prevents visual glitch where ball appears before camera moves
@@ -4018,9 +4020,7 @@ class TronPong {
         this.rgbSplitEaseInDuration = 150; // 150ms quick ease-in duration
         this.rgbSplitEaseInStartTime = performance.now();
         
-        // EXPLICITLY ensure camera tracking is NOT disabled for bonus pickup
-        // Camera should continue normal ball tracking during bonus pickup
-        this.cameraTrackingDisabled = false;
+        // Camera continues normal ball tracking during bonus pickup
         
         log('🌈 RGB Split bonus pickup boosted! Duration: 0.3s with smooth ease-in and fade-out (NO camera interaction)');
     }
@@ -4646,9 +4646,8 @@ class TronPong {
             }
             
             if (this.celebrationTimer <= 0) {
-                // Celebration ended - keep camera tracking disabled briefly to prevent pop
+                // Celebration ended
                 this.isCelebrating = false;
-                this.cameraTrackingDisabled = true; // Prevent sudden camera jump
                 this.waveSoundPlayed = false; // Reset sound flag for next celebration
                 this.undergroundLightTransition.active = false;
                 this.undergroundLightTransition.direction = 1; // Reset for next celebration
@@ -4666,10 +4665,6 @@ class TronPong {
                 this.collisionDisableTimer = 0;
                 this.ballCollisionHistory = [];
                 
-                // Re-enable camera tracking after a brief delay
-                setTimeout(() => {
-                    this.cameraTrackingDisabled = false;
-                }, 300); // 300ms delay to let camera settle
                 
                 // NO CAMERA RESET - just let normal gameplay camera continue
                 // Camera will naturally return to normal gameplay behavior
@@ -6323,7 +6318,6 @@ class TronPong {
             
             // Deactivate ALL camera systems
             this.multiBallZoom.active = false;
-            this.cameraTransition.active = false;
             this.startMenuCamera.active = false;
             this.pauseCamera.active = false;
             
@@ -6436,14 +6430,7 @@ class TronPong {
                     log('✨ Celebration light cleaned up before new ball spawn');
                 }
                 
-                // Keep camera tracking disabled to prevent any pops during restart
-                this.cameraTrackingDisabled = true;
                 this.spawnBall(0, 0, 0, { x: 0, y: 0, z: -this.baseBallSpeed });
-                
-                // Keep camera tracking disabled for longer to ensure smooth restart
-                setTimeout(() => {
-                    this.cameraTrackingDisabled = false;
-                }, 1000); // 1 second delay to ensure smooth restart
             }, 2500);
             this.activeTimeouts.push(ballSpawnTimeout);
             }
@@ -6543,7 +6530,7 @@ class TronPong {
         // Look at the center of the arena, looking down
         this.camera.lookAt(0, this.startMenuCamera.lookAtHeight, 0);
     }
-
+    
     updateSpatialAudioListener() {
         // Update spatial audio listener position to match camera
         if (this.listener && this.listener.positionX) {
@@ -6561,40 +6548,6 @@ class TronPong {
         }
     }
     
-    updateCameraTransition() {
-        // Smooth transition from start menu camera to gameplay camera
-        if (!this.cameraTransition.active) return;
-        
-        const elapsed = performance.now() - this.cameraTransition.startTime;
-        const progress = Math.min(elapsed / this.cameraTransition.duration, 1);
-        
-        // Use easing for smooth, cinematic feel
-        const eased = this.easeInOutCubic(progress);
-        
-        // Interpolate position
-        this.camera.position.x = this.cameraTransition.startPos.x + 
-            (this.cameraTransition.targetPos.x - this.cameraTransition.startPos.x) * eased;
-        this.camera.position.y = this.cameraTransition.startPos.y + 
-            (this.cameraTransition.targetPos.y - this.cameraTransition.startPos.y) * eased;
-        this.camera.position.z = this.cameraTransition.startPos.z + 
-            (this.cameraTransition.targetPos.z - this.cameraTransition.startPos.z) * eased;
-        
-        // Smooth look-at transition
-        const lookX = this.cameraTransition.targetLookAt.x * eased;
-        const lookY = this.cameraTransition.targetLookAt.y;
-        const lookZ = this.cameraTransition.targetLookAt.z * eased;
-        this.camera.lookAt(lookX, lookY, lookZ);
-        
-        // End transition
-        if (progress >= 1) {
-            this.cameraTransition.active = false;
-            // Initialize camera target to prevent jump when normal camera takes over
-            this.cameraTarget.x = 0;
-            this.cameraTarget.z = 0;
-            this.cameraTarget.zoom = 22;
-            log('✅ Camera transition complete - gameplay started!');
-        }
-    }
     
     updateCameraResetTransition() {
         if (!this.cameraResetTransition || !this.cameraResetTransition.active) return;
@@ -6626,29 +6579,6 @@ class TronPong {
         }
     }
     
-    startCameraTransition() {
-        // Begin smooth transition from start menu to gameplay
-        log('🎬 Starting camera transition...');
-        
-        // Deactivate start menu camera
-        this.startMenuCamera.active = false;
-        
-        // Record current camera state
-        this.cameraTransition.startPos = {
-            x: this.camera.position.x,
-            y: this.camera.position.y,
-            z: this.camera.position.z
-        };
-        
-        // Target is the normal gameplay camera position
-        // z=22 matches the default zoom value in updateDynamicCamera
-        this.cameraTransition.targetPos = { x: 0, y: 20, z: 22 };
-        this.cameraTransition.targetLookAt = { x: 0, y: -4, z: 0 }; // Match gameplay camera lookAt!
-        
-        // Activate transition
-        this.cameraTransition.active = true;
-        this.cameraTransition.startTime = performance.now();
-    }
     
     resetCameraToDefault() {
         // Start smooth transition back to default gameplay position
@@ -6657,9 +6587,9 @@ class TronPong {
             startTime: performance.now(),
             duration: 1500, // 1.5 seconds smooth transition
             startPos: {
-                x: this.camera.position.x,
-                y: this.camera.position.y,
-                z: this.camera.position.z
+            x: this.camera.position.x,
+            y: this.camera.position.y,
+            z: this.camera.position.z
             },
             targetPos: { x: 0, y: 18, z: 22 }, // Default gameplay position
             startLookAt: {
@@ -6691,17 +6621,7 @@ class TronPong {
         if (this.isPaused) return;
         
         
-        // Camera reset transition override (smooth return to default position)
-        if (this.cameraResetTransition && this.cameraResetTransition.active) {
-            this.updateCameraResetTransition();
-            return;
-        }
-        
-        // Camera transition override (start menu → gameplay)
-        if (this.cameraTransition.active) {
-            this.updateCameraTransition();
-            return;
-        }
+        // No camera transitions - single camera system only
         
         // Multi-ball camera zoom override (dramatic zoom on new balls!)
         if (this.multiBallZoom.active) {
@@ -6713,22 +6633,23 @@ class TronPong {
         
         // Smart camera positioning based on game state
         // NOTE: RGB split for bonus pickup does NOT affect camera - only win celebrations do
-        if (this.balls.length > 0 && !this.isCelebrating && !this.deathResetPhase && !this.cameraTrackingDisabled) {
-            // Normal gameplay: Gentle ball tracking
-            this.cameraTarget.x = this.balls[0].position.x * 0.088; // 10% increase from 0.08
-            this.cameraTarget.z = this.balls[0].position.z * 0.055; // 10% increase from 0.05
+        if (this.balls.length > 0 && !this.isCelebrating && !this.deathResetPhase) {
+            // Gradually ramp up camera tracking intensity over time
+            this.cameraTrackingRampUp = Math.min(this.cameraTrackingRampUp + 0.008, 1.0); // Very slow ramp-up
             
-            // Very gentle zoom based on ball speed
+            // Normal gameplay: Very gentle ball tracking that gradually increases
+            const trackingIntensity = this.cameraTrackingRampUp * 0.05; // Much reduced from 0.088
+            this.cameraTarget.x = this.balls[0].position.x * trackingIntensity;
+            this.cameraTarget.z = this.balls[0].position.z * (trackingIntensity * 0.6); // Even gentler Z tracking
+            
+            // Very gentle zoom based on ball speed (also ramped up)
             const ballSpeed = Math.sqrt(this.ballVelocities[0].x ** 2 + this.ballVelocities[0].z ** 2);
-            this.cameraTarget.zoom = 22 + ballSpeed * 0.88; // 10% increase from 0.8
+            this.cameraTarget.zoom = 22 + (ballSpeed * 0.3 * this.cameraTrackingRampUp); // Much reduced zoom effect
         } else if (this.isCelebrating) {
             // During win celebration: Smoothly move camera to center
             this.cameraTarget.x += (0 - this.cameraTarget.x) * 0.03; // Very gentle transition to center
             this.cameraTarget.z += (0 - this.cameraTarget.z) * 0.03; // Very gentle transition to center
             this.cameraTarget.zoom += (22 - this.cameraTarget.zoom) * 0.03; // Very gentle transition to default zoom
-        } else if (this.cameraTrackingDisabled) {
-            // When tracking is disabled: Stay at current position (no movement)
-            // Do nothing - keep camera exactly where it is
         } else {
             // Other dramatic events: Smoothly transition to default position
             this.cameraTarget.x += (0 - this.cameraTarget.x) * 0.1; // Smooth transition to 0
@@ -6736,7 +6657,7 @@ class TronPong {
             this.cameraTarget.zoom += (22 - this.cameraTarget.zoom) * 0.1; // Smooth transition to 22
         }
         
-        // Smooth camera movement
+        // Very smooth camera movement
         const currentPos = this.camera.position;
         currentPos.x += (this.cameraTarget.x - currentPos.x) * this.cameraSmooth;
         currentPos.z += (this.cameraTarget.zoom + this.cameraTarget.z - currentPos.z) * this.cameraSmooth;
@@ -6798,6 +6719,7 @@ class TronPong {
             this.cameraShake.horizontalShift *= this.cameraShake.horizontalShiftDecay;
         }
     }
+    
     
     updateAnimatedLights() {
         if (this.isPaused) return;
@@ -6989,20 +6911,7 @@ class TronPong {
         
         if (this.deathResetPhase === 5) {
             // Phase 5: Reset camera to default gameplay position and spawn new ball
-            this.camera.fov = 75;
-            this.camera.updateProjectionMatrix();
-            
-            // NO CAMERA RESET - just let normal gameplay camera continue
-            // Camera will naturally return to normal gameplay behavior
-            
-            // Reset all camera targets to default
-            this.cameraTarget.x = 0;
-            this.cameraTarget.z = 0;
-            this.cameraTarget.zoom = 22;
-            this.cameraLookOffset = 0;
-            this.camera.rotation.z = 0;
-            
-            // NO SPECIAL CAMERA BEHAVIOR - let normal gameplay camera continue
+            // CAMERA DOES NOTHING - stays exactly as it is
             
             // CRITICAL: Reset timeScale to normal speed!
             this.forceNormalSpeed();
@@ -7046,6 +6955,7 @@ class TronPong {
                 y: 0,
                 z: -0.15
             });
+            
             
             // Reset phase tracking
             this.deathResetPhase = 0;
@@ -7144,19 +7054,7 @@ class TronPong {
         this.paddle1.rotation.z = 0;
         this.paddle2.rotation.z = 0;
         
-        // Reset camera to normal gameplay state
-        this.camera.fov = 75; // Default gameplay FOV
-        this.camera.updateProjectionMatrix();
-        
-        // Reset camera position to default (same as init)
-        this.camera.position.set(0, 18, 22);
-        this.cameraTarget.x = 0;
-        this.cameraTarget.z = 0;
-        this.cameraTarget.zoom = 22;
-        this.cameraLookOffset = 0;
-        
-        // Reset camera rotation
-        this.camera.rotation.z = 0;
+        // CAMERA DOES NOTHING - stays exactly as it is
         
         // CRITICAL: Reset timeScale to normal speed!
         this.forceNormalSpeed();
