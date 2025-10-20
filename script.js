@@ -306,6 +306,15 @@ class TronPong {
         this.particleOpacityTimer = 0.0; // Timer for opacity fade-back
         this.particleOpacityFadeSpeed = 2.0; // How fast opacity returns to default
         
+        // Stuck ball detection and recovery system
+        this.ballCollisionHistory = []; // Track recent collision positions and times
+        this.maxCollisionHistory = 10; // Keep last 10 collisions
+        this.stuckDetectionRadius = 3.0; // If ball collides within 3 units of previous collision
+        this.stuckDetectionTime = 500; // Within 0.5 seconds
+        this.stuckCollisionThreshold = 6; // If 6+ collisions in same area within 0.5s = stuck
+        this.collisionDisabled = false; // Flag to disable collisions temporarily
+        this.collisionDisableTimer = 0; // Timer for re-enabling collisions
+        
         
         // Environment map for reflections
         this.envMap = null;
@@ -448,6 +457,85 @@ class TronPong {
                 // Blend between 25% (0.15) and full (0.6) opacity
                 const targetOpacity = 0.15 + (this.particleOpacityBoost * 0.45); // 0.15 to 0.6
                 this.particles.material.opacity = targetOpacity;
+            }
+        }
+    }
+    
+    recordBallCollision(ballPosition) {
+        // Record collision position and timestamp
+        const currentTime = performance.now();
+        this.ballCollisionHistory.push({
+            position: ballPosition.clone(),
+            timestamp: currentTime
+        });
+        
+        // Keep only recent collisions
+        if (this.ballCollisionHistory.length > this.maxCollisionHistory) {
+            this.ballCollisionHistory.shift();
+        }
+        
+        // Check for stuck ball pattern
+        this.checkForStuckBall();
+    }
+    
+    checkForStuckBall() {
+        if (this.ballCollisionHistory.length < this.stuckCollisionThreshold) return;
+        
+        const currentTime = performance.now();
+        const recentCollisions = this.ballCollisionHistory.filter(collision => 
+            currentTime - collision.timestamp <= this.stuckDetectionTime
+        );
+        
+        if (recentCollisions.length >= this.stuckCollisionThreshold) {
+            // Check if collisions are clustered in a small area
+            const positions = recentCollisions.map(c => c.position);
+            const centerPosition = this.calculateCenter(positions);
+            
+            // Count collisions within detection radius of center
+            const clusteredCollisions = positions.filter(pos => 
+                pos.distanceTo(centerPosition) <= this.stuckDetectionRadius
+            );
+            
+            if (clusteredCollisions.length >= this.stuckCollisionThreshold) {
+                this.triggerStuckBallRecovery();
+            }
+        }
+    }
+    
+    calculateCenter(positions) {
+        // Calculate center position of collision cluster
+        const center = new THREE.Vector3();
+        positions.forEach(pos => center.add(pos));
+        center.divideScalar(positions.length);
+        return center;
+    }
+    
+    triggerStuckBallRecovery() {
+        // Disable collisions for just THIS frame to break the loop
+        this.collisionDisabled = true;
+        this.collisionDisableTimer = 0; // No timer - reset immediately next frame
+        
+        // Clear collision history to reset detection
+        this.ballCollisionHistory = [];
+        
+        log('🚨 STUCK BALL DETECTED! Collisions disabled for current frame to break loop');
+    }
+    
+    updateStuckBallRecovery(deltaTime) {
+        // Update collision disable timer
+        if (this.collisionDisabled) {
+            // If timer is 0, re-enable immediately (same frame)
+            if (this.collisionDisableTimer <= 0) {
+                this.collisionDisabled = false;
+                log('✅ Ball collision recovery complete - collisions re-enabled immediately');
+            } else {
+                // Decrease timer
+                this.collisionDisableTimer -= deltaTime;
+                
+                if (this.collisionDisableTimer <= 0) {
+                    this.collisionDisabled = false;
+                    log('✅ Ball collision recovery complete - collisions re-enabled');
+                }
             }
         }
     }
@@ -1889,6 +1977,11 @@ class TronPong {
     }
     
     spawnBall(x, y, z, velocity) {
+        // Reset stuck ball collision system when spawning new ball
+        this.collisionDisabled = false;
+        this.collisionDisableTimer = 0;
+        this.ballCollisionHistory = [];
+        
         // Use shared geometry for performance!
         const ballMaterial = new THREE.ShaderMaterial({
             uniforms: {
@@ -2988,6 +3081,11 @@ class TronPong {
         // Ensure we start with normal speed
         this.forceNormalSpeed();
         
+        // Reset stuck ball collision system
+        this.collisionDisabled = false;
+        this.collisionDisableTimer = 0;
+        this.ballCollisionHistory = [];
+        
             this.gameStarted = true;
             this.domElements.ui.style.display = 'none';
         document.getElementById('logo').style.display = 'none';
@@ -3203,6 +3301,11 @@ class TronPong {
             // Don't show UI element - it contains "PRESS SPACE TO START" text
             // Show score UI again when unpausing
             document.getElementById('score').style.display = 'block';
+            
+            // Reset stuck ball collision system when unpausing
+            this.collisionDisabled = false;
+            this.collisionDisableTimer = 0;
+            this.ballCollisionHistory = [];
             // Play unpause sound (same sound for consistency)
             if (this.sounds.pause) {
                 this.sounds.pause.currentTime = 0;
@@ -4238,6 +4341,11 @@ class TronPong {
                 // UNFREEZE GAME: Resume normal gameplay after win sequence
                 this.gameSpeed = 1.0;
                 this.isGameFrozen = false;
+                
+                // Reset stuck ball collision system after win
+                this.collisionDisabled = false;
+                this.collisionDisableTimer = 0;
+                this.ballCollisionHistory = [];
                 
                 // Re-enable camera tracking after a brief delay
                 setTimeout(() => {
@@ -5624,6 +5732,9 @@ class TronPong {
                 this.worldLightBoost = 12.0;
                 this.playStereoWallHit('left');
                 this.triggerLensFlare();
+                
+                // Record collision for stuck ball detection
+                this.recordBallCollision(ball.position.clone());
             }
         
             if (ball.position.x >= 11.5 && !this.isCollisionOnCooldown(i, 'wall')) {
@@ -5650,6 +5761,9 @@ class TronPong {
                 this.worldLightBoost = 12.0;
                 this.playStereoWallHit('right');
                 this.triggerLensFlare();
+                
+                // Record collision for stuck ball detection
+                this.recordBallCollision(ball.position.clone());
             }
         
             // Obstacle collision (raised floor tile)
@@ -5717,7 +5831,8 @@ class TronPong {
             const paddle1HalfWidth = 2.5 * (1.0 + (this.bonusActivePaddle === this.paddle1 ? this.paddleWidthTransition : 0));
             if (ball.position.z >= 14.5 && 
                 Math.abs(ball.position.x - paddle1X) < paddle1HalfWidth &&
-                !this.isCollisionOnCooldown(i, 'paddle')) {
+                !this.isCollisionOnCooldown(i, 'paddle') &&
+                !this.collisionDisabled) {
                 
                 // Set cooldown to prevent rapid-fire collisions
                 this.setCollisionCooldown(i, 'paddle');
@@ -5735,6 +5850,9 @@ class TronPong {
                 this.createImpactEffect(ball.position.clone(), 0x00FEFC); // Lime green
                 this.playSound('paddleHit');
                 this.boostParticleOpacity(); // Boost particles on paddle hit
+                
+                // Record collision for stuck ball detection
+                this.recordBallCollision(ball.position.clone());
                 
                 // Paddle pushback!
                 this.paddle1Pushback = 1.5; // Push back 1.5 units (increased from 0.8)
@@ -5784,7 +5902,8 @@ class TronPong {
         // AI paddle collision (top) - ANTI-STUCK system
             if (ball.position.z <= -14.5 && 
                 Math.abs(ball.position.x - paddle2X) < 2.5 &&
-                !this.isCollisionOnCooldown(i, 'paddle')) {
+                !this.isCollisionOnCooldown(i, 'paddle') &&
+                !this.collisionDisabled) {
                 
                 // Set cooldown to prevent rapid-fire collisions
                 this.setCollisionCooldown(i, 'paddle');
@@ -5805,6 +5924,9 @@ class TronPong {
             this.playSound('paddleHit');
             this.triggerLensFlare(); // Lens flare on impact!
             this.boostParticleOpacity(); // Boost particles on paddle hit
+            
+                // Record collision for stuck ball detection
+                this.recordBallCollision(ball.position.clone());
             
                 // Paddle pushback!
                 this.paddle2Pushback = 1.5; // Push back 1.5 units (increased from 0.8)
@@ -6023,6 +6145,11 @@ class TronPong {
                 // UNFREEZE GAME: Resume normal gameplay
                 this.gameSpeed = 1.0;
                 this.isGameFrozen = false;
+                
+                // Reset stuck ball collision system after death
+                this.collisionDisabled = false;
+                this.collisionDisableTimer = 0;
+                this.ballCollisionHistory = [];
                 
                 // Clean up death vignette class after animation completes
                 setTimeout(() => {
@@ -6545,6 +6672,11 @@ class TronPong {
             // Restore paddle lights (energy restored!)
             this.fadePaddleLights(1.0, 500);
             
+            // Reset stuck ball collision system after death reset
+            this.collisionDisabled = false;
+            this.collisionDisableTimer = 0;
+            this.ballCollisionHistory = [];
+            
             // Spawn new ball
             this.spawnBall(0, 0, 0, {
                 x: 0,
@@ -6761,6 +6893,12 @@ class TronPong {
             this.celebrationLightActive = false;
             log('✨ Celebration light cleaned up during game reset');
         }
+        
+        // Reset stuck ball collision system
+        this.collisionDisabled = false;
+        this.collisionDisableTimer = 0;
+        this.ballCollisionHistory = [];
+        log('🔄 Stuck ball collision system reset');
         
         // Music keeps playing (don't stop it)
         
@@ -7199,6 +7337,7 @@ class TronPong {
                 this.updateCelebration(deltaTime); // Celebration system
                 this.updateParticles();
                 this.updateParticleOpacity(deltaTime); // Dynamic particle opacity system
+                this.updateStuckBallRecovery(deltaTime); // Stuck ball detection and recovery
                 this.updateFloorGlow();
                 this.updateObstacles();
             }
