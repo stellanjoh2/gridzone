@@ -1357,7 +1357,7 @@ class TronPong {
                 tDiffuse: { value: null },
                 threshold: { value: 0.85 }, // Only bright lights trigger flares
                 intensity: { value: 0.4 }, // Flare strength
-                ghostIntensity: { value: 0.09 }, // Ghost artifacts strength (increased by 20%)
+                ghostIntensity: { value: 0.1035 }, // Ghost artifacts strength (increased by 35% total)
                 aspectRatio: { value: window.innerWidth / window.innerHeight },
                 flareOpacity: { value: 0.0 } // 0 = off, 1 = full strength (controlled by impacts)
             },
