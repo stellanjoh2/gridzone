@@ -7027,7 +7027,8 @@ class TronPong {
     
     // Initialize CRT Effect
     initCRTEffect() {
-        // CRT Shader
+        // CRT Shader adapted from bfollington's react-three-fiber CRT effect
+        // https://codesandbox.io/p/sandbox/react-three-fiber-crt-effect-rrdco
         const crtVertexShader = `
             varying vec2 vUv;
             void main() {
