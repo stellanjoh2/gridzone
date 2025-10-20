@@ -402,10 +402,7 @@ class TronPong {
             electroFlow: null  // New electro-flow sound for wall wave celebration
         };
         
-        // Spatial audio system
-        this.audioContext = null;
-        this.listener = null;
-        this.spatialSounds = [];
+        // Spatial audio system removed - not working properly
         
         this.cacheDOMElements(); // Cache DOM first!
         this.init();
@@ -425,51 +422,9 @@ class TronPong {
         this.domElements.deathText = document.getElementById('deathText');
     }
     
-    initSpatialAudio() {
-        // Initialize Web Audio API for spatial audio
-        try {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            this.listener = this.audioContext.listener;
-            
-            // Set listener position (camera position)
-            if (this.listener.positionX) {
-                this.listener.positionX.value = 0;
-                this.listener.positionY.value = 18;
-                this.listener.positionZ.value = 22;
-            }
-            
-            log('🎵 Spatial audio initialized');
-        } catch (e) {
-            log('❌ Spatial audio not supported:', e);
-        }
-    }
+    // Spatial audio system removed - not working properly
 
-    playSpatialSound(soundFile, position, volume = 1.0) {
-        // Simplified spatial audio using stereo panning
-        // Since Web Audio API fetch doesn't work with file:// URLs
-        try {
-            // Create a simple stereo pan based on X position
-            const panValue = Math.max(-1, Math.min(1, position.x / 12)); // Normalize to -1 to 1
-            
-            // Create audio element with spatial positioning
-            const audio = new Audio(soundFile);
-            audio.volume = volume * (1 - Math.abs(position.z) / 30); // Distance-based volume
-            
-            // Apply stereo panning
-            if (audio.setSinkId) {
-                // Modern browsers support setSinkId for spatial audio
-                audio.play().catch(e => log('Spatial audio play error:', e));
-            } else {
-                // Fallback: just play the sound
-                audio.play().catch(e => log('Audio play error:', e));
-            }
-            
-            log(`🎵 Spatial audio: pan=${panValue.toFixed(2)}, vol=${audio.volume.toFixed(2)}`);
-                
-        } catch (e) {
-            log('Spatial audio playback error:', e);
-        }
-    }
+    // Spatial audio system removed - not working properly
 
     playStereoWallHit(side) {
         // Simple wall hit sound - no stereo effects
@@ -3455,6 +3410,8 @@ class TronPong {
         this.showTrackName(randomTrack.name);
         
         log(`🎵 Random track selected: ${randomTrack.name}`);
+        
+        // Audio context removed - was causing issues
             
         // Start music
         if (this.sounds.music) {
@@ -3628,6 +3585,8 @@ class TronPong {
             
             // Resume music when unpaused (only if not "No Music")
             if (this.sounds.music && this.musicTracks[this.currentTrackIndex].file !== null) {
+                // Ensure volume is set correctly (prevent any volume drift)
+                this.sounds.music.volume = 0.67;
                 this.sounds.music.play().catch(e => log('Could not resume music'));
             }
         }
@@ -6643,22 +6602,7 @@ class TronPong {
         this.camera.lookAt(0, this.startMenuCamera.lookAtHeight, 0);
     }
     
-    updateSpatialAudioListener() {
-        // Update spatial audio listener position to match camera
-        if (this.listener && this.listener.positionX) {
-            this.listener.positionX.value = this.camera.position.x;
-            this.listener.positionY.value = this.camera.position.y;
-            this.listener.positionZ.value = this.camera.position.z;
-            
-            // Update listener orientation to match camera rotation
-            this.listener.forwardX.value = 0;
-            this.listener.forwardY.value = 0;
-            this.listener.forwardZ.value = -1;
-            this.listener.upX.value = 0;
-            this.listener.upY.value = 1;
-            this.listener.upZ.value = 0;
-        }
-    }
+    // Spatial audio system removed - was causing issues
     
     
     updateCameraResetTransition() {
@@ -7798,7 +7742,7 @@ class TronPong {
         this.updateCameraDriftCorrection();
         this.updateUndergroundLightFadeIn();
         this.updateUndergroundLightTransition();
-        this.updateSpatialAudioListener();
+        // Spatial audio removed - was causing issues
             
             // Update logo 3D effects
             if (this.handleLogoGamepad) {
