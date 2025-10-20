@@ -2844,7 +2844,7 @@ class TronPong {
         }
         
         const positions = this.itemHighlightParticles.geometry.attributes.position.array;
-        const time = performance.now() * 0.005; // Fast rotation speed
+        const time = performance.now() * 0.002; // Slower, smoother rotation speed
         
         // Update target position to follow bonus cube
         this.itemHighlightTarget = this.bonusCube.position;
@@ -6093,6 +6093,9 @@ class TronPong {
                 this.playSound('paddleHit');
                 this.boostParticleOpacity('player'); // Boost particles on player paddle hit
                 
+                // Update ball ownership to player
+                this.ballOwners[i] = 'player';
+                
                 // Record collision for stuck ball detection
                 this.recordBallCollision(ball.position.clone());
                 
@@ -6109,7 +6112,7 @@ class TronPong {
                     this.playerHits = 0; // Reset counter
                 }
                 
-                // Spawn additional ball every 2 hits (max 2 balls)
+                // Spawn additional ball every 4 hits (max 2 balls)
                 // SAFETY: Only spawn once per frame, even if multiple balls hit paddle
                 if (!multiBallSpawnedThisFrame && 
                     this.successfulHits >= this.nextBallThreshold && 
@@ -6166,6 +6169,9 @@ class TronPong {
             this.playSound('paddleHit');
             this.triggerLensFlare(); // Lens flare on impact!
             this.boostParticleOpacity('enemy'); // Boost particles on enemy paddle hit
+            
+            // Update ball ownership to AI
+            this.ballOwners[i] = 'ai';
             
                 // Record collision for stuck ball detection
                 this.recordBallCollision(ball.position.clone());
