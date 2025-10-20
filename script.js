@@ -1722,7 +1722,7 @@ class TronPong {
         this.overheadLight.visible = false; // Hidden during title screen
         this.scene.add(this.overheadLight);
         
-        this.overheadLight2 = new THREE.PointLight(0xff6600, 23.203125, 100); // Orange laser gate - 25% increase
+        this.overheadLight2 = new THREE.PointLight(0xff6600, 23.2, 100); // Orange laser gate - 25% increase
         this.overheadLight2.position.set(0, 80, -60); // Halfway back from -70 to -60
         this.overheadLight2.castShadow = false; // Keep shadows disabled for performance
         this.overheadLight2.layers.set(0);
@@ -7181,7 +7181,7 @@ class TronPong {
         // Update world light boost (both lights flash on any hit) - sharp triangle curve
         if (this.worldLightBoost > 0) {
             this.overheadLight.intensity = 6.75 + this.worldLightBoost; // Your light base intensity (10% decrease)
-            this.overheadLight2.intensity = 23.203125 + this.worldLightBoost; // Enemy light base intensity (25% increase)
+            this.overheadLight2.intensity = 23.2 + this.worldLightBoost; // Enemy light base intensity (25% increase)
             
             // Sharp triangle curve: immediate linear decay (no plateau)
             this.worldLightBoost -= 0.8; // Linear decay for sharp triangle effect
@@ -7189,7 +7189,7 @@ class TronPong {
             if (this.worldLightBoost <= 0) {
                 this.worldLightBoost = 0;
                 this.overheadLight.intensity = 6.75; // Reset to your light base intensity (10% decrease)
-                this.overheadLight2.intensity = 23.203125; // Reset to enemy light base intensity (25% increase)
+                this.overheadLight2.intensity = 23.2; // Reset to enemy light base intensity (25% increase)
                 log('💡 Light intensities reset - Overhead1:', this.overheadLight.intensity, 'Overhead2:', this.overheadLight2.intensity);
             }
         }
@@ -8150,10 +8150,10 @@ class TronPong {
                 this.renderer.render(this.crtScene, this.crtCamera);
             } else {
                 // Direct render without CRT
-                this.renderer.setRenderTarget(null);
-                this.renderer.toneMappingExposure = 2.678;
-                this.renderer.clear();
-                this.renderer.render(this.scene, this.camera);
+            this.renderer.setRenderTarget(null);
+            this.renderer.toneMappingExposure = 2.678;
+            this.renderer.clear();
+            this.renderer.render(this.scene, this.camera);
             }
         } else {
             // Quality mode: full post-processing pipeline
@@ -8189,7 +8189,7 @@ class TronPong {
                 
                 // Apply CRT effect to final result
                 this.crtMaterial.uniforms.tDiffuse.value = this.renderTarget.texture;
-                this.renderer.setRenderTarget(null);
+            this.renderer.setRenderTarget(null);
                 this.renderer.render(this.crtScene, this.crtCamera);
             } else {
                 // Final render to screen without CRT
