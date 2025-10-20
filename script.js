@@ -4021,19 +4021,54 @@ class TronPong {
     
     // Message queue system to prevent overlapping on-screen messages
     queueMessage(text, duration = 2000, style = 'default') {
-        this.messageQueue.push({
+        // NEW MESSAGE OVERRIDE: Clear any existing message immediately
+        this.clearCurrentMessage();
+        
+        // Clear the queue and add only this new message
+        this.messageQueue = [{
             text: text,
             duration: duration,
             style: style,
             timestamp: performance.now()
-        });
+        }];
         
-        // Process queue if no message is currently active
-        if (!this.messageActive) {
-            this.processMessageQueue();
+        // Process the new message immediately
+        this.processMessageQueue();
+        
+        log(`📝 Message queued (override): "${text}" (previous message cleared)`);
+    }
+    
+    clearCurrentMessage() {
+        // Immediately remove any currently active message element
+        if (this.currentMessage && this.currentMessage.element) {
+            if (this.currentMessage.element.parentNode) {
+                document.body.removeChild(this.currentMessage.element);
+            }
+            this.currentMessage.element = null;
         }
         
-        log(`📝 Message queued: "${text}" (${this.messageQueue.length} messages in queue)`);
+        // Clear any message elements in the DOM
+        const existingMessages = document.querySelectorAll('[data-message]');
+        existingMessages.forEach(msg => {
+            if (msg.parentNode) {
+                document.body.removeChild(msg);
+            }
+        });
+        
+        // Reset message state
+        this.messageActive = false;
+        this.currentMessage = null;
+        
+        // Clear any pending timeouts for message removal
+        if (this.messageTimeout) {
+            clearTimeout(this.messageTimeout);
+            this.messageTimeout = null;
+        }
+        
+        // Clear the message queue completely
+        this.messageQueue = [];
+        
+        log('🧹 Current message cleared for override');
     }
     
     processMessageQueue() {
@@ -6411,6 +6446,9 @@ class TronPong {
     }
     
     showDeathScreen() {
+        // MESSAGE OVERRIDE: Clear any existing messages when "YOU DIED!" takes priority
+        this.clearCurrentMessage();
+        
         // FREEZE GAME: Stop all ball and paddle movement
         this.gameSpeed = 0; // Freeze game speed
         this.isGameFrozen = true; // Set freeze flag
