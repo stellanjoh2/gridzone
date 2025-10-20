@@ -529,6 +529,39 @@
             filter: brightness(1.1) contrast(1.05);
         }
         
+        /* Title screen background layer for text readability and game start fade-in */
+        #titleBackground {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.33);
+            z-index: 999999;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 2s ease-out;
+        }
+        
+        /* Title screen mode - semi-transparent for text readability */
+        #titleBackground.titleScreen {
+            background: rgba(0, 0, 0, 0.33);
+            z-index: 1;
+            transition: opacity 0.5s ease-out;
+        }
+        
+        /* Game start mode - solid black for fade-in effect */
+        #titleBackground.gameStart {
+            background: rgba(0, 0, 0, 1);
+            z-index: 999999;
+            transition: opacity 1s ease-out;
+        }
+        
+        /* Hide title background when game starts */
+        #titleBackground.hidden {
+            opacity: 0;
+        }
+        
         body::after {
             content: '';
             position: fixed;
@@ -703,6 +736,9 @@
     </style>
 </head>
 <body>
+    <!-- Semi-transparent black background for title screen text readability and game start fade-in -->
+    <div id="titleBackground" class="titleScreen"></div>
+    
     <div id="score">
         <span>YOU <span id="player1Score">0</span></span> <span class="score-dash">-</span> <span>AI <span id="player2Score">0</span></span>
     </div>

@@ -273,6 +273,25 @@ class TronPong {
             lastCheckTime: 0
         };
         
+        // Underground light fade-in system for dramatic effect
+        this.undergroundLightFadeIn = {
+            active: false,
+            startTime: 0,
+            duration: 5000, // 5 seconds
+            targetIntensity: 0.5
+        };
+        
+        // Underground light flash transition system for smooth color changes
+        this.undergroundLightFlashTransition = {
+            active: false,
+            startTime: 0,
+            duration: 0,
+            startColor: 0x6600cc,
+            endColor: 0x6600cc,
+            targetIntensity: 0.5
+        };
+        
+        
         // Controls
         this.keys = {};
         this.gamepad = null;
@@ -1688,20 +1707,22 @@ class TronPong {
         const ambientLight = new THREE.AmbientLight(0x6600cc, 10.0); // Purple color, 25% increase from 8.0 to 10.0
         this.scene.add(ambientLight);
         
-        this.overheadLight = new THREE.PointLight(0xff6600, 6.75, 120); // Orange laser gate (10% decrease from 7.5)
+        this.overheadLight = new THREE.PointLight(0xff6600, 6.75, 120); // Orange laser gate - back to original intensity
         this.overheadLight.position.set(0, 60, 20);
         this.overheadLight.castShadow = false; // Keep shadows disabled for performance
         this.overheadLight.layers.set(0);
+        this.overheadLight.visible = false; // Hidden during title screen
         this.scene.add(this.overheadLight);
         
-        this.overheadLight2 = new THREE.PointLight(0xff6600, 18.5625, 100); // Orange laser gate (10% increase from 16.875)
+        this.overheadLight2 = new THREE.PointLight(0xff6600, 18.5625, 100); // Orange laser gate - back to original intensity
         this.overheadLight2.position.set(0, 80, -60); // Halfway back from -70 to -60
         this.overheadLight2.castShadow = false; // Keep shadows disabled for performance
         this.overheadLight2.layers.set(0);
+        this.overheadLight2.visible = false; // Hidden during title screen
         this.scene.add(this.overheadLight2);
         
         // Underground purple light for building illumination
-        this.undergroundLight = new THREE.PointLight(0x6600cc, 0.5, 150); // Purple color, 75% intensity reduction from 2.0 to 0.5
+        this.undergroundLight = new THREE.PointLight(0x6600cc, 0, 150); // Purple color - starts at zero for dramatic effect
         this.undergroundLight.position.set(0, -30, -20); // Moved forward towards enemy (from 0 to -20)
         this.undergroundLight.castShadow = false; // No shadows for performance
         this.undergroundLight.layers.set(0);
@@ -3325,6 +3346,18 @@ class TronPong {
         document.getElementById('presents').style.display = 'none';
         document.getElementById('copyright').style.display = 'none';
         
+        // Switch to game start fade-in mode
+        if (document.getElementById('titleBackground')) {
+            const titleBackground = document.getElementById('titleBackground');
+            titleBackground.classList.remove('titleScreen');
+            titleBackground.classList.add('gameStart');
+            
+            // Start fade-in from black after a brief moment
+            setTimeout(() => {
+                titleBackground.classList.add('hidden');
+            }, 100); // Small delay to ensure the solid black is visible first
+        }
+        
         // Hide world logo and lights when game starts
         if (this.worldLogo) {
             this.worldLogo.visible = false;
@@ -3336,6 +3369,18 @@ class TronPong {
         if (this.logoLights) {
             this.logoLights.forEach(light => light.visible = false);
         }
+        
+        // Show overhead lights when game starts
+        if (this.overheadLight) {
+            this.overheadLight.visible = true;
+        }
+        if (this.overheadLight2) {
+            this.overheadLight2.visible = true;
+        }
+        
+        // Start underground light fade-in for dramatic effect
+        this.undergroundLightFadeIn.active = true;
+        this.undergroundLightFadeIn.startTime = performance.now();
         
             // Set camera to gameplay position once at start
             this.camera.position.set(0, 18, 22);
@@ -4637,7 +4682,7 @@ class TronPong {
         if (this.isCelebrating) {
             this.celebrationTimer -= deltaTime * 1000; // Convert to milliseconds
             
-            if (this.celebrationTimer <= 600) { // Start transition back 0.6 seconds before end
+            if (this.celebrationTimer <= 1000) { // Start transition back 1.0 seconds before end
                 if (this.undergroundLightTransition.direction === 1) { // Only start once
                     // Start transition back to purple
                     this.undergroundLightTransition.active = true;
@@ -4664,6 +4709,11 @@ class TronPong {
                 this.undergroundLightTransition.direction = 1; // Reset for next celebration
                 this.undergroundLightTransition.startColor = 0x6600cc; // Reset to purple
                 this.undergroundLightTransition.endColor = 0x00FFFF;   // Reset to pure cyan
+                
+                // Safety: Ensure underground light is back to purple
+                if (this.undergroundLight) {
+                    this.undergroundLight.color.setHex(0x6600cc);
+                }
                 
                 // Cyan vignette fades out automatically via CSS animation
                 
@@ -5534,7 +5584,24 @@ class TronPong {
         vignette.classList.add('bonus');
         setTimeout(() => {
             vignette.classList.remove('bonus');
-        }, 1200); // Remove class after animation completes
+        }, 1200);
+        
+        // Flash underground light orange for bonus pickup
+        if (this.undergroundLight) {
+            const originalColor = this.undergroundLight.color.clone();
+            const originalIntensity = this.undergroundLight.intensity;
+            
+            // Flash to orange
+            this.undergroundLight.color.setHex(0xFF6600); // Orange
+            this.undergroundLight.intensity = originalIntensity * 1.5; // Boost intensity briefly
+            
+            // Start smooth transition back to purple after 1200ms (when vignette ends)
+            setTimeout(() => {
+                if (this.undergroundLight) {
+                    this.startUndergroundLightTransition(0xFF6600, 0x6600cc, originalIntensity, 1200);
+                }
+            }, 1200);
+        }
         
         // Show 2X WIDTH text
         this.showBonusText();
@@ -6244,6 +6311,23 @@ class TronPong {
                     });
                     this.nextBallThreshold += 2; // Next ball at +2 hits
                     this.showMultiBallText(); // Show text
+                    
+                    // Flash underground light cyan for multiball pickup
+                    if (this.undergroundLight) {
+                        const originalColor = this.undergroundLight.color.clone();
+                        const originalIntensity = this.undergroundLight.intensity;
+                        
+                        // Flash to cyan
+                        this.undergroundLight.color.setHex(0x00FFFF); // Cyan
+                        this.undergroundLight.intensity = originalIntensity * 1.5; // Boost intensity briefly
+                        
+                        // Start smooth transition back to purple after 1200ms
+                        setTimeout(() => {
+                            if (this.undergroundLight) {
+                                this.startUndergroundLightTransition(0x00FFFF, 0x6600cc, originalIntensity, 1200);
+                            }
+                        }, 1200);
+                    }
                     this.playSound('multiBall'); // Play sound
                     multiBallSpawnedThisFrame = true; // Prevent duplicate spawns this frame
                     
@@ -6776,24 +6860,70 @@ class TronPong {
             this.cameraTarget.z += (originalPos.z - currentPos.z) * this.cameraDriftCorrection.correctionSpeed;
             this.cameraTarget.zoom += (22 - this.cameraTarget.zoom) * this.cameraDriftCorrection.correctionSpeed;
             
-            // Also gently adjust camera lookAt
-            const currentLookAt = new THREE.Vector3();
-            this.camera.getWorldDirection(currentLookAt);
-            const lookAtPoint = currentPos.clone().add(currentLookAt.multiplyScalar(10));
-            
-            const targetLookAt = this.cameraDriftCorrection.originalLookAt;
-            const lookAtDirection = new THREE.Vector3(
-                targetLookAt.x - currentPos.x,
-                targetLookAt.y - currentPos.y,
-                targetLookAt.z - currentPos.z
-            ).normalize();
-            
-            // Very gentle lookAt adjustment
-            this.camera.lookAt(
-                currentPos.x + lookAtDirection.x * 0.1,
-                targetLookAt.y,
-                currentPos.z + lookAtDirection.z * 0.1
-            );
+            // Camera lookAt correction removed - only use gradual position correction
+            // Direct camera.lookAt() calls can cause visual glitches and flashing
+        }
+    }
+    
+    // Update underground light fade-in system
+    updateUndergroundLightFadeIn() {
+        if (!this.undergroundLightFadeIn.active) return;
+        
+        const elapsed = performance.now() - this.undergroundLightFadeIn.startTime;
+        const progress = Math.min(elapsed / this.undergroundLightFadeIn.duration, 1);
+        
+        // Use easing for smooth fade-in
+        const eased = this.easeInOutCubic(progress);
+        
+        // Gradually increase underground light intensity
+        if (this.undergroundLight) {
+            this.undergroundLight.intensity = this.undergroundLightFadeIn.targetIntensity * eased;
+        }
+        
+        // End fade-in when complete
+        if (progress >= 1) {
+            this.undergroundLightFadeIn.active = false;
+            log('💜 Underground light fade-in complete - at full intensity');
+        }
+    }
+    
+    // Start smooth underground light color transition
+    startUndergroundLightTransition(startColor, endColor, targetIntensity, duration) {
+        this.undergroundLightFlashTransition.active = true;
+        this.undergroundLightFlashTransition.startTime = performance.now();
+        this.undergroundLightFlashTransition.duration = duration;
+        this.undergroundLightFlashTransition.startColor = startColor;
+        this.undergroundLightFlashTransition.endColor = endColor;
+        this.undergroundLightFlashTransition.targetIntensity = targetIntensity;
+    }
+    
+    // Update underground light color transition
+    updateUndergroundLightTransition() {
+        if (!this.undergroundLightFlashTransition.active) return;
+        
+        const elapsed = performance.now() - this.undergroundLightFlashTransition.startTime;
+        const progress = Math.min(elapsed / this.undergroundLightFlashTransition.duration, 1);
+        
+        // Use easing for smooth transition
+        const eased = this.easeInOutCubic(progress);
+        
+        // Smooth color interpolation
+        const startColor = new THREE.Color(this.undergroundLightFlashTransition.startColor);
+        const endColor = new THREE.Color(this.undergroundLightFlashTransition.endColor);
+        const currentColor = startColor.clone().lerp(endColor, eased);
+        
+        // Smooth intensity transition back to normal
+        const currentIntensity = this.undergroundLightFlashTransition.targetIntensity;
+        
+        if (this.undergroundLight) {
+            this.undergroundLight.color.copy(currentColor);
+            this.undergroundLight.intensity = currentIntensity;
+        }
+        
+        // End transition when complete
+        if (progress >= 1) {
+            this.undergroundLightFlashTransition.active = false;
+            log('💜 Underground light flash transition complete - back to purple');
         }
     }
     
@@ -7451,8 +7581,6 @@ class TronPong {
         // Keep overhead lights orange during death flash
         this.overheadLight.color.setHex(0xff6600);
         this.overheadLight2.color.setHex(0xff6600);
-        this.overheadLight.intensity = 10.0; // Bright flash
-        this.overheadLight2.intensity = 10.0;
         
         // Start fade after death sequence (2 seconds)
         // Fade happens over 0.8 seconds for smooth transition
@@ -7481,9 +7609,7 @@ class TronPong {
                 // Fade opacity from 0.9 to 0.2
                 goal.material.uniforms.opacity.value = 0.9 - (0.7 * progress);
                 
-        // Fade overhead lights from 10.0 back to base intensities
-        this.overheadLight.intensity = 6.75 + (3.25 * (1 - progress)); // Fade from 10.0 to 6.75
-        this.overheadLight2.intensity = 18.5625 + (-8.5625 * (1 - progress)); // Fade from 10.0 to 18.5625
+                // DO NOT modify overhead light intensities - they stay at default values
                 
                 if (step >= fadeSteps) {
                     clearInterval(fadeTimer);
@@ -7495,9 +7621,9 @@ class TronPong {
                     // Reset lights to orange laser gates (keep orange after wins)
                     this.overheadLight.color.setHex(0xff6600);
                     this.overheadLight2.color.setHex(0xff6600);
-            this.overheadLight.intensity = 6.75; // Use your light base intensity (10% decrease)
-            this.overheadLight2.intensity = 18.5625; // Use enemy light base intensity (10% increase)
-                    log('🎯 Goal fade complete - Overhead1:', this.overheadLight.intensity, 'Overhead2:', this.overheadLight2.intensity);
+                    // DO NOT modify overhead light intensities - they stay at their default values
+                    
+                    log('🎯 Goal fade complete - overhead lights unchanged');
                     // Remove from tracking when complete
                     this.activeIntervals = this.activeIntervals.filter(interval => interval.id !== fadeTimer);
                 }
@@ -7652,8 +7778,10 @@ class TronPong {
             this.updateBall();
             this.updateDynamicCamera();
             this.updateCameraShake();
-            this.updateCameraDriftCorrection();
-            this.updateSpatialAudioListener();
+        this.updateCameraDriftCorrection();
+        this.updateUndergroundLightFadeIn();
+        this.updateUndergroundLightTransition();
+        this.updateSpatialAudioListener();
             
             // Update logo 3D effects
             if (this.handleLogoGamepad) {
