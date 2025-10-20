@@ -262,6 +262,17 @@ class TronPong {
         this.cameraSmooth = 0.015; // Much more gradual camera movement (was 0.05)
         this.cameraTrackingRampUp = 0; // Gradual ramp-up for ball tracking
         
+        // Camera drift correction system
+        this.cameraDriftCorrection = {
+            enabled: false,
+            originalPosition: { x: 0, y: 18, z: 22 },
+            originalLookAt: { x: 0, y: -4, z: 0 },
+            correctionSpeed: 0.005, // Very gentle correction
+            maxDriftDistance: 3.0, // Only correct if drifted more than 3 units
+            checkDelay: 3000, // Wait 3 seconds after restart before checking
+            lastCheckTime: 0
+        };
+        
         // Controls
         this.keys = {};
         this.gamepad = null;
@@ -6720,6 +6731,71 @@ class TronPong {
         }
     }
     
+    // Enable camera drift correction after game restart
+    enableCameraDriftCorrection() {
+        this.cameraDriftCorrection.enabled = true;
+        this.cameraDriftCorrection.lastCheckTime = performance.now();
+        log('📷 Camera drift correction enabled - will check after 3 seconds');
+    }
+    
+    // Update camera drift correction
+    updateCameraDriftCorrection() {
+        if (!this.cameraDriftCorrection.enabled) return;
+        
+        const currentTime = performance.now();
+        
+        // Wait for the delay period before starting to check
+        if (currentTime - this.cameraDriftCorrection.lastCheckTime < this.cameraDriftCorrection.checkDelay) {
+            return;
+        }
+        
+        // Check every 2 seconds
+        if (currentTime - this.cameraDriftCorrection.lastCheckTime < 2000) {
+            return;
+        }
+        
+        this.cameraDriftCorrection.lastCheckTime = currentTime;
+        
+        // Calculate current camera position
+        const currentPos = this.camera.position;
+        const originalPos = this.cameraDriftCorrection.originalPosition;
+        
+        // Calculate distance from original position
+        const distance = Math.sqrt(
+            Math.pow(currentPos.x - originalPos.x, 2) +
+            Math.pow(currentPos.y - originalPos.y, 2) +
+            Math.pow(currentPos.z - originalPos.z, 2)
+        );
+        
+        // Only correct if drifted too far
+        if (distance > this.cameraDriftCorrection.maxDriftDistance) {
+            log(`📷 Camera drift detected: ${distance.toFixed(2)} units from original position`);
+            
+            // Gently drift back to original position
+            this.cameraTarget.x += (originalPos.x - currentPos.x) * this.cameraDriftCorrection.correctionSpeed;
+            this.cameraTarget.z += (originalPos.z - currentPos.z) * this.cameraDriftCorrection.correctionSpeed;
+            this.cameraTarget.zoom += (22 - this.cameraTarget.zoom) * this.cameraDriftCorrection.correctionSpeed;
+            
+            // Also gently adjust camera lookAt
+            const currentLookAt = new THREE.Vector3();
+            this.camera.getWorldDirection(currentLookAt);
+            const lookAtPoint = currentPos.clone().add(currentLookAt.multiplyScalar(10));
+            
+            const targetLookAt = this.cameraDriftCorrection.originalLookAt;
+            const lookAtDirection = new THREE.Vector3(
+                targetLookAt.x - currentPos.x,
+                targetLookAt.y - currentPos.y,
+                targetLookAt.z - currentPos.z
+            ).normalize();
+            
+            // Very gentle lookAt adjustment
+            this.camera.lookAt(
+                currentPos.x + lookAtDirection.x * 0.1,
+                targetLookAt.y,
+                currentPos.z + lookAtDirection.z * 0.1
+            );
+        }
+    }
     
     updateAnimatedLights() {
         if (this.isPaused) return;
@@ -6961,6 +7037,8 @@ class TronPong {
             this.deathResetPhase = 0;
             this.deathResetProgress = 0;
             
+            // Enable camera drift correction after game restart
+            this.enableCameraDriftCorrection();
             
             log('✅ Optimized death reset complete!');
         }
@@ -7142,6 +7220,9 @@ class TronPong {
             y: 0,
             z: -0.15 // Always toward enemy/AI
         });
+        
+        // Enable camera drift correction after game restart
+        this.enableCameraDriftCorrection();
         
         // Reset wall wave animation and heights
         this.wallWaveAnimation.active = false;
@@ -7571,6 +7652,7 @@ class TronPong {
             this.updateBall();
             this.updateDynamicCamera();
             this.updateCameraShake();
+            this.updateCameraDriftCorrection();
             this.updateSpatialAudioListener();
             
             // Update logo 3D effects
