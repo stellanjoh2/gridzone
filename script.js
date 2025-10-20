@@ -4537,7 +4537,7 @@ class TronPong {
         
         // Start celebration - begin smooth transition to cyan
         this.isCelebrating = true;
-        this.celebrationTimer = 2500; // 2.5 seconds celebration
+        this.celebrationTimer = 2000; // 2.0 seconds celebration
         
         // Start smooth color transition to cyan
         this.undergroundLightTransition.active = true;
@@ -4562,7 +4562,7 @@ class TronPong {
         // Set up light properties
         this.celebrationLightActive = true;
         this.celebrationLightStartTime = performance.now();
-        this.celebrationLightDuration = 3000; // 3 seconds travel time (slower)
+        this.celebrationLightDuration = 2000; // 2 seconds travel time (matches celebration)
         this.celebrationLightStartZ = -19; // Enemy goal
         this.celebrationLightEndZ = 19;    // Player goal
         
@@ -4623,7 +4623,7 @@ class TronPong {
         if (this.isCelebrating) {
             this.celebrationTimer -= deltaTime * 1000; // Convert to milliseconds
             
-            if (this.celebrationTimer <= 800) { // Start transition back 0.8 seconds before end
+            if (this.celebrationTimer <= 600) { // Start transition back 0.6 seconds before end
                 if (this.undergroundLightTransition.direction === 1) { // Only start once
                     // Start transition back to purple
                     this.undergroundLightTransition.active = true;
@@ -4772,7 +4772,7 @@ class TronPong {
         
         // Start celebration - begin smooth transition to magenta
         this.isCelebrating = true;
-        this.celebrationTimer = 2500; // 2.5 seconds celebration
+        this.celebrationTimer = 2000; // 2.0 seconds celebration
         
         // Start smooth color transition to magenta
         this.undergroundLightTransition.active = true;
@@ -6333,7 +6333,7 @@ class TronPong {
             const deathCleanupTimeout = setTimeout(() => {
                 log('🧹 Post-death cleanup triggered');
                 this.cleanupImpactEffects();
-            }, 1000); // Clean up 1 second after death sequence starts
+            }, 800); // Clean up 0.8 seconds after death sequence starts
             this.activeTimeouts.push(deathCleanupTimeout);
             
             // Building animation removed for performance
@@ -6453,7 +6453,7 @@ class TronPong {
             // Delay ball respawn until AFTER death sequence completes (2 seconds)
             const deathRespawnTimeout = setTimeout(() => {
                 this.resetBallAfterDeath(); // Optimized reset for death scenario
-            }, 2100); // Slightly after death animation ends
+            }, 2000); // Exactly when death animation ends (2.0s)
             this.activeTimeouts.push(deathRespawnTimeout);
         }
     }
@@ -6513,9 +6513,9 @@ class TronPong {
                 // Clean up death vignette class after animation completes
                 setTimeout(() => {
                     vignette.classList.remove('death');
-                }, 2000); // Match CSS animation duration
+                }, 1800); // Match updated timing (1.2s display + 0.6s exit = 1.8s)
             }, 600);
-        }, 1400); // Show for 1.4s before starting exit
+        }, 1200); // Show for 1.2s before starting exit (total 2.0s)
     }
     
     updateStartMenuCamera(deltaTime) {
@@ -7522,7 +7522,7 @@ class TronPong {
             
             // Track this interval for cleanup
             this.activeIntervals.push({ id: fadeTimer, type: 'goalFade' });
-        }, 2000); // Start fade after 2 second death sequence
+        }, 1800); // Start fade after 1.8 second death sequence (matches updated timing)
     }
     
     flashGoalGreen(goal) {
