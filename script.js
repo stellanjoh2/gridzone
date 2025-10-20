@@ -672,7 +672,6 @@ class TronPong {
             this.musicTracks = [
                 { file: null, name: 'No Music' }, // Muted option
                 { file: 'Music/the-antlers.mp3', name: 'The Antlers' },
-                { file: 'Music/all-things.mp3', name: 'All Things' },
                 { file: 'Music/ambient-synthwave-arpeggio.mp3', name: 'Ambient Synthwave' },
                 { file: 'Music/ethereal-ambient-music-55115.mp3', name: 'Ethereal Ambient' },
                 { file: 'Music/hello-doctor.mp3', name: 'Hello Doctor' },
@@ -3438,10 +3437,28 @@ class TronPong {
         this.paddle2.rotation.z = 0;
         
         this.playSound('menuSelect');
+        
+        // Select random track from music catalogue (excluding "No Music" option)
+        const availableTracks = this.musicTracks.filter(track => track.file !== null);
+        const randomIndex = Math.floor(Math.random() * availableTracks.length);
+        const randomTrack = availableTracks[randomIndex];
+        
+        // Find the index in the full musicTracks array
+        this.currentTrackIndex = this.musicTracks.findIndex(track => track.file === randomTrack.file);
+        
+        // Load the random track
+        this.sounds.music = new Audio(randomTrack.file);
+        this.sounds.music.volume = 0.67;
+        this.sounds.music.loop = true;
+        
+        // Show track name
+        this.showTrackName(randomTrack.name);
+        
+        log(`🎵 Random track selected: ${randomTrack.name}`);
             
-            // Start music
-            if (this.sounds.music) {
-                this.sounds.music.play().catch(e => log('Could not play music'));
+        // Start music
+        if (this.sounds.music) {
+            this.sounds.music.play().catch(e => log('Could not play music'));
         }
     }
     
