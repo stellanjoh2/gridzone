@@ -281,6 +281,8 @@ class TronPong {
         this.cameraTarget = { x: 0, y: 0, z: 0, zoom: 22 };
         this.cameraSmooth = 0.015; // Much more gradual camera movement (was 0.05)
         this.cameraTrackingRampUp = 0; // Gradual ramp-up for ball tracking
+        this.cameraTrackingRampUpTarget = 0; // Target ramp-up value for smooth transitions
+        this.cameraTrackingRampUpSmooth = 0.02; // Smooth transition speed for ramp-up reset
         
         // Camera drift correction system
         this.cameraDriftCorrection = {
@@ -3250,6 +3252,7 @@ class TronPong {
             
             // Reset camera tracking ramp-up for gradual tracking
             this.cameraTrackingRampUp = 0;
+            this.cameraTrackingRampUpTarget = 0;
         
         // Delay ball spawn slightly to let camera transition start smoothly
         // This prevents visual glitch where ball appears before camera moves
@@ -6455,6 +6458,9 @@ class TronPong {
         this.gameSpeed = 0; // Freeze game speed
         this.isGameFrozen = true; // Set freeze flag
         
+        // Reset camera tracking ramp-up smoothly (invisible to player)
+        this.cameraTrackingRampUpTarget = 0;
+        
         // Add magenta vignette for death atmosphere
         const vignette = document.getElementById('vignette');
         vignette.classList.add('death');
@@ -6611,8 +6617,11 @@ class TronPong {
         // Smart camera positioning based on game state
         // NOTE: RGB split for bonus pickup does NOT affect camera - only win celebrations do
         if (this.balls.length > 0 && !this.isCelebrating && !this.deathResetPhase) {
-            // Gradually ramp up camera tracking intensity over time
-            this.cameraTrackingRampUp = Math.min(this.cameraTrackingRampUp + 0.008, 1.0); // Very slow ramp-up
+            // Gradually increase target ramp-up during normal gameplay (invisible to player)
+            this.cameraTrackingRampUpTarget = Math.min(this.cameraTrackingRampUpTarget + 0.008, 1.0);
+            
+            // Gradually ramp up camera tracking intensity over time (smooth transition to target)
+            this.cameraTrackingRampUp += (this.cameraTrackingRampUpTarget - this.cameraTrackingRampUp) * this.cameraTrackingRampUpSmooth;
             
             // Normal gameplay: Very gentle ball tracking that gradually increases
             const trackingIntensity = this.cameraTrackingRampUp * 0.05; // Much reduced from 0.088
@@ -6623,12 +6632,18 @@ class TronPong {
             const ballSpeed = Math.sqrt(this.ballVelocities[0].x ** 2 + this.ballVelocities[0].z ** 2);
             this.cameraTarget.zoom = 22 + (ballSpeed * 0.3 * this.cameraTrackingRampUp); // Much reduced zoom effect
         } else if (this.isCelebrating) {
-            // During win celebration: Smoothly move camera to center
+            // During win celebration: Smoothly move camera to center and reset tracking ramp-up
+            this.cameraTrackingRampUpTarget = 0; // Trigger invisible reset to 0
+            this.cameraTrackingRampUp += (this.cameraTrackingRampUpTarget - this.cameraTrackingRampUp) * this.cameraTrackingRampUpSmooth;
+            
             this.cameraTarget.x += (0 - this.cameraTarget.x) * 0.03; // Very gentle transition to center
             this.cameraTarget.z += (0 - this.cameraTarget.z) * 0.03; // Very gentle transition to center
             this.cameraTarget.zoom += (22 - this.cameraTarget.zoom) * 0.03; // Very gentle transition to default zoom
         } else {
-            // Other dramatic events: Smoothly transition to default position
+            // Other dramatic events: Smoothly transition to default position and reset tracking ramp-up
+            this.cameraTrackingRampUpTarget = 0; // Trigger invisible reset to 0
+            this.cameraTrackingRampUp += (this.cameraTrackingRampUpTarget - this.cameraTrackingRampUp) * this.cameraTrackingRampUpSmooth;
+            
             this.cameraTarget.x += (0 - this.cameraTarget.x) * 0.1; // Smooth transition to 0
             this.cameraTarget.z += (0 - this.cameraTarget.z) * 0.1; // Smooth transition to 0
             this.cameraTarget.zoom += (22 - this.cameraTarget.zoom) * 0.1; // Smooth transition to 22
