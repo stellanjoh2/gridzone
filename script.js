@@ -30,7 +30,7 @@ class TronPong {
             metalness: 0.9,               // High metalness for reflections
             roughness: 0.3,               // Lower = more reflective
             emissive: 0x000000,           // Emissive glow color (black)
-            emissiveIntensity: 0.04       // Emissive strength
+            emissiveIntensity: 0.15       // Emissive strength - increased for better CRT glow
         };
         
         this.scene = null;
@@ -2104,7 +2104,7 @@ class TronPong {
             uniforms: {
                 time: { value: 0 },
                 baseColor: { value: new THREE.Color(0x00FEFC) }, // Bright lime-yellow!
-                emissiveIntensity: { value: 5.0 },
+                emissiveIntensity: { value: 12.0 }, // Increased for better CRT glow
                 opacity: { value: 1.0 }
             },
             vertexShader: `
@@ -2383,7 +2383,7 @@ class TronPong {
             uniforms: {
                 time: { value: 0 },
                 baseColor: { value: new THREE.Color(0x00FEFC) }, // Bright lime-yellow!
-                emissiveIntensity: { value: 5.0 },
+                emissiveIntensity: { value: 12.0 }, // Increased for better CRT glow
                 opacity: { value: 1.0 } // Opaque for paddle
             },
             vertexShader: `
@@ -2463,7 +2463,7 @@ class TronPong {
             uniforms: {
                 time: { value: 0 },
                 baseColor: { value: new THREE.Color(0xff00ff) }, // Bright magenta!
-                emissiveIntensity: { value: 5.0 },
+                emissiveIntensity: { value: 12.0 }, // Increased for better CRT glow
                 opacity: { value: 1.0 }
             },
             vertexShader: `
@@ -3297,7 +3297,7 @@ class TronPong {
                 metalness: 0.8, // Very metallic for better effects
                 roughness: 0.1, // Very smooth for better bloom
                 emissive: new THREE.Color(0x00ffff), // Bright cyan glow for maximum visibility
-                emissiveIntensity: 1.0, // Maximum emissive for better bloom
+                emissiveIntensity: 3.0, // Increased for better CRT glow
                 transparent: false, // CRITICAL: Must be false for post-processing
                 alphaTest: 0.1,
                 side: THREE.DoubleSide, // Ensure both sides are rendered
@@ -3939,7 +3939,7 @@ class TronPong {
         
         // Set target color to white for shader material
         material.uniforms.baseColor.value.setHex(0xffffff); // WHITE!
-        material.uniforms.emissiveIntensity.value = 8.0; // SUPER BRIGHT
+        material.uniforms.emissiveIntensity.value = 20.0; // SUPER BRIGHT - increased for CRT glow
         
         // Boost the paddle's point light intensity when hit
         if (paddleName === 'paddle1' && this.playerLight) {
@@ -3973,7 +3973,7 @@ class TronPong {
             material.uniforms.baseColor.value.setHex(lerpedColor);
             
             // Fade emissive intensity back to original
-            material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
+            material.uniforms.emissiveIntensity.value = 20.0 * fadeProgress + 12.0 * (1 - fadeProgress);
             
             // Also fade the light intensity (flash at 12.0, base is 0.75)
             if (this.playerLight) {
@@ -4001,7 +4001,7 @@ class TronPong {
             material.uniforms.baseColor.value.setHex(lerpedColor);
             
             // Fade emissive intensity back to original
-            material.uniforms.emissiveIntensity.value = 8.0 * fadeProgress + 5.0 * (1 - fadeProgress);
+            material.uniforms.emissiveIntensity.value = 20.0 * fadeProgress + 12.0 * (1 - fadeProgress);
             
             // Also fade the light intensity (flash at 12.0, base is 0.75)
             if (this.aiLight) {
@@ -5604,7 +5604,7 @@ class TronPong {
             uniforms: {
                 time: { value: 0 },
                 baseColor: { value: new THREE.Color(0xFF8C00) }, // Strong orange/yellow!
-                emissiveIntensity: { value: 5.0 },
+                emissiveIntensity: { value: 15.0 }, // Increased for better CRT glow
                 opacity: { value: 1.0 }
             },
             vertexShader: `
