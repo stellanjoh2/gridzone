@@ -138,7 +138,7 @@ gridzone/
 
 ## 🎯 **Learning Journey**
 
-This project represents my **first foray into web development**, where I learned:
+This project represents my **first foray into web development**, where I gained knowledge in:
 
 - **3D graphics programming** with WebGL and Three.js
 - **Game development fundamentals** including physics, collision detection, and game loops
