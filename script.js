@@ -703,6 +703,7 @@ class TronPong {
         this.messageQueue = [];
         this.currentMessage = null;
         this.messageActive = false;
+        this.deathScreenWasHidden = false; // Track if death screen was hidden during pause
         
         // RGB Split effect - always active at low level to prevent rendering pipeline changes
         this.rgbSplitActive = true; // Always active
@@ -3509,6 +3510,9 @@ class TronPong {
             // Calculate starting angle based on current camera position
             this.pauseCamera.startAngle = Math.atan2(this.camera.position.z, this.camera.position.x);
             
+            // Hide any active in-game messages during pause
+            this.hideActiveMessage();
+            
             // Mute music when paused
             if (this.sounds.music) {
                 this.sounds.music.pause();
@@ -3524,6 +3528,9 @@ class TronPong {
             // Don't show UI element - it contains "PRESS SPACE TO START" text
             // Show score UI again when unpausing
             document.getElementById('score').style.display = 'block';
+            
+            // Restore any active messages when unpausing
+            this.restoreActiveMessage();
             
             // Reset stuck ball collision system when unpausing
             this.collisionDisabled = false;
@@ -4107,6 +4114,9 @@ class TronPong {
         
         document.body.appendChild(messageElement);
         
+        // Store element reference in message object for pause/unpause handling
+        this.currentMessage.element = messageElement;
+        
         // Remove message after duration
         setTimeout(() => {
             messageElement.style.animation = 'hardBlinkExit 0.6s ease-out forwards';
@@ -4123,6 +4133,45 @@ class TronPong {
                 log(`📺 Message completed: "${message.text}"`);
             }, 600);
         }, message.duration);
+    }
+    
+    hideActiveMessage() {
+        // Hide any currently active message element
+        if (this.currentMessage && this.currentMessage.element) {
+            this.currentMessage.element.style.display = 'none';
+        }
+        
+        // Also hide any message elements that might be in the DOM
+        const existingMessages = document.querySelectorAll('[data-message]');
+        existingMessages.forEach(msg => {
+            msg.style.display = 'none';
+        });
+        
+        // Hide death screen elements during pause
+        if (this.domElements.deathScreen && this.domElements.deathScreen.style.display === 'block') {
+            this.domElements.deathScreen.style.display = 'none';
+            // Store that we hid it so we can restore it
+            this.deathScreenWasHidden = true;
+        }
+    }
+    
+    restoreActiveMessage() {
+        // Restore any active message when unpausing
+        if (this.currentMessage && this.currentMessage.element) {
+            this.currentMessage.element.style.display = 'block';
+        }
+        
+        // Also restore any message elements that might be in the DOM
+        const existingMessages = document.querySelectorAll('[data-message]');
+        existingMessages.forEach(msg => {
+            msg.style.display = 'block';
+        });
+        
+        // Restore death screen if it was hidden during pause
+        if (this.deathScreenWasHidden && this.domElements.deathScreen) {
+            this.domElements.deathScreen.style.display = 'block';
+            this.deathScreenWasHidden = false;
+        }
     }
     
     updateLensFlare(deltaTime) {
