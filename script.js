@@ -278,9 +278,9 @@ class TronPong {
             enabled: false,
             originalPosition: { x: 0, y: 18, z: 22 },
             originalLookAt: { x: 0, y: -4, z: 0 },
-            correctionSpeed: 0.005, // Very gentle correction
-            maxDriftDistance: 3.0, // Only correct if drifted more than 3 units
-            checkDelay: 3000, // Wait 3 seconds after restart before checking
+            correctionSpeed: 0.008, // Slightly more responsive gentle correction
+            maxDriftDistance: 1.5, // Correct if drifted more than 1.5 units (more vigilant)
+            checkDelay: 2000, // Wait 2 seconds after restart before checking
             lastCheckTime: 0
         };
         
@@ -6930,8 +6930,8 @@ class TronPong {
             return;
         }
         
-        // Check every 2 seconds
-        if (currentTime - this.cameraDriftCorrection.lastCheckTime < 2000) {
+        // Check every 1 second (more frequent monitoring)
+        if (currentTime - this.cameraDriftCorrection.lastCheckTime < 1000) {
             return;
         }
         
@@ -6948,17 +6948,17 @@ class TronPong {
             Math.pow(currentPos.z - originalPos.z, 2)
         );
         
-        // Only correct if drifted too far
+        // Always apply gentle drift correction to keep camera centered
+        const gentleCorrectionSpeed = this.cameraDriftCorrection.correctionSpeed * 0.3; // Very gentle continuous correction
+        
+        // Gently drift back to original position (continuous, not just when drifted too far)
+        this.cameraTarget.x += (originalPos.x - currentPos.x) * gentleCorrectionSpeed;
+        this.cameraTarget.z += (originalPos.z - currentPos.z) * gentleCorrectionSpeed;
+        this.cameraTarget.zoom += (22 - this.cameraTarget.zoom) * gentleCorrectionSpeed;
+        
+        // Log only if drifted significantly
         if (distance > this.cameraDriftCorrection.maxDriftDistance) {
-            log(`📷 Camera drift detected: ${distance.toFixed(2)} units from original position`);
-            
-            // Gently drift back to original position
-            this.cameraTarget.x += (originalPos.x - currentPos.x) * this.cameraDriftCorrection.correctionSpeed;
-            this.cameraTarget.z += (originalPos.z - currentPos.z) * this.cameraDriftCorrection.correctionSpeed;
-            this.cameraTarget.zoom += (22 - this.cameraTarget.zoom) * this.cameraDriftCorrection.correctionSpeed;
-            
-            // Camera lookAt correction removed - only use gradual position correction
-            // Direct camera.lookAt() calls can cause visual glitches and flashing
+            log(`📷 Camera drift detected: ${distance.toFixed(2)} units from original position - applying gentle correction`);
         }
     }
     
