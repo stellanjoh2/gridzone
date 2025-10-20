@@ -407,6 +407,7 @@ class TronPong {
         this.lastSoundTime = 0;
         this.soundDelay = 50; // 50ms delay between sounds
         
+        
         this.cacheDOMElements(); // Cache DOM first!
         this.init();
         this.loadSounds();
@@ -2950,6 +2951,7 @@ class TronPong {
                 this.togglePerformanceMode();
             }
             
+            
             // FPS counter toggle on 'F' key
             if (e.key.toLowerCase() === 'f' && !this.lastFPSTogglePress) {
                 this.lastFPSTogglePress = true;
@@ -3443,8 +3445,8 @@ class TronPong {
         
         // Audio context removed - was causing issues
             
-        // Start music
-        if (this.sounds.music) {
+            // Start music
+            if (this.sounds.music) {
             this.sounds.music.play().catch(e => log('Could not play music'));
         }
     }
@@ -3558,6 +3560,15 @@ class TronPong {
         
         if (this.isPaused) {
             this.domElements.pauseMenu.style.display = 'block';
+            
+            // Reset pause menu animations
+            const pauseElements = this.domElements.pauseMenu.querySelectorAll('h2, .controls-section, #resetButton');
+            pauseElements.forEach(element => {
+                element.style.animation = 'none';
+                element.offsetHeight; // Trigger reflow
+                element.style.animation = null;
+            });
+            
             // Hide score UI during pause
             this.domElements.ui.style.display = 'none';
             document.getElementById('score').style.display = 'none';
@@ -5004,6 +5015,7 @@ class TronPong {
         this.updateRenderTargetSizes();
         this.updateShadowQuality();
     }
+    
     
     updateRenderTargetSizes() {
         const width = Math.floor(window.innerWidth * this.performanceSettings.renderScale);
@@ -6775,6 +6787,7 @@ class TronPong {
     }
     
     updateCameraShake() {
+        if (this.isPaused) return;
         
         // Gradually reduce intensity for softer shake over time
         if (this.cameraShake.intensity > 0.001) {
@@ -7787,6 +7800,7 @@ class TronPong {
         if (this.sounds.music && this.sounds.music.volume !== 0.67) {
             this.sounds.music.volume = 0.67;
         }
+        
         
         // Spatial audio removed - was causing issues
             

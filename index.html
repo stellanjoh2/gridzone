@@ -383,7 +383,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            text-align: center;
+            text-align: left;
             background: rgba(0, 4, 40, 0.9);
             padding: 40px 60px;
             border-radius: 10px;
@@ -415,13 +415,14 @@
         }
         
         #pauseMenu p {
-            color: #ff00ff;
+            color: #00FEFC;
             font-size: 22px;
             font-family: 'Terminal Grotesque', monospace;
             text-transform: uppercase;
-            text-shadow: 0 0 10px #ff00ff;
+            text-shadow: 0 0 10px #00FEFC;
             margin: 8px 0;
             text-align: left;
+            opacity: 0.75;
         }
         
         .controls-section {
@@ -436,6 +437,38 @@
             margin: 0 0 10px 0;
             border-bottom: 1px solid #00FEFC;
             padding-bottom: 5px;
+        }
+        
+        /* Pause menu staggered entry animations */
+        #pauseMenu h2 {
+            animation: pauseEntry 0.3s ease-out 0s forwards;
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        
+        .controls-section {
+            animation: pauseEntry 0.3s ease-out forwards;
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        
+        .controls-section:nth-child(2) { animation-delay: 0.1s; }
+        .controls-section:nth-child(3) { animation-delay: 0.2s; }
+        .controls-section:nth-child(4) { animation-delay: 0.3s; }
+        .controls-section:nth-child(5) { animation-delay: 0.4s; }
+        .controls-section:nth-child(6) { animation-delay: 0.5s; }
+        
+        #resetButton {
+            animation: pauseEntry 0.3s ease-out 0.6s forwards;
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        
+        @keyframes pauseEntry {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         #score {
@@ -583,10 +616,21 @@
             50% { opacity: 0.8; }
         }
         
+        #resetButton {
+            background: #00FEFC;
+            color: black;
+            border: 2px solid #00FEFC;
+            text-shadow: none;
+            box-shadow: 0 0 20px #00FEFC;
+        }
+        
         #resetButton:hover {
-            background: #ff3355;
+            background: #ff00ff !important;
+            color: white !important;
+            border: 2px solid #ff00ff !important;
             transform: scale(1.05);
-            box-shadow: 0 0 30px #ff0033;
+            box-shadow: 0 0 30px #ff00ff !important;
+            text-shadow: 0 0 10px #ff00ff !important;
         }
         
         #resetButton:active {
@@ -782,7 +826,7 @@
             <p>Performance Mode: P / Circle Button</p>
         </div>
         
-        <button id="resetButton" style="margin-top: 20px; padding: 12px 24px; font-family: 'Terminal Grotesque', monospace; text-transform: uppercase; font-size: 19px; background: #ff0033; color: white; border: 2px solid #ff0033; border-radius: 5px; cursor: pointer; text-shadow: 0 0 10px #ff0033; box-shadow: 0 0 20px #ff0033; transition: all 0.2s ease;">SUPER RESET</button>
+        <button id="resetButton" style="margin-top: 40px; margin-bottom: 15px; padding: 12px 120px; font-family: 'Terminal Grotesque', monospace; text-transform: uppercase; font-size: 19px; border-radius: 5px; cursor: pointer; transition: all 0.2s ease; text-align: center; display: block; width: 100%;">SUPER RESET</button>
     </div>
     
     <!-- Vignette overlay -->
