@@ -7700,37 +7700,5 @@ window.addEventListener('load', () => {
     game = new TronPong();
     log('✅ Game initialized successfully');
     
-    // Debug function - call from console: forceUpdateEnvMap()
-    window.forceUpdateEnvMap = () => {
-        log('🔧 Forcing environment map update...');
-        log('EnvMap exists:', !!game.envMap);
-        if (game.envMap) {
-            log('EnvMap details:', game.envMap);
-        }
-        game.updateMaterialsWithEnvMap();
-    };
-    
-    window.testEnvMap = () => {
-        log('🧪 Testing environment map setup...');
-        log('Game instance:', game);
-        log('EnvMap:', game.envMap);
-        log('Scene children:', game.scene.children.length);
-        
-        // Find and log materials
-        let metalMaterials = 0;
-        game.scene.traverse((object) => {
-            if (object.isMesh && object.material && object.material.isMeshStandardMaterial) {
-                if (object.material.metalness > 0.5) {
-                    metalMaterials++;
-                    log('Metallic material found:', {
-                        metalness: object.material.metalness,
-                        roughness: object.material.roughness,
-                        hasEnvMap: !!object.material.envMap,
-                        envMapIntensity: object.material.envMapIntensity
-                    });
-                }
-            }
-        });
-        log(`Total metallic materials: ${metalMaterials}`);
-    };
+    // Debug helpers removed for production cleanliness
 });
