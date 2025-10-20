@@ -268,6 +268,15 @@ class TronPong {
         this.maxMouseTiltVelocity = 1.2; // Maximum mouse tilt velocity
         this.mouseControlsEnabled = false; // Only active during gameplay
         
+        // CRT Shader Effect
+        this.crtEffect = {
+            enabled: true, // Always on by default
+            composer: null,
+            renderPass: null,
+            crtPass: null
+        };
+        
+        
         // Camera system
         this.cameraTarget = { x: 0, y: 0, z: 0, zoom: 22 };
         this.cameraSmooth = 0.015; // Much more gradual camera movement (was 0.05)
@@ -275,12 +284,12 @@ class TronPong {
         
         // Camera drift correction system
         this.cameraDriftCorrection = {
-            enabled: false,
+            enabled: false, // DISABLED - conflicts with cameraTarget system
             originalPosition: { x: 0, y: 18, z: 22 },
             originalLookAt: { x: 0, y: -4, z: 0 },
-            correctionSpeed: 0.008, // Slightly more responsive gentle correction
-            maxDriftDistance: 1.5, // Correct if drifted more than 1.5 units (more vigilant)
-            checkDelay: 2000, // Wait 2 seconds after restart before checking
+            correctionSpeed: 0.008,
+            maxDriftDistance: 1.5,
+            checkDelay: 2000,
             lastCheckTime: 0
         };
         
@@ -1120,6 +1129,9 @@ class TronPong {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         
+        // Initialize CRT effect
+        this.initCRTEffect();
+        
         // Shadow quality will be initialized after ballLights are created
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.5;
@@ -1710,7 +1722,7 @@ class TronPong {
         this.overheadLight.visible = false; // Hidden during title screen
         this.scene.add(this.overheadLight);
         
-        this.overheadLight2 = new THREE.PointLight(0xff6600, 18.5625, 100); // Orange laser gate - back to original intensity
+        this.overheadLight2 = new THREE.PointLight(0xff6600, 23.203125, 100); // Orange laser gate - 25% increase
         this.overheadLight2.position.set(0, 80, -60); // Halfway back from -70 to -60
         this.overheadLight2.castShadow = false; // Keep shadows disabled for performance
         this.overheadLight2.layers.set(0);
@@ -2969,6 +2981,12 @@ class TronPong {
                 this.toggleFPSCounter();
             }
             
+            // CRT effect toggle on 'C' key
+            if (e.key.toLowerCase() === 'c') {
+                this.toggleCRTEffect();
+            }
+            
+            
             // Track controls
             if (e.key === '[' || e.key === '{') {
                 this.changeTrack(-1); // Previous track
@@ -3247,30 +3265,58 @@ class TronPong {
         const textures = {};
         
         const createSingleLogo = (texture) => {
-            // Create a plane geometry for the logo
-            const logoGeometry = new THREE.PlaneGeometry(8, 2.7); // Aspect ratio of the SVG
+            // Create text-based logo instead of SVG texture for better post-processing compatibility
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 144;
+            const context = canvas.getContext('2d');
             
-            // Create metallic material for main logo
+            // Set background to transparent
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Set font properties
+            context.font = 'bold 80px Terminal Grotesque';
+            context.fillStyle = '#00ffff';
+            context.strokeStyle = '#ffffff';
+            context.lineWidth = 3;
+            
+            // Draw text with stroke for better visibility
+            context.strokeText('GRIDZONE', 50, 90);
+            context.fillText('GRIDZONE', 50, 90);
+            
+            // Create texture from canvas
+            const textTexture = new THREE.CanvasTexture(canvas);
+            textTexture.needsUpdate = true;
+            
+            // Create a plane geometry for the logo
+            const logoGeometry = new THREE.PlaneGeometry(8, 2.3); // Adjusted for text
+            
+            // Create material for main logo that's compatible with post-processing
             const mainMaterial = new THREE.MeshStandardMaterial({
-                map: texture,
-                metalness: 0.8, // Very metallic
-                roughness: 0.2, // Quite smooth/shiny
-                emissive: new THREE.Color(0x001122), // Subtle blue glow
-                emissiveIntensity: 0.3,
-                transparent: true,
-                alphaTest: 0.1
+                map: textTexture,
+                metalness: 0.8, // Very metallic for better effects
+                roughness: 0.1, // Very smooth for better bloom
+                emissive: new THREE.Color(0x00ffff), // Bright cyan glow for maximum visibility
+                emissiveIntensity: 1.0, // Maximum emissive for better bloom
+                transparent: false, // CRITICAL: Must be false for post-processing
+                alphaTest: 0.1,
+                side: THREE.DoubleSide, // Ensure both sides are rendered
+                // Force the material to be very bright for testing
+                color: new THREE.Color(0xffffff) // Pure white for maximum visibility
             });
             
             // Create main logo mesh
             this.worldLogo = new THREE.Mesh(logoGeometry, mainMaterial);
             
+            // CRITICAL: Set logo to layer 0 so it gets post-processed with other scene elements
+            this.worldLogo.layers.set(0);
             
             // Comment out stroke layer for now
             // this.worldLogoStroke = new THREE.Mesh(logoGeometry, strokeMaterial);
             
-            // Position main logo in the world (floating above the arena)
-            this.worldLogo.position.set(0, 12, -5);
-            this.worldLogo.rotation.x = -0.2; // Slight tilt toward camera
+            // Position main logo in the world (closer to camera for better visibility)
+            this.worldLogo.position.set(0, 8, -8);
+            this.worldLogo.rotation.x = -0.1; // Less tilt toward camera
             
             // Comment out stroke positioning for now
             // this.worldLogoStroke.position.set(0, 12, -4.0);
@@ -3332,7 +3378,7 @@ class TronPong {
         this.worldLogo.rotation.y = this.worldLogoRotation.y;
         
         // Gentle floating motion
-        const floatY = 12 + this.cachedSin(this.worldLogoRotation.y * 0.5) * 0.5;
+        const floatY = 8 + this.cachedSin(this.worldLogoRotation.y * 0.5) * 0.5;
         this.worldLogo.position.y = floatY;
         
         // Comment out stroke animation for now
@@ -3357,13 +3403,28 @@ class TronPong {
         }
         
         // Hide during main menu sequence, show after logo animation completes
-        // Only show logo during title screen, not during gameplay
+        // Only show 3D world logo during title screen (gets full post-processing), not during gameplay
         if (this.gameStarted) {
             this.worldLogo.visible = false;
+            // Hide DOM logo when game starts
+            document.getElementById('logo').style.display = 'none';
         } else if (performance.now() < 3250) { // Hide until logo entry animation completes
             this.worldLogo.visible = false;
+            // Hide DOM logo initially, let 3D logo take over
+            document.getElementById('logo').style.display = 'none';
         } else {
+            // FORCE logo to be visible during title screen for full post-processing
             this.worldLogo.visible = true;
+            // Keep DOM logo hidden - 3D logo with full effects is better
+            document.getElementById('logo').style.display = 'none';
+            // Also hide the presents text to avoid conflicts
+            document.getElementById('presents').style.display = 'none';
+            
+            // Show logo lights during title screen
+            if (this.logoLights) {
+                this.logoLights.forEach(light => light.visible = true);
+            }
+            
         }
         
         // Comment out stroke visibility for now
@@ -6948,18 +7009,108 @@ class TronPong {
             Math.pow(currentPos.z - originalPos.z, 2)
         );
         
-        // Always apply gentle drift correction to keep camera centered
-        const gentleCorrectionSpeed = this.cameraDriftCorrection.correctionSpeed * 0.3; // Very gentle continuous correction
-        
-        // Gently drift back to original position (continuous, not just when drifted too far)
-        this.cameraTarget.x += (originalPos.x - currentPos.x) * gentleCorrectionSpeed;
-        this.cameraTarget.z += (originalPos.z - currentPos.z) * gentleCorrectionSpeed;
-        this.cameraTarget.zoom += (22 - this.cameraTarget.zoom) * gentleCorrectionSpeed;
+        // Only apply drift correction if camera has drifted significantly
+        if (distance > this.cameraDriftCorrection.maxDriftDistance) {
+            const gentleCorrectionSpeed = this.cameraDriftCorrection.correctionSpeed * 0.2; // Even more gentle correction
+            
+            // Gently drift back to original position only when needed
+            this.cameraTarget.x += (originalPos.x - currentPos.x) * gentleCorrectionSpeed;
+            this.cameraTarget.z += (originalPos.z - currentPos.z) * gentleCorrectionSpeed;
+            this.cameraTarget.zoom += (22 - this.cameraTarget.zoom) * gentleCorrectionSpeed;
+        }
         
         // Log only if drifted significantly
         if (distance > this.cameraDriftCorrection.maxDriftDistance) {
             log(`📷 Camera drift detected: ${distance.toFixed(2)} units from original position - applying gentle correction`);
         }
+    }
+    
+    // Initialize CRT Effect
+    initCRTEffect() {
+        // CRT Shader
+        const crtVertexShader = `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+        
+        const crtFragmentShader = `
+            uniform sampler2D tDiffuse;
+            uniform float time;
+            uniform vec2 resolution;
+            varying vec2 vUv;
+            
+            void main() {
+                vec2 uv = vUv;
+                
+                // Sample the texture
+                vec4 color = texture2D(tDiffuse, uv);
+                
+                // Scanlines
+                float scanline = sin(uv.y * resolution.y * 0.7) * 0.04;
+                color.rgb += scanline;
+                
+                // Vignette (simple distance from center)
+                vec2 center = vec2(0.5, 0.5);
+                float dist = length(uv - center);
+                float vignette = 1.0 - dist * 0.8;
+                color.rgb *= vignette;
+                
+                // Chromatic aberration
+                float aberration = 0.002;
+                color.r = texture2D(tDiffuse, uv + vec2(aberration, 0.0)).r;
+                color.b = texture2D(tDiffuse, uv - vec2(aberration, 0.0)).b;
+                
+                // Noise
+                float noise = fract(sin(dot(uv + time, vec2(12.9898, 78.233))) * 43758.5453) * 0.02;
+                color.rgb += noise;
+                
+                gl_FragColor = color;
+            }
+        `;
+        
+        // Create CRT material
+        this.crtMaterial = new THREE.ShaderMaterial({
+            vertexShader: crtVertexShader,
+            fragmentShader: crtFragmentShader,
+            uniforms: {
+                tDiffuse: { value: null },
+                time: { value: 0.0 },
+                resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+            }
+        });
+        
+        // Create CRT plane
+        this.crtGeometry = new THREE.PlaneGeometry(2, 2);
+        this.crtMesh = new THREE.Mesh(this.crtGeometry, this.crtMaterial);
+        this.crtMesh.position.z = -1;
+        this.crtScene = new THREE.Scene();
+        this.crtScene.add(this.crtMesh);
+        this.crtCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        
+        // Create render target
+        this.renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
+        
+        log('📺 CRT effect initialized');
+    }
+    
+    // Toggle CRT effect
+    toggleCRTEffect() {
+        this.crtEffect.enabled = !this.crtEffect.enabled;
+        log(`📺 CRT effect ${this.crtEffect.enabled ? 'enabled' : 'disabled'}`);
+    }
+    
+    // Update CRT effect
+    updateCRTEffect() {
+        if (!this.crtEffect.enabled) return;
+        
+        // Update time uniform
+        this.crtMaterial.uniforms.time.value = performance.now() * 0.001;
+        
+        // Update resolution uniform
+        this.crtMaterial.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
     }
     
     // Update underground light fade-in system
@@ -7030,7 +7181,7 @@ class TronPong {
         // Update world light boost (both lights flash on any hit) - sharp triangle curve
         if (this.worldLightBoost > 0) {
             this.overheadLight.intensity = 6.75 + this.worldLightBoost; // Your light base intensity (10% decrease)
-            this.overheadLight2.intensity = 18.5625 + this.worldLightBoost; // Enemy light base intensity (10% increase)
+            this.overheadLight2.intensity = 23.203125 + this.worldLightBoost; // Enemy light base intensity (25% increase)
             
             // Sharp triangle curve: immediate linear decay (no plateau)
             this.worldLightBoost -= 0.8; // Linear decay for sharp triangle effect
@@ -7038,7 +7189,7 @@ class TronPong {
             if (this.worldLightBoost <= 0) {
                 this.worldLightBoost = 0;
                 this.overheadLight.intensity = 6.75; // Reset to your light base intensity (10% decrease)
-                this.overheadLight2.intensity = 18.5625; // Reset to enemy light base intensity (10% increase)
+                this.overheadLight2.intensity = 23.203125; // Reset to enemy light base intensity (25% increase)
                 log('💡 Light intensities reset - Overhead1:', this.overheadLight.intensity, 'Overhead2:', this.overheadLight2.intensity);
             }
         }
@@ -7264,8 +7415,7 @@ class TronPong {
             this.deathResetPhase = 0;
             this.deathResetProgress = 0;
             
-            // Enable camera drift correction after game restart
-            this.enableCameraDriftCorrection();
+            // Camera drift correction disabled - cameraTarget system handles positioning
             
             log('✅ Optimized death reset complete!');
         }
@@ -7452,8 +7602,7 @@ class TronPong {
             z: -0.15 // Always toward enemy/AI
         });
         
-        // Enable camera drift correction after game restart
-        this.enableCameraDriftCorrection();
+        // Camera drift correction disabled - cameraTarget system handles positioning
         
         // Reset wall wave animation and heights
         this.wallWaveAnimation.active = false;
@@ -7887,11 +8036,9 @@ class TronPong {
         this.updateCameraDriftCorrection();
         this.updateUndergroundLightFadeIn();
         this.updateUndergroundLightTransition();
+        this.updateCRTEffect();
         
-        // Ensure music volume stays constant (prevent any drift)
-        if (this.sounds.music && this.sounds.music.volume !== 0.67) {
-            this.sounds.music.volume = 0.67;
-        }
+        // Music volume is set once and should not be continuously adjusted
         
         
         // Spatial audio removed - was causing issues
@@ -7990,10 +8137,24 @@ class TronPong {
         // Optimized rendering pipeline with performance mode support
         if (this.performanceMode) {
             // Performance mode: simplified pipeline
-            this.renderer.setRenderTarget(null);
-            this.renderer.toneMappingExposure = 2.678;
-            this.renderer.clear();
-            this.renderer.render(this.scene, this.camera);
+            if (this.crtEffect.enabled) {
+                // Render to CRT render target
+                this.renderer.setRenderTarget(this.renderTarget);
+                this.renderer.toneMappingExposure = 2.678;
+                this.renderer.clear();
+                this.renderer.render(this.scene, this.camera);
+                
+                // Apply CRT effect
+                this.crtMaterial.uniforms.tDiffuse.value = this.renderTarget.texture;
+                this.renderer.setRenderTarget(null);
+                this.renderer.render(this.crtScene, this.crtCamera);
+            } else {
+                // Direct render without CRT
+                this.renderer.setRenderTarget(null);
+                this.renderer.toneMappingExposure = 2.678;
+                this.renderer.clear();
+                this.renderer.render(this.scene, this.camera);
+            }
         } else {
             // Quality mode: full post-processing pipeline
             // 1. Render scene to base render target
@@ -8002,11 +8163,13 @@ class TronPong {
             this.renderer.clear();
             this.renderer.render(this.scene, this.camera);
             
+            
             // 2. Apply fisheye distortion (intermediate buffer)
             this.renderer.setRenderTarget(this.fisheyeRenderTarget);
             this.renderer.toneMappingExposure = 3.825; // Another 10% darker (was 4.25)
             this.renderer.clear();
             this.renderer.render(this.scene, this.camera);
+            
             
             // 3. Render bloom on top of fisheye target with additive blending
             this.bloomMaterial.uniforms.tDiffuse.value = this.bloomRenderTarget.texture;
@@ -8018,9 +8181,21 @@ class TronPong {
             this.renderer.clear();
             this.renderer.render(this.lensFlareScene, this.lensFlareCamera);
             
-            // 5. Final render to screen
-            this.renderer.setRenderTarget(null);
-            this.renderer.render(this.lensFlareScene, this.lensFlareCamera);
+            // 5. Apply CRT effect if enabled
+            if (this.crtEffect.enabled) {
+                // Render lens flare result to CRT render target
+                this.renderer.setRenderTarget(this.renderTarget);
+                this.renderer.render(this.lensFlareScene, this.lensFlareCamera);
+                
+                // Apply CRT effect to final result
+                this.crtMaterial.uniforms.tDiffuse.value = this.renderTarget.texture;
+                this.renderer.setRenderTarget(null);
+                this.renderer.render(this.crtScene, this.crtCamera);
+            } else {
+                // Final render to screen without CRT
+                this.renderer.setRenderTarget(null);
+                this.renderer.render(this.lensFlareScene, this.lensFlareCamera);
+            }
             
             // 8. Apply RGB split as final overlay (always active, intensity varies) - COMMENTED OUT
             // this.renderer.setRenderTarget(this.rgbSplitRenderTarget);
