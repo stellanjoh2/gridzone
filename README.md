@@ -1,8 +1,8 @@
-# GridZone - 3D Tron Pong
+# GridZone - 3D Arcade Game
 
 🎮 **Live Demo**: [https://gridzone.online](https://gridzone.online)
 
-A modern, immersive 3D take on the classic Pong game featuring stunning visuals, dynamic lighting, and atmospheric sound design. This is my **first web development project**, built from scratch with modern web technologies.
+A modern, immersive 3D arcade game featuring stunning visuals, dynamic lighting, and atmospheric sound design. This is my **first web development project**, built from scratch with modern web technologies.
 
 ## ✨ Standout Features
 
