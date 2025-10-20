@@ -402,7 +402,10 @@ class TronPong {
             electroFlow: null  // New electro-flow sound for wall wave celebration
         };
         
-        // Spatial audio system removed - not working properly
+        // Sound queuing system to prevent multiple sounds on same frame
+        this.soundQueue = [];
+        this.lastSoundTime = 0;
+        this.soundDelay = 50; // 50ms delay between sounds
         
         this.cacheDOMElements(); // Cache DOM first!
         this.init();
@@ -727,14 +730,41 @@ class TronPong {
         }
     }
     
-    playSound(soundName) {
+    playSound(soundName, priority = false) {
         const sound = this.sounds[soundName];
-        if (sound) {
+        if (!sound) {
+            log('❌ Sound not found:', soundName);
+            return;
+        }
+        
+        // Priority sounds (like music) play immediately
+        if (priority || soundName === 'music') {
+            sound.currentTime = 0;
+            sound.play().catch(e => log('Audio play failed for', soundName, ':', e));
+            log('🎵 Playing priority sound:', soundName);
+            this.lastSoundTime = performance.now();
+            return;
+        }
+        
+        // Queue other sounds to prevent conflicts
+        const currentTime = performance.now();
+        const timeSinceLastSound = currentTime - this.lastSoundTime;
+        
+        if (timeSinceLastSound >= this.soundDelay) {
+            // Can play immediately
             sound.currentTime = 0;
             sound.play().catch(e => log('Audio play failed for', soundName, ':', e));
             log('🎵 Playing sound:', soundName);
+            this.lastSoundTime = currentTime;
         } else {
-            log('❌ Sound not found:', soundName);
+            // Queue the sound
+            const delay = this.soundDelay - timeSinceLastSound;
+            setTimeout(() => {
+                sound.currentTime = 0;
+                sound.play().catch(e => log('Audio play failed for queued', soundName, ':', e));
+                log('🎵 Playing queued sound:', soundName);
+                this.lastSoundTime = performance.now();
+            }, delay);
         }
     }
     
@@ -6543,6 +6573,11 @@ class TronPong {
         const vignette = document.getElementById('vignette');
         vignette.classList.add('death');
         
+        // Ensure music volume stays constant during death sequence
+        if (this.sounds.music) {
+            this.sounds.music.volume = 0.67;
+        }
+        
         // Show death screen (transparent background, just for positioning)
         this.domElements.deathScreen.style.display = 'block';
         
@@ -7627,6 +7662,11 @@ class TronPong {
             this.sounds.goalAlarm.play().catch(e => log('Could not play goal alarm'));
         }
         
+        // Ensure music volume stays constant during celebrations
+        if (this.sounds.music) {
+            this.sounds.music.volume = 0.67;
+        }
+        
         // Start fade after celebration (2 seconds)
         // Fade happens over 0.8 seconds for smooth transition
         const goalFadeTimeout = setTimeout(() => {
@@ -7742,6 +7782,12 @@ class TronPong {
         this.updateCameraDriftCorrection();
         this.updateUndergroundLightFadeIn();
         this.updateUndergroundLightTransition();
+        
+        // Ensure music volume stays constant (prevent any drift)
+        if (this.sounds.music && this.sounds.music.volume !== 0.67) {
+            this.sounds.music.volume = 0.67;
+        }
+        
         // Spatial audio removed - was causing issues
             
             // Update logo 3D effects
