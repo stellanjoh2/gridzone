@@ -302,6 +302,13 @@ class TronPong {
         this.particleVelocities = [];
         this.particleOriginalColors = []; // Store original particle colors for color shifting
         
+        // Item highlight particle system (for bonus icons, etc.)
+        this.itemHighlightParticles = null;
+        this.itemHighlightActive = false;
+        this.itemHighlightTarget = null; // What item is being highlighted
+        this.itemHighlightColor = { r: 1.0, g: 1.0, b: 0.0 }; // Default yellow
+        this.itemHighlightRadius = 1.0; // Radius of particle sphere around item
+        
         // Dynamic particle opacity system
         this.particleOpacityBoost = 0.0; // 0.0 = default 25%, 1.0 = full opacity
         this.particleOpacityTimer = 0.0; // Timer for opacity fade-back
@@ -2769,6 +2776,144 @@ class TronPong {
         log(`✨ Created ${particleCount} optimized particles focused around player area!`);
     }
     
+    createItemHighlightParticles(targetPosition, color = { r: 1.0, g: 1.0, b: 0.0 }, radius = 1.0) {
+        // Create small particle sphere around specific items (like bonus icons)
+        const particleCount = 5; // Even fewer for maximum impact
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+        const sizes = new Float32Array(particleCount);
+        
+        for (let i = 0; i < particleCount; i++) {
+            // Create particles in a sphere around the target position
+            const angle = (Math.PI * 2 * i) / particleCount;
+            const height = (Math.random() - 0.5) * 2; // Random height variation
+            const distance = radius + (Math.random() - 0.5) * 0.5; // Slight radius variation
+            
+            const x = targetPosition.x + Math.cos(angle) * distance;
+            const y = targetPosition.y + height;
+            const z = targetPosition.z + Math.sin(angle) * distance;
+            
+            positions[i * 3] = x;
+            positions[i * 3 + 1] = y;
+            positions[i * 3 + 2] = z;
+            
+            // Set colors based on input
+            colors[i * 3] = color.r;
+            colors[i * 3 + 1] = color.g;
+            colors[i * 3 + 2] = color.b;
+            
+            // Even larger, consistent particle sizes (+50% more)
+            sizes[i] = 0.1125 + Math.random() * 0.0675; // 0.1125 to 0.18 (was 0.075 to 0.12)
+        }
+        
+        // Create geometry and material
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+        
+        const material = new THREE.PointsMaterial({
+            size: 0.135, // +50% more size (was 0.09)
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true
+        });
+        
+        // Create particles mesh
+        this.itemHighlightParticles = new THREE.Points(geometry, material);
+        this.scene.add(this.itemHighlightParticles);
+        
+        // Store properties
+        this.itemHighlightTarget = targetPosition;
+        this.itemHighlightColor = color;
+        this.itemHighlightRadius = radius;
+        this.itemHighlightActive = true;
+        
+        log('✨ Item highlight particles created!');
+    }
+    
+    updateItemHighlightParticles(deltaTime) {
+        if (!this.itemHighlightActive || !this.itemHighlightParticles || !this.itemHighlightTarget) return;
+        
+        // Safety check: Remove particles if bonus cube no longer exists
+        if (!this.bonusCube || !this.bonusCubeActive) {
+            this.removeItemHighlightParticles();
+            return;
+        }
+        
+        const positions = this.itemHighlightParticles.geometry.attributes.position.array;
+        const time = performance.now() * 0.005; // Fast rotation speed
+        
+        // Update target position to follow bonus cube
+        this.itemHighlightTarget = this.bonusCube.position;
+        
+        // Animate particles in a revolving sphere around the target
+        for (let i = 0; i < positions.length; i += 3) {
+            const particleIndex = i / 3;
+            const angle = (Math.PI * 2 * particleIndex) / (positions.length / 3) + time;
+            const height = (Math.random() - 0.5) * 2; // Random height variation
+            const distance = this.itemHighlightRadius + (Math.random() - 0.5) * 0.5;
+            
+            positions[i] = this.itemHighlightTarget.x + Math.cos(angle) * distance;
+            positions[i + 1] = this.itemHighlightTarget.y + height;
+            positions[i + 2] = this.itemHighlightTarget.z + Math.sin(angle) * distance;
+        }
+        
+        // Mark positions as needing update
+        this.itemHighlightParticles.geometry.attributes.position.needsUpdate = true;
+    }
+    
+    setItemHighlightColor(color) {
+        if (!this.itemHighlightParticles) return;
+        
+        this.itemHighlightColor = color;
+        const colors = this.itemHighlightParticles.geometry.attributes.color.array;
+        
+        // Update all particle colors
+        for (let i = 0; i < colors.length; i += 3) {
+            colors[i] = color.r;
+            colors[i + 1] = color.g;
+            colors[i + 2] = color.b;
+        }
+        
+        this.itemHighlightParticles.geometry.attributes.color.needsUpdate = true;
+    }
+    
+    fadeOutItemHighlightParticles(duration = 1000) {
+        if (!this.itemHighlightParticles) return;
+        
+        const startOpacity = this.itemHighlightParticles.material.opacity;
+        const startTime = performance.now();
+        
+        const fadeOut = () => {
+            const elapsed = performance.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1.0);
+            
+            this.itemHighlightParticles.material.opacity = startOpacity * (1.0 - progress);
+            
+            if (progress < 1.0) {
+                requestAnimationFrame(fadeOut);
+            } else {
+                // Remove particles when fade is complete
+                this.removeItemHighlightParticles();
+            }
+        };
+        
+        fadeOut();
+    }
+    
+    removeItemHighlightParticles() {
+        if (this.itemHighlightParticles) {
+            this.scene.remove(this.itemHighlightParticles);
+            this.itemHighlightParticles = null;
+        }
+        this.itemHighlightActive = false;
+        this.itemHighlightTarget = null;
+        log('✨ Item highlight particles removed!');
+    }
+    
     setupEventListeners() {
         // Keyboard controls
         window.addEventListener('keydown', (e) => {
@@ -4124,6 +4269,9 @@ class TronPong {
                 this.bonusCubeFlickerActive = false;
                 this.bonusCubeFlickerTimer = 0;
                 
+                // Fade out highlight particles when bonus is denied and removed
+                this.fadeOutItemHighlightParticles(500);
+                
                 // Clean up bonus denied light when cube is removed
                 if (this.bonusLight && this.bonusLight.light) {
                     this.scene.remove(this.bonusLight.light);
@@ -5213,6 +5361,9 @@ class TronPong {
         
         this.scene.add(this.bonusCube);
         
+        // Create highlight particles around the bonus cube
+        this.createItemHighlightParticles(this.bonusCube.position, { r: 1.0, g: 1.0, b: 0.0 }, 2.0);
+        
         // Play bonus spawn sound
         this.playSound('bonusSpawn');
         
@@ -5254,6 +5405,10 @@ class TronPong {
                     }
                 } else {
                     log('❌ AI gets bonus denied!');
+                    
+                    // Prevent multiple triggers by immediately deactivating
+                    this.bonusCubeActive = false;
+                    
                     this.triggerBonusLoss();
                     // Start flicker animation (cube removed after flicker)
                 }
@@ -5270,6 +5425,9 @@ class TronPong {
         
         // Trigger yellow particle color shift for bonus pickup
         this.boostParticleOpacity('bonus');
+        
+        // Fade out highlight particles when bonus is picked up
+        this.fadeOutItemHighlightParticles(800);
         
         // Flash yellow vignette for bonus pickup (CSS animation handles fade-out)
         const vignette = document.getElementById('vignette');
@@ -5311,6 +5469,9 @@ class TronPong {
         
         // Play denied sound
         this.playSound('bonusDenied');
+        
+        // Change highlight particles to red when bonus is denied
+        this.setItemHighlightColor({ r: 1.0, g: 0.0, b: 0.0 }); // Red
         
         // Spawn red point light at bonus position
         const bonusLight = new THREE.PointLight(0xff0000, 8.0, 15);
@@ -7418,6 +7579,7 @@ class TronPong {
                 this.updateCelebration(deltaTime); // Celebration system
                 this.updateParticles();
                 this.updateParticleOpacity(deltaTime); // Dynamic particle opacity system
+                this.updateItemHighlightParticles(deltaTime); // Item highlight particle system
                 this.updateStuckBallRecovery(deltaTime); // Stuck ball detection and recovery
                 this.updateFloorGlow();
                 this.updateObstacles();
