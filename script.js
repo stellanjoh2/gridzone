@@ -284,7 +284,7 @@ class TronPong {
         
         // Camera drift correction system
         this.cameraDriftCorrection = {
-            enabled: true, // Re-enabled for camera positioning after game restarts
+            enabled: false, // DISABLED - causing camera drift issues
             originalPosition: { x: 0, y: 18, z: 22 },
             originalLookAt: { x: 0, y: -4, z: 0 },
             correctionSpeed: 0.008,
@@ -7416,8 +7416,7 @@ class TronPong {
             this.deathResetPhase = 0;
             this.deathResetProgress = 0;
             
-            // Enable camera drift correction after death reset
-            this.enableCameraDriftCorrection();
+            // Camera drift correction disabled - was causing issues
             
             log('✅ Optimized death reset complete!');
         }
@@ -7604,8 +7603,7 @@ class TronPong {
             z: -0.15 // Always toward enemy/AI
         });
         
-        // Enable camera drift correction after full game reset
-        this.enableCameraDriftCorrection();
+        // Camera drift correction disabled - was causing issues
         
         // Reset wall wave animation and heights
         this.wallWaveAnimation.active = false;
