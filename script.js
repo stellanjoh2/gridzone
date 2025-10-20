@@ -262,7 +262,7 @@ class TronPong {
         this.mouseY = 0;
         this.lastMouseX = 0;
         this.mouseTiltVelocity = 0;
-        this.mouseSensitivity = 0.000075; // How sensitive mouse movement is (reduced by 96.25% total)
+        this.mouseSensitivity = 0.0000375; // How sensitive mouse movement is (reduced by 50% more)
         this.mouseTiltAcceleration = 0.12; // How fast mouse tilt ramps up
         this.mouseTiltDecay = 0.94; // How fast mouse tilt ramps down
         this.maxMouseTiltVelocity = 1.2; // Maximum mouse tilt velocity
