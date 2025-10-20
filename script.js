@@ -260,6 +260,12 @@ class TronPong {
         this.cameraLookOffset = 0; // Horizontal look offset
         this.cameraLookSmooth = 0.08; // How fast camera follows paddle
         
+        // Keyboard camera smoothing (to match gamepad analog feel)
+        this.keyboardTiltVelocity = 0; // Current keyboard tilt velocity
+        this.keyboardTiltAcceleration = 0.15; // How fast keyboard tilt ramps up
+        this.keyboardTiltDecay = 0.92; // How fast keyboard tilt ramps down
+        this.maxKeyboardTiltVelocity = 0.02; // Maximum tilt velocity for keyboard (75% reduction)
+        
         // Camera system
         this.cameraTarget = { x: 0, y: 0, z: 0, zoom: 22 };
         this.cameraSmooth = 0.05; // Smooth lerp factor for camera movement
@@ -5829,8 +5835,26 @@ class TronPong {
         // Calculate paddle velocity for camera tilt
         const paddleVelocity = this.paddle1.position.x - previousX;
         
-        // Target tilt based on paddle movement (increased for more noticeable effect)
-        const targetTilt = paddleVelocity * -0.3; // Doubled intensity (was -0.15)
+        // Detect if keyboard input is being used (binary on/off)
+        const isKeyboardInput = (this.keys['a'] || this.keys['arrowleft'] || this.keys['d'] || this.keys['arrowright']);
+        
+        // Calculate target tilt based on paddle movement (increased for more noticeable effect)
+        let targetTilt = paddleVelocity * -0.3; // Doubled intensity (was -0.15)
+        
+        // Apply keyboard smoothing for gradual ramp-up/ramp-down
+        if (isKeyboardInput && Math.abs(paddleVelocity) > 0.001) {
+            // Keyboard input detected - use smooth ramp-up system
+            const targetVelocity = Math.sign(paddleVelocity) * this.maxKeyboardTiltVelocity;
+            this.keyboardTiltVelocity += (targetVelocity - this.keyboardTiltVelocity) * this.keyboardTiltAcceleration;
+            targetTilt = this.keyboardTiltVelocity * -0.94; // Scale to match gamepad intensity (75% reduction)
+        } else {
+            // No keyboard input - ramp down smoothly
+            this.keyboardTiltVelocity *= this.keyboardTiltDecay;
+            if (Math.abs(this.keyboardTiltVelocity) < 0.001) {
+                this.keyboardTiltVelocity = 0;
+            }
+            targetTilt = this.keyboardTiltVelocity * -0.94; // Continue with smoothed velocity (75% reduction)
+        }
         
         // Smoothly interpolate to target tilt
         this.cameraTilt += (targetTilt - this.cameraTilt) * this.cameraTiltSmooth;
