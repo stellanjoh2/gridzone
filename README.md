@@ -186,6 +186,6 @@ This project is released under the **Creative Commons Zero (CC0)** license, maki
 
 ---
 
-**Built with ❤️ by Stellar Corp. Publishing**
+**Vibecoded with ❤️ by Stellar Corp. Publishing**
 
 *Experience the future of arcade gaming at [gridzone.online](https://gridzone.online)* 🚀
