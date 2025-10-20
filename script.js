@@ -840,10 +840,11 @@ class TronPong {
             top: 25%;
             left: 5%;
             color: ${color};
-            font-size: 24px;
+            font-size: 29px;
             font-weight: bold;
             text-shadow: ${shadow};
-            font-family: 'Orbitron', monospace;
+            font-family: 'Terminal Grotesque', monospace;
+            text-transform: uppercase;
             z-index: 200;
             pointer-events: none;
             opacity: 0;
@@ -3321,7 +3322,6 @@ class TronPong {
         document.getElementById('logo').style.display = 'none';
         document.getElementById('presents').style.display = 'none';
         document.getElementById('copyright').style.display = 'none';
-        document.getElementById('fullscreenHint').style.display = 'none';
         
         // Hide world logo and lights when game starts
         if (this.worldLogo) {
@@ -4102,14 +4102,15 @@ class TronPong {
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                font-size: 120px;
+                font-size: 173px;
                 font-weight: bold;
                 color: #ffffff;
                 text-shadow: 
                     0 0 40px #00FEFC,
                     0 0 80px #00FEFC,
                     0 0 120px #00FEFC;
-                font-family: 'Orbitron', monospace;
+                font-family: 'Terminal Grotesque', monospace;
+            text-transform: uppercase;
                 z-index: 1000;
                 pointer-events: none;
                 white-space: nowrap;
@@ -4121,14 +4122,15 @@ class TronPong {
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                font-size: 120px;
+                font-size: 173px;
                 font-weight: bold;
                 color: #ffffff;
                 text-shadow: 
                     0 0 40px #FFD700,
                     0 0 80px #FFD700,
                     0 0 120px #FFD700;
-                font-family: 'Orbitron', monospace;
+                font-family: 'Terminal Grotesque', monospace;
+            text-transform: uppercase;
                 z-index: 1000;
                 pointer-events: none;
                 white-space: nowrap;
@@ -4141,11 +4143,12 @@ class TronPong {
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                font-size: 120px;
+                font-size: 173px;
                 font-weight: bold;
                 color: #ffffff;
                 text-shadow: 0 0 20px #00FEFC;
-                font-family: 'Orbitron', monospace;
+                font-family: 'Terminal Grotesque', monospace;
+            text-transform: uppercase;
                 z-index: 1000;
                 pointer-events: none;
                 white-space: nowrap;
@@ -5227,8 +5230,9 @@ class TronPong {
             top: 20px;
             right: 20px;
             color: #00FEFC;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
+            font-family: 'Terminal Grotesque', monospace;
+            text-transform: uppercase;
+            font-size: 19px;
             font-weight: bold;
             text-shadow: 0 0 10px #00FEFC;
             background: rgba(0, 0, 0, 0.7);
@@ -5589,7 +5593,7 @@ class TronPong {
     
     showBonusText() {
         // Use message queue system to prevent overlapping
-        this.queueMessage('2X WIDTH', 1000, 'bonus');
+        this.queueMessage('2X WIDTH', 1200, 'bonus');
     }
     
     updateParticles() {
@@ -6461,12 +6465,12 @@ class TronPong {
     
     showAwesomeText() {
         // Use message queue system to prevent overlapping
-        this.queueMessage('AWESOME', 1400, 'awesome');
+        this.queueMessage('AWESOME', 1200, 'awesome');
     }
     
     showMultiBallText() {
         // Use message queue system to prevent overlapping
-        this.queueMessage('MULTI-BALL', 1400, 'default');
+        this.queueMessage('MULTI-BALL', 1200, 'default');
     }
     
     showDeathScreen() {

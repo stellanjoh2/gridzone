@@ -23,9 +23,19 @@
     <meta property="twitter:description" content="Experience the future of arcade gaming! A stunning 3D take on classic Pong with dynamic lighting, particle effects, and immersive cyberpunk aesthetics.">
     <meta property="twitter:image" content="https://gridzone.online/Images/gridzone-share-image.jpg">
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Orbitron font removed - using Terminal Grotesque instead -->
+    
+    <!-- Custom Terminal Grotesque Font -->
+    <style>
+        @font-face {
+            font-family: 'Terminal Grotesque';
+            src: url('assets/fonts/terminal-grotesque.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+    </style>
+    
     <style>
         * {
             margin: 0;
@@ -36,7 +46,7 @@
         body {
             background: #000;
             overflow: hidden;
-            font-family: 'Orbitron', sans-serif;
+            font-family: 'Terminal Grotesque', monospace;
             animation: fadeInBackground 5.25s ease-out forwards;
         }
         
@@ -234,37 +244,23 @@
             transform: translate(-50%, -50%);
             text-align: center;
             color: #00FEFC;
-            font-size: 36px;
-            text-shadow: 0 0 20px #00FEFC, 3px 3px 0px rgba(0, 20, 20, 1), -3px -3px 0px rgba(0, 20, 20, 1), 3px -3px 0px rgba(0, 20, 20, 1), -3px 3px 0px rgba(0, 20, 20, 1);
+            font-size: 43px;
+            text-shadow: 0 0 20px #00FEFC;
             pointer-events: none;
             z-index: 100;
             opacity: 0;
             animation: fadeInUI 0.5s ease-out 3.75s forwards, uiBlink 0.75s ease-in-out infinite 4.25s;
         }
         
-        #fullscreenHint {
-            position: absolute;
-            top: 85%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            color: #00FEFC;
-            font-size: 18px;
-            font-family: 'Orbitron', monospace;
-            text-shadow: 0 0 10px #00FEFC, 2px 2px 0px rgba(0, 20, 20, 1);
-            pointer-events: none;
-            z-index: 100;
-            opacity: 0;
-            animation: fadeInFullscreenHint 0.5s ease-out 4s forwards;
-        }
         
         #presents {
             position: fixed;
             top: 10%;
             left: 50%;
             transform: translateX(-50%);
-            font-family: 'Orbitron', monospace;
-            font-size: 16pt;
+            font-family: 'Terminal Grotesque', monospace;
+            text-transform: uppercase;
+            font-size: 19pt;
             color: #00FEFC;
             text-align: center;
             line-height: 1.2;
@@ -280,8 +276,9 @@
             bottom: 10%;
             left: 50%;
             transform: translateX(-50%);
-            font-family: 'Orbitron', monospace;
-            font-size: 8pt;
+            font-family: 'Terminal Grotesque', monospace;
+            text-transform: uppercase;
+            font-size: 10pt;
             color: #00FEFC;
             text-align: center;
             line-height: 1.2;
@@ -334,16 +331,6 @@
             }
         }
         
-        @keyframes fadeInFullscreenHint {
-            from {
-                opacity: 0;
-                transform: translate(-50%, -50%) translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translate(-50%, -50%) translateY(0);
-            }
-        }
         
         @keyframes fadeInCopyright {
             from {
@@ -420,14 +407,18 @@
         
         #pauseMenu h2 {
             color: #00FEFC;
-            font-size: 48px;
+            font-size: 58px;
+            font-family: 'Terminal Grotesque', monospace;
+            text-transform: uppercase;
             text-shadow: 0 0 20px #00FEFC;
             margin-bottom: 20px;
         }
         
         #pauseMenu p {
             color: #ff00ff;
-            font-size: 18px;
+            font-size: 22px;
+            font-family: 'Terminal Grotesque', monospace;
+            text-transform: uppercase;
             text-shadow: 0 0 10px #ff00ff;
             margin: 8px 0;
             text-align: left;
@@ -440,7 +431,7 @@
         
         .controls-section h3 {
             color: #00FEFC;
-            font-size: 20px;
+            font-size: 24px;
             text-shadow: 0 0 15px #00FEFC;
             margin: 0 0 10px 0;
             border-bottom: 1px solid #00FEFC;
@@ -452,7 +443,7 @@
             top: 45px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 36px;
+            font-size: 43px;
             pointer-events: none;
             z-index: 100;
             opacity: 0;
@@ -484,7 +475,7 @@
             width: 100%;
             text-align: center;
             color: #00FEFC;
-            font-size: 72px;
+            font-size: 86px;
             font-weight: bold;
             text-shadow: 0 0 30px #00FEFC, 0 0 60px #00FEFC;
             pointer-events: none;
@@ -576,7 +567,7 @@
             transform: translate(-50%, -50%);
             text-align: center;
             color: #ffffff;
-            font-size: 120px;
+            font-size: 173px;
             font-weight: bold;
             text-shadow: 0 0 40px #00FEFC, 0 0 80px #00FEFC, 0 0 120px #00FEFC;
             pointer-events: none;
@@ -599,7 +590,7 @@
             transform: translate(-50%, -50%);
             text-align: center;
             color: #ffffff;
-            font-size: 120px;
+            font-size: 173px;
             font-weight: bold;
             text-shadow: 0 0 40px #00FEFC, 0 0 80px #00FEFC, 0 0 120px #00FEFC;
             pointer-events: none;
@@ -623,7 +614,7 @@
             transform: translate(-50%, -50%);
             text-align: center;
             color: #ffffff;
-            font-size: 120px;
+            font-size: 173px;
             font-weight: bold;
             text-shadow: 0 0 40px #ff00ff, 0 0 80px #ff00ff, 0 0 120px #ff00ff;
             pointer-events: none;
@@ -720,9 +711,8 @@
     <div id="multiBallText">MULTI-BALL!!!</div>
     <div id="logo"><img src="assets/images/gridzone-logo.svg" alt="GridZone" style="fill: #00FEFC;"></div>
     <div id="ui">PRESS SPACE TO START</div>
-    <div id="fullscreenHint">BEST EXPERIENCED IN FULLSCREEN (F11) + A GAMEPAD</div>
     <div id="presents">Stellar Corp. Publishing Presents</div>
-    <div id="copyright">© 2025 Stellar Corp. All rights reserved. GRIDZONE™ is a synthetic entertainment simulation — unauthorized duplication may destabilize reality. By continuing, you consent to full immersion and potential data resonance within The Zone.</div>
+    <div id="copyright">BEST EXPERIENCED IN FULLSCREEN (F11) + A GAMEPAD<br><br>© 2025 Stellar Corp. All rights reserved. GRIDZONE™ is a synthetic entertainment simulation — unauthorized duplication may destabilize reality. By continuing, you consent to full immersion and potential data resonance within The Zone. Terminal Grotesque by Raphaël Bastide, with the contribution of Jérémy Landes. Distributed by <a href="https://velvetyne.fr/" target="_blank" style="color: #00FEFC; text-decoration: underline;">velvetyne.fr</a>.</div>
     
     <div id="deathScreen">
         <div id="deathText">YOU DIED</div>
@@ -756,7 +746,7 @@
             <p>Performance Mode: P / Circle Button</p>
         </div>
         
-        <button id="resetButton" style="margin-top: 20px; padding: 12px 24px; font-family: 'Orbitron', sans-serif; font-size: 16px; background: #ff0033; color: white; border: 2px solid #ff0033; border-radius: 5px; cursor: pointer; text-shadow: 0 0 10px #ff0033; box-shadow: 0 0 20px #ff0033; transition: all 0.2s ease;">SUPER RESET</button>
+        <button id="resetButton" style="margin-top: 20px; padding: 12px 24px; font-family: 'Terminal Grotesque', monospace; text-transform: uppercase; font-size: 19px; background: #ff0033; color: white; border: 2px solid #ff0033; border-radius: 5px; cursor: pointer; text-shadow: 0 0 10px #ff0033; box-shadow: 0 0 20px #ff0033; transition: all 0.2s ease;">SUPER RESET</button>
     </div>
     
     <!-- Vignette overlay -->
