@@ -8058,11 +8058,13 @@ class TronPong {
             // Non-critical systems - frame skipping based on performance mode
             const skipFrequency = this.performanceMode ? 3 : 2; // Skip more frames in performance mode
             
+            // Critical systems that need smooth updates (every frame)
+            this.updateBonusCube(deltaTime); // Move outside frame skip for smooth light blinking
+            
             if (this._frameSkipCounter % skipFrequency === 0) {
                 this.updateAnimatedLights();
                 this.updatePaddleBlinks(deltaTime);
                 this.updateBonusEffect(deltaTime);
-                this.updateBonusCube(deltaTime);
                 this.updateLensFlare(deltaTime); // Lens flare fade
                 this.updateRGBSplit(deltaTime); // RGB split effect
                 this.updateWallWaveAnimation(deltaTime); // Wall wave animation
