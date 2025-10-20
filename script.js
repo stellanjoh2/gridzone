@@ -257,6 +257,17 @@ class TronPong {
         this.keyboardTiltDecay = 0.92; // How fast keyboard tilt ramps down
         this.maxKeyboardTiltVelocity = 0.02; // Maximum tilt velocity for keyboard (75% reduction)
         
+        // Mouse controls for camera tilt
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.lastMouseX = 0;
+        this.mouseTiltVelocity = 0;
+        this.mouseSensitivity = 0.000075; // How sensitive mouse movement is (reduced by 96.25% total)
+        this.mouseTiltAcceleration = 0.12; // How fast mouse tilt ramps up
+        this.mouseTiltDecay = 0.94; // How fast mouse tilt ramps down
+        this.maxMouseTiltVelocity = 1.2; // Maximum mouse tilt velocity
+        this.mouseControlsEnabled = false; // Only active during gameplay
+        
         // Camera system
         this.cameraTarget = { x: 0, y: 0, z: 0, zoom: 22 };
         this.cameraSmooth = 0.015; // Much more gradual camera movement (was 0.05)
@@ -3063,6 +3074,78 @@ class TronPong {
                 this.superHardReset();
             });
         }
+        
+        // Mouse controls for paddle movement and camera tilt
+        window.addEventListener('mousemove', (e) => {
+            if (this.mouseControlsEnabled && this.gameStarted && !this.isPaused) {
+                // Calculate mouse movement delta
+                const deltaX = e.movementX || 0;
+                
+                // Update mouse position and calculate velocity
+                this.lastMouseX = this.mouseX;
+                this.mouseX += deltaX;
+                
+                // Calculate mouse velocity for tilt
+                const mouseVelocity = deltaX * this.mouseSensitivity;
+                
+                // Apply mouse tilt with smoothing similar to keyboard
+                if (Math.abs(mouseVelocity) > 0.001) {
+                    const targetVelocity = Math.sign(mouseVelocity) * Math.min(Math.abs(mouseVelocity), this.maxMouseTiltVelocity);
+                    this.mouseTiltVelocity += (targetVelocity - this.mouseTiltVelocity) * this.mouseTiltAcceleration;
+                } else {
+                    // No mouse movement - ramp down smoothly
+                    this.mouseTiltVelocity *= this.mouseTiltDecay;
+                    if (Math.abs(this.mouseTiltVelocity) < 0.001) {
+                        this.mouseTiltVelocity = 0;
+                    }
+                }
+                
+                // Move paddle based on mouse movement
+                if (Math.abs(deltaX) > 0) {
+                    // Calculate paddle movement speed based on mouse delta
+                    const paddleMoveSpeed = deltaX * this.mouseSensitivity * 1000; // Scale up for paddle movement
+                    
+                    // Calculate paddle half-width (accounts for bonus effect)
+                    const scaleFactor = 1.0 + (this.bonusActivePaddle === this.paddle1 ? this.paddleWidthTransition : 0);
+                    const paddleHalfWidth = 2.5 * scaleFactor;
+                    
+                    // Wall boundaries (walls are at ±11.5)
+                    const wallPosition = 11.5;
+                    const maxX = wallPosition - paddleHalfWidth;
+                    const minX = -(wallPosition - paddleHalfWidth);
+                    
+                    // Move paddle with mouse input
+                    this.paddle1.position.x += paddleMoveSpeed * this.timeScale;
+                    
+                    // Clamp to prevent wall intersection
+                    this.paddle1.position.x = Math.max(minX, Math.min(maxX, this.paddle1.position.x));
+                }
+            }
+        });
+        
+        // Enable mouse controls when game starts
+        window.addEventListener('click', (e) => {
+            if (this.gameStarted && !this.isPaused) {
+                // Request pointer lock for better mouse control
+                if (document.pointerLockElement !== document.body) {
+                    document.body.requestPointerLock().catch(err => {
+                        // Pointer lock failed, but we can still use mouse movement
+                        log('Pointer lock failed:', err);
+                    });
+                }
+                this.mouseControlsEnabled = true;
+            }
+        });
+        
+        // Handle pointer lock changes
+        document.addEventListener('pointerlockchange', () => {
+            if (document.pointerLockElement === document.body) {
+                this.mouseControlsEnabled = true;
+            } else {
+                this.mouseControlsEnabled = false;
+                this.mouseTiltVelocity = 0; // Reset mouse tilt when losing pointer lock
+            }
+        });
     }
     
     setupLogo3DEffects() {
@@ -5951,6 +6034,11 @@ class TronPong {
             targetTilt = this.keyboardTiltVelocity * -0.94; // Continue with smoothed velocity (75% reduction)
         }
         
+        // Add mouse tilt to the camera tilt calculation
+        if (this.mouseControlsEnabled && Math.abs(this.mouseTiltVelocity) > 0.001) {
+            targetTilt += this.mouseTiltVelocity * -0.8; // Mouse tilt contribution (negative for natural feel)
+        }
+        
         // Smoothly interpolate to target tilt
         this.cameraTilt += (targetTilt - this.cameraTilt) * this.cameraTiltSmooth;
         
@@ -7342,6 +7430,10 @@ class TronPong {
         this.cameraZoom = 0;
         this.cameraTilt = 0;
         this.cameraLookOffset = 0;
+        
+        // Reset mouse controls
+        this.mouseTiltVelocity = 0;
+        this.keyboardTiltVelocity = 0;
         
         // Clear all balls
         this.resetBall();
