@@ -1213,8 +1213,8 @@ class TronPong {
         const bloomShader = {
             uniforms: {
                 tDiffuse: { value: null },
-                bloomStrength: { value: 0.75 }, // +20% from 2.8
-                bloomRadius: { value: 0.5 } // 20% reduction from 2.125
+                bloomStrength: { value: 1.5 }, // Match bfollington's CRT example
+                bloomRadius: { value: 0.4 } // Match bfollington's CRT example
             },
             vertexShader: `
                 varying vec2 vUv;
@@ -1250,9 +1250,9 @@ class TronPong {
                     
                     sum /= totalWeight;
                     
-                    // Low threshold - emissive objects bloom easily
+                    // Match bfollington's CRT example threshold
                     float brightness = dot(sum.rgb, vec3(0.2126, 0.7152, 0.0722));
-                    float bloomAmount = smoothstep(0.01, 0.2, brightness); // Very low threshold
+                    float bloomAmount = smoothstep(0.85, 1.0, brightness); // Match bfollington's threshold
                     gl_FragColor = sum * bloomStrength * bloomAmount;
                 }
             `
@@ -2104,7 +2104,7 @@ class TronPong {
             uniforms: {
                 time: { value: 0 },
                 baseColor: { value: new THREE.Color(0x00FEFC) }, // Bright lime-yellow!
-                emissiveIntensity: { value: 12.0 }, // Increased for better CRT glow
+                emissiveIntensity: { value: 2.0 }, // Optimized for bfollington's bloom threshold
                 opacity: { value: 1.0 }
             },
             vertexShader: `
@@ -2383,7 +2383,7 @@ class TronPong {
             uniforms: {
                 time: { value: 0 },
                 baseColor: { value: new THREE.Color(0x00FEFC) }, // Bright lime-yellow!
-                emissiveIntensity: { value: 12.0 }, // Increased for better CRT glow
+                emissiveIntensity: { value: 2.0 }, // Optimized for bfollington's bloom threshold
                 opacity: { value: 1.0 } // Opaque for paddle
             },
             vertexShader: `
@@ -2463,7 +2463,7 @@ class TronPong {
             uniforms: {
                 time: { value: 0 },
                 baseColor: { value: new THREE.Color(0xff00ff) }, // Bright magenta!
-                emissiveIntensity: { value: 12.0 }, // Increased for better CRT glow
+                emissiveIntensity: { value: 2.0 }, // Optimized for bfollington's bloom threshold
                 opacity: { value: 1.0 }
             },
             vertexShader: `
@@ -3939,7 +3939,7 @@ class TronPong {
         
         // Set target color to white for shader material
         material.uniforms.baseColor.value.setHex(0xffffff); // WHITE!
-        material.uniforms.emissiveIntensity.value = 20.0; // SUPER BRIGHT - increased for CRT glow
+        material.uniforms.emissiveIntensity.value = 5.0; // Optimized for bfollington's bloom threshold
         
         // Boost the paddle's point light intensity when hit
         if (paddleName === 'paddle1' && this.playerLight) {
@@ -3973,7 +3973,7 @@ class TronPong {
             material.uniforms.baseColor.value.setHex(lerpedColor);
             
             // Fade emissive intensity back to original
-            material.uniforms.emissiveIntensity.value = 20.0 * fadeProgress + 12.0 * (1 - fadeProgress);
+            material.uniforms.emissiveIntensity.value = 5.0 * fadeProgress + 2.0 * (1 - fadeProgress);
             
             // Also fade the light intensity (flash at 12.0, base is 0.75)
             if (this.playerLight) {
@@ -4001,7 +4001,7 @@ class TronPong {
             material.uniforms.baseColor.value.setHex(lerpedColor);
             
             // Fade emissive intensity back to original
-            material.uniforms.emissiveIntensity.value = 20.0 * fadeProgress + 12.0 * (1 - fadeProgress);
+            material.uniforms.emissiveIntensity.value = 5.0 * fadeProgress + 2.0 * (1 - fadeProgress);
             
             // Also fade the light intensity (flash at 12.0, base is 0.75)
             if (this.aiLight) {
@@ -5604,7 +5604,7 @@ class TronPong {
             uniforms: {
                 time: { value: 0 },
                 baseColor: { value: new THREE.Color(0xFF8C00) }, // Strong orange/yellow!
-                emissiveIntensity: { value: 15.0 }, // Increased for better CRT glow
+                emissiveIntensity: { value: 3.0 }, // Optimized for bfollington's bloom threshold
                 opacity: { value: 1.0 }
             },
             vertexShader: `
