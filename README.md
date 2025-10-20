@@ -11,13 +11,11 @@ A modern, immersive 3D arcade game featuring stunning visuals, dynamic lighting,
 - **Atmospheric particle effects** and follows trails with color-shifting mechanics
 - **Smooth camera animations** with shake effects and intelligent drift correction
 - **Celebratory visual sequences** with wall lighting waves and traveling lights
-- **Professional UI design** with custom Terminal Grotesque typography and animations
-- **RGB Split post-processing effects** for dramatic visual impact
+- **Custom UI design** with Terminal Grotesque typography and animations
 - **Lens flare system** with dynamic ghost effects
 - **Dynamic floor glow** with magnetic tile elevation effects
 
 ### 🎵 **Audio Design**
-- **Spatial audio system** for immersive sound effects
 - **Dynamic music integration** with multiple atmospheric tracks
 - **Real-time audio feedback** for paddle hits, wall collisions, and special events
 - **Celebration sound sequences** synchronized with visual effects
@@ -70,7 +68,7 @@ A modern, immersive 3D arcade game featuring stunning visuals, dynamic lighting,
 - **Built a complete 3D game engine** from scratch using Three.js
 - **Implemented advanced lighting systems** with real-time shadow mapping
 - **Created a sophisticated physics engine** with collision detection and response
-- **Developed a modular audio system** with spatial positioning and dynamic mixing
+- **Developed a modular audio system** with dynamic mixing
 - **Optimized for performance** across different devices and browsers
 - **Implemented camera drift correction** for consistent gameplay experience
 - **Created particle color-shifting system** for dynamic visual feedback
@@ -81,8 +79,7 @@ A modern, immersive 3D arcade game featuring stunning visuals, dynamic lighting,
 - **Created smooth, cinematic camera movements** that enhance gameplay
 - **Implemented particle effects systems** for visual feedback and atmosphere
 - **Built responsive UI components** that work across desktop and mobile
-- **Integrated professional typography** with Terminal Grotesque font
-- **Added RGB split post-processing** for dramatic visual effects
+- **Integrated custom typography** with Terminal Grotesque font
 - **Created dynamic floor lighting** with magnetic tile effects
 
 ### **Project Management**
@@ -163,11 +160,10 @@ This project represents my **first foray into web development**, where I learned
 - **Created seamless camera transitions** throughout the game
 
 ### **Visual Enhancements**
-- **RGB Split post-processing** for dramatic visual impact
 - **Particle color-shifting system** based on game events
 - **Enhanced lens flare effects** with ghost visibility improvements
 - **Dynamic floor glow** with magnetic tile elevation
-- **Professional typography** with Terminal Grotesque font
+- **Custom typography** with Terminal Grotesque font
 
 ### **Performance Optimizations**
 - **Bloom effect optimization** for better frame rates
