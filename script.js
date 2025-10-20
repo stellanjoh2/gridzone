@@ -6634,6 +6634,9 @@ class TronPong {
         currentPos.x += (this.cameraTarget.x - currentPos.x) * this.cameraSmooth;
         currentPos.z += (this.cameraTarget.zoom + this.cameraTarget.z - currentPos.z) * this.cameraSmooth;
         
+        // Keep camera at consistent height (prevent upward/downward drift)
+        currentPos.y += (18 - currentPos.y) * this.cameraSmooth;
+        
         // Look at target with paddle direction offset
         this.camera.lookAt(this.cameraTarget.x + this.cameraLookOffset, -4, this.cameraTarget.z);
     }
