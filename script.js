@@ -4363,7 +4363,7 @@ class TronPong {
                 font-size: 173px;
                 font-weight: bold;
                 color: #ffffff;
-                text-shadow: 0 0 20px #00FEFC;
+                text-shadow: 0 0 40px #00FEFC, 0 0 80px #00FEFC, 0 0 120px #00FEFC;
                 font-family: 'Terminal Grotesque', monospace;
             text-transform: uppercase;
                 z-index: 1000;
@@ -5452,7 +5452,7 @@ class TronPong {
             text-transform: uppercase;
             font-size: 19px;
             font-weight: bold;
-            text-shadow: 0 0 10px #00FEFC;
+            text-shadow: 0 0 40px #00FEFC, 0 0 80px #00FEFC, 0 0 120px #00FEFC;
             background: rgba(0, 0, 0, 0.7);
             padding: 8px 12px;
             border-radius: 4px;
