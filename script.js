@@ -1158,8 +1158,6 @@ class TronPong {
         
         // Event listeners
         this.setupEventListeners();
-        this.setupLogo3DEffects();
-        this.createWorldLogo();
         
         
         // Create FPS counter
@@ -3166,272 +3164,10 @@ class TronPong {
         });
     }
     
-    setupLogo3DEffects() {
-        // 3D logo effects with mouse movement
-        const logo = document.getElementById('logo');
-        const logoImg = logo.querySelector('img');
-        
-        let mouseX = 0;
-        let mouseY = 0;
-        let targetRotateX = 0;
-        let targetRotateY = 0;
-        let currentRotateX = 0;
-        let currentRotateY = 0;
-        
-        // Mouse movement handler
-        const handleMouseMove = (e) => {
-            const rect = logo.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            
-            // Calculate relative mouse position (-1 to 1)
-            mouseX = (e.clientX - centerX) / (rect.width / 2);
-            mouseY = (e.clientY - centerY) / (rect.height / 2);
-            
-            // Clamp values and scale for subtle rotation
-            mouseX = Math.max(-1, Math.min(1, mouseX));
-            mouseY = Math.max(-1, Math.min(1, mouseY));
-            
-            // Calculate target rotation (subtle angles)
-            targetRotateY = mouseX * 8; // Max 8 degrees
-            targetRotateX = -mouseY * 6; // Max 6 degrees (inverted)
-        };
-        
-        // Gamepad handler for controller support
-        const handleGamepad = () => {
-            const gamepads = navigator.getGamepads();
-            if (gamepads[0]) {
-                const gamepad = gamepads[0];
-                
-                // Gamepad detected and ready
-                
-                // Try different axis combinations for PS5 controller
-                // PS5 controller typically has: 0=Left X, 1=Left Y, 2=Right X, 3=Right Y
-                const stickX = gamepad.axes[2] || 0; // Right stick X
-                const stickY = gamepad.axes[3] || 0; // Right stick Y
-                
-                if (Math.abs(stickX) > 0.1 || Math.abs(stickY) > 0.1) {
-                    targetRotateY = stickX * 8;
-                    targetRotateX = -stickY * 6;
-                } else {
-                    targetRotateY = 0;
-                    targetRotateX = 0;
-                }
-            }
-        };
-        
-        // Smooth rotation interpolation
-        const animateRotation = () => {
-            // Smooth interpolation
-            currentRotateX += (targetRotateX - currentRotateX) * 0.1;
-            currentRotateY += (targetRotateY - currentRotateY) * 0.1;
-            
-            // Apply rotation to logo image
-            const rotationTransform = `
-                rotateX(${currentRotateX}deg) 
-                rotateY(${currentRotateY}deg)
-            `;
-            
-            logoImg.style.transform = rotationTransform;
-            
-            requestAnimationFrame(animateRotation);
-        };
-        
-        // Wait for entry animation to complete, then start interactive rotation
-        setTimeout(() => {
-            // Reset logo to neutral position after entry animation
-            logoImg.style.transform = 'rotateX(0deg) rotateY(0deg)';
-            
-            // Start the interactive rotation system
-            animateRotation();
-        }, 3250); // 2.25s start + 1s duration = 3.25s
-        
-        // Add event listeners
-        window.addEventListener('mousemove', handleMouseMove);
-        
-        // Store handler for gamepad updates
-        this.handleLogoGamepad = handleGamepad;
-    }
-    
-    createWorldLogo() {
-        // Create 3D logo in the world that receives lighting
-        this.worldLogo = null;
-        this.worldLogoRotation = { x: 0, y: 0 };
-        
-        // Load both SVG textures
-        const loader = new THREE.TextureLoader();
-        loader.setCrossOrigin(''); // Remove CORS restrictions for local files
-        let loadedCount = 0;
-        const textures = {};
-        
-        const createSingleLogo = (texture) => {
-            // Create text-based logo instead of SVG texture for better post-processing compatibility
-            const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 144;
-            const context = canvas.getContext('2d');
-            
-            // Set background to transparent
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Set font properties
-            context.font = 'bold 80px Terminal Grotesque';
-            context.fillStyle = '#00ffff';
-            context.strokeStyle = '#ffffff';
-            context.lineWidth = 3;
-            
-            // Draw text with stroke for better visibility
-            context.strokeText('GRIDZONE', 50, 90);
-            context.fillText('GRIDZONE', 50, 90);
-            
-            // Create texture from canvas
-            const textTexture = new THREE.CanvasTexture(canvas);
-            textTexture.needsUpdate = true;
-            
-            // Create a plane geometry for the logo
-            const logoGeometry = new THREE.PlaneGeometry(8, 2.3); // Adjusted for text
-            
-            // Create material for main logo that's compatible with post-processing
-            const mainMaterial = new THREE.MeshStandardMaterial({
-                map: textTexture,
-                metalness: 0.8, // Very metallic for better effects
-                roughness: 0.1, // Very smooth for better bloom
-                emissive: new THREE.Color(0x00ffff), // Bright cyan glow for maximum visibility
-                emissiveIntensity: 3.0, // Increased for better CRT glow
-                transparent: false, // CRITICAL: Must be false for post-processing
-                alphaTest: 0.1,
-                side: THREE.DoubleSide, // Ensure both sides are rendered
-                // Force the material to be very bright for testing
-                color: new THREE.Color(0xffffff) // Pure white for maximum visibility
-            });
-            
-            // Create main logo mesh
-            this.worldLogo = new THREE.Mesh(logoGeometry, mainMaterial);
-            
-            // CRITICAL: Set logo to layer 0 so it gets post-processed with other scene elements
-            this.worldLogo.layers.set(0);
-            
-            // Comment out stroke layer for now
-            // this.worldLogoStroke = new THREE.Mesh(logoGeometry, strokeMaterial);
-            
-            // Position main logo in the world (closer to camera for better visibility)
-            this.worldLogo.position.set(0, 8, -8);
-            this.worldLogo.rotation.x = -0.1; // Less tilt toward camera
-            
-            // Comment out stroke positioning for now
-            // this.worldLogoStroke.position.set(0, 12, -4.0);
-            // this.worldLogoStroke.rotation.x = -0.2;
-            
-            // Add main logo to scene
-            this.scene.add(this.worldLogo);
-            
-            // Add dedicated lights for logo specular highlights
-            this.createLogoLights();
-            
-            log('🌍 Single world logo created!');
-            log('Main logo position:', this.worldLogo.position);
-            log('Main logo visible:', this.worldLogo.visible);
-        };
-        
-        // Error handling for texture loading
-        const handleError = (error) => {
-            console.warn('Could not load logo texture:', error);
-        };
-        
-        // Create a simple fallback logo (no external files needed)
-        log('🎨 Creating procedural logo (no external files)');
-        createSingleLogo(null);
-        
-    }
     
     
-    createLogoLights() {
-        // Create lights positioned to create specular highlights on the logo
-        this.logoLights = [];
-        
-        // Main highlight light - positioned to the side and above
-        const mainLight = new THREE.PointLight(0x00FEFC, 8.0, 25);
-        mainLight.position.set(8, 15, -2);
-        this.scene.add(mainLight);
-        this.logoLights.push(mainLight);
-        
-        // Secondary light - from the opposite side for rim lighting
-        const rimLight = new THREE.PointLight(0xFF00FF, 6.0, 22);
-        rimLight.position.set(-6, 14, 0);
-        this.scene.add(rimLight);
-        this.logoLights.push(rimLight);
-        
-        // Accent light - from behind for edge definition
-        const accentLight = new THREE.PointLight(0xFFFFFF, 5.0, 18);
-        accentLight.position.set(0, 10, 2);
-        this.scene.add(accentLight);
-        this.logoLights.push(accentLight);
-        
-        log('💡 Logo lights created for specular highlights!');
-    }
     
-    updateWorldLogo(deltaTime) {
-        if (!this.worldLogo) return;
-        
-        // Gentle rotation animation
-        this.worldLogoRotation.y += deltaTime * 0.3; // Slow rotation
-        this.worldLogo.rotation.y = this.worldLogoRotation.y;
-        
-        // Gentle floating motion
-        const floatY = 8 + this.cachedSin(this.worldLogoRotation.y * 0.5) * 0.5;
-        this.worldLogo.position.y = floatY;
-        
-        // Comment out stroke animation for now
-        // this.worldLogoStroke.rotation.y = this.worldLogoRotation.y;
-        // this.worldLogoStroke.position.y = floatY;
-        // this.worldLogoStroke.position.z = -4.0 + Math.sin(this.worldLogoRotation.y * 0.7) * 0.1;
-        
-        // Animate logo lights for dynamic specular highlights
-        if (this.logoLights && this.logoLights.length > 0) {
-            const time = this.worldLogoRotation.y;
-            
-            // Main light - gentle orbit
-            this.logoLights[0].position.x = 8 + this.cachedSin(time * 0.4) * 2;
-            this.logoLights[0].position.z = -2 + this.cachedCos(time * 0.4) * 1.5;
-            
-            // Rim light - counter-orbit
-            this.logoLights[1].position.x = -6 + this.cachedSin(time * 0.3 + Math.PI) * 1.5;
-            this.logoLights[1].position.z = this.cachedCos(time * 0.3 + Math.PI) * 1;
-            
-            // Accent light - subtle pulsing
-            this.logoLights[2].intensity = 5.0 + this.cachedSin(time * 0.8) * 1.5;
-        }
-        
-        // Hide during main menu sequence, show after logo animation completes
-        // Only show 3D world logo during title screen (gets full post-processing), not during gameplay
-        if (this.gameStarted) {
-            this.worldLogo.visible = false;
-            // Hide DOM logo when game starts
-            document.getElementById('logo').style.display = 'none';
-        } else if (performance.now() < 3250) { // Hide until logo entry animation completes
-            this.worldLogo.visible = false;
-            // Hide DOM logo initially, let 3D logo take over
-            document.getElementById('logo').style.display = 'none';
-        } else {
-            // FORCE logo to be visible during title screen for full post-processing
-            this.worldLogo.visible = true;
-            // Keep DOM logo hidden - 3D logo with full effects is better
-            document.getElementById('logo').style.display = 'none';
-            // Also hide the presents text to avoid conflicts
-            document.getElementById('presents').style.display = 'none';
-            
-            // Show logo lights during title screen
-            if (this.logoLights) {
-                this.logoLights.forEach(light => light.visible = true);
-            }
-            
-        }
-        
-        // Comment out stroke visibility for now
-        // if (this.worldLogoStroke) {
-        //     this.worldLogoStroke.visible = true;
-        // }
-    }
+    
     
     updateStartMenuGamepad() {
         // Check for gamepad input during start menu
@@ -3488,17 +3224,6 @@ class TronPong {
             }, 100); // Small delay to ensure the solid black is visible first
         }
         
-        // Hide world logo and lights when game starts
-        if (this.worldLogo) {
-            this.worldLogo.visible = false;
-        }
-        // Comment out stroke hiding for now
-        // if (this.worldLogoStroke) {
-        //     this.worldLogoStroke.visible = false;
-        // }
-        if (this.logoLights) {
-            this.logoLights.forEach(light => light.visible = false);
-        }
         
         // Show overhead lights when game starts
         if (this.overheadLight) {
@@ -8044,15 +7769,7 @@ class TronPong {
         
         // Spatial audio removed - was causing issues
             
-            // Update logo 3D effects
-            if (this.handleLogoGamepad) {
-                this.handleLogoGamepad();
-            }
             
-            // Update world logo rotation (only during start menu)
-            if (!this.gameStarted) {
-                this.updateWorldLogo(deltaTime);
-            }
             
             // Non-critical systems - frame skipping based on performance mode
             const skipFrequency = this.performanceMode ? 3 : 2; // Skip more frames in performance mode
