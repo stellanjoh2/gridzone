@@ -300,11 +300,18 @@ class TronPong {
         this.particles = null;
         this.particleOriginalPositions = [];
         this.particleVelocities = [];
+        this.particleOriginalColors = []; // Store original particle colors for color shifting
         
         // Dynamic particle opacity system
         this.particleOpacityBoost = 0.0; // 0.0 = default 25%, 1.0 = full opacity
         this.particleOpacityTimer = 0.0; // Timer for opacity fade-back
         this.particleOpacityFadeSpeed = 2.0; // How fast opacity returns to default
+        
+        // Particle color shifting system
+        this.particleColorShift = 0.0; // 0.0 = original colors, 1.0 = full color shift
+        this.particleColorTimer = 0.0; // Timer for color fade-back
+        this.particleColorFadeSpeed = 1.5; // How fast colors return to original
+        this.lastHitPaddle = null; // Track which paddle hit last ('player' or 'enemy')
         
         // Stuck ball detection and recovery system
         this.ballCollisionHistory = []; // Track recent collision positions and times
@@ -437,11 +444,26 @@ class TronPong {
         log(`🎵 Wall hit: ${side} side`);
     }
     
-    boostParticleOpacity() {
+    boostParticleOpacity(paddleType = null) {
         // Boost particles to full opacity on impact
         this.particleOpacityBoost = 1.0;
         this.particleOpacityTimer = 0.0; // Reset timer
+        
+        // Trigger color shifting based on paddle type
+        if (paddleType) {
+            this.triggerParticleColorShift(paddleType);
+        }
+        
         log('✨ Particle opacity boosted to full intensity!');
+    }
+    
+    triggerParticleColorShift(paddleType) {
+        // Track which paddle hit and trigger color shift
+        this.lastHitPaddle = paddleType;
+        this.particleColorShift = 1.0;
+        this.particleColorTimer = 0.0;
+        
+        log(`🎨 Particle color shift triggered by ${paddleType} paddle!`);
     }
     
     updateParticleOpacity(deltaTime) {
@@ -454,11 +476,60 @@ class TronPong {
             
             // Update actual particle material opacity
             if (this.particles && this.particles.material) {
-                // Blend between 25% (0.15) and full (0.6) opacity
-                const targetOpacity = 0.15 + (this.particleOpacityBoost * 0.45); // 0.15 to 0.6
+                // Blend between 25% (0.15) and full (0.75) opacity
+                const targetOpacity = 0.15 + (this.particleOpacityBoost * 0.6); // 0.15 to 0.75
                 this.particles.material.opacity = targetOpacity;
             }
         }
+        
+        // Update particle color shifting
+        if (this.particleColorShift > 0) {
+            this.particleColorTimer += deltaTime;
+            
+            // Fade back to original colors over time
+            this.particleColorShift = Math.max(0, 1.0 - (this.particleColorTimer * this.particleColorFadeSpeed));
+            
+            // Update particle colors based on color shift
+            if (this.particles && this.particles.geometry) {
+                this.updateParticleColors();
+            }
+        }
+    }
+    
+    updateParticleColors() {
+        if (!this.particles || !this.particles.geometry) return;
+        
+        const colors = this.particles.geometry.attributes.color.array;
+        
+        for (let i = 0; i < this.particleOriginalColors.length; i++) {
+            const originalColor = this.particleOriginalColors[i];
+            let targetColor = { ...originalColor }; // Default to original
+            
+            // Apply color shift based on last hit paddle
+            if (this.lastHitPaddle === 'player') {
+                // 75% of particles turn cyan on player hit
+                if (Math.random() < 0.75) {
+                    targetColor = { r: 0.0, g: 1.0, b: 1.0 }; // Pure cyan
+                }
+            } else if (this.lastHitPaddle === 'enemy') {
+                // 90% of particles turn magenta on enemy hit
+                if (Math.random() < 0.90) {
+                    targetColor = { r: 1.0, g: 0.0, b: 1.0 }; // Pure magenta
+                }
+            } else if (this.lastHitPaddle === 'bonus') {
+                // 100% of particles turn yellow on bonus pickup
+                targetColor = { r: 1.0, g: 1.0, b: 0.0 }; // Pure yellow
+            }
+            
+            // Blend between original and target color based on shift amount
+            const blendFactor = this.particleColorShift;
+            colors[i * 3] = originalColor.r + (targetColor.r - originalColor.r) * blendFactor;
+            colors[i * 3 + 1] = originalColor.g + (targetColor.g - originalColor.g) * blendFactor;
+            colors[i * 3 + 2] = originalColor.b + (targetColor.b - originalColor.b) * blendFactor;
+        }
+        
+        // Mark colors as needing update
+        this.particles.geometry.attributes.color.needsUpdate = true;
     }
     
     recordBallCollision(ballPosition) {
@@ -2656,6 +2727,13 @@ class TronPong {
                 colors[i * 3 + 1] = 0.0;   // Green: 0x00 = 0.0
                 colors[i * 3 + 2] = 1.0;   // Blue: 0xff = 1.0
             }
+            
+            // Store original colors for color shifting
+            this.particleOriginalColors.push({
+                r: colors[i * 3],
+                g: colors[i * 3 + 1],
+                b: colors[i * 3 + 2]
+            });
             
             // Random sizes with variation - some much bigger (increased by 20%)
             const sizeVariation = Math.random();
@@ -5190,6 +5268,9 @@ class TronPong {
         // Play success sound
         this.playSound('multiBall'); // Nice uplifting sound!
         
+        // Trigger yellow particle color shift for bonus pickup
+        this.boostParticleOpacity('bonus');
+        
         // Flash yellow vignette for bonus pickup (CSS animation handles fade-out)
         const vignette = document.getElementById('vignette');
         vignette.classList.add('bonus');
@@ -5849,7 +5930,7 @@ class TronPong {
                 this.triggerRumble(0.4, 120);
                 this.createImpactEffect(ball.position.clone(), 0x00FEFC); // Lime green
                 this.playSound('paddleHit');
-                this.boostParticleOpacity(); // Boost particles on paddle hit
+                this.boostParticleOpacity('player'); // Boost particles on player paddle hit
                 
                 // Record collision for stuck ball detection
                 this.recordBallCollision(ball.position.clone());
@@ -5923,7 +6004,7 @@ class TronPong {
                 this.worldLightBoost = 12.0;
             this.playSound('paddleHit');
             this.triggerLensFlare(); // Lens flare on impact!
-            this.boostParticleOpacity(); // Boost particles on paddle hit
+            this.boostParticleOpacity('enemy'); // Boost particles on enemy paddle hit
             
                 // Record collision for stuck ball detection
                 this.recordBallCollision(ball.position.clone());
