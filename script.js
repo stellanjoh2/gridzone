@@ -2963,7 +2963,7 @@ class TronPong {
     }
     
     loadDeathSkull() {
-        // Load 3D skull model using OBJ loader (more reliable than FBX)
+        // Load 3D skull model using OBJ loader
         const loader = new THREE.OBJLoader();
         
         loader.load('assets/3D/LowpolyHuman Skull.obj', (obj) => {
@@ -6585,6 +6585,7 @@ class TronPong {
             this.deathSkullAnimation.active = true;
             this.deathSkullAnimation.startTime = performance.now();
             log('💀 3D Death skull animation starting!');
+            // Don't show "YOU DIED" text when skull is active
         } else {
             // Fallback to text if skull failed to load
             this.domElements.deathScreen.style.display = 'block';
