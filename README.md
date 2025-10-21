@@ -188,6 +188,8 @@ This project represents my **first foray into web development**, where I gained 
 
 This project is released under the **Creative Commons Zero (CC0)** license, making it completely free for anyone to use, modify, and distribute.
 
+**Music Tracks**: The soundtrack tracks are generated using Suno.ai and are owned by the project creator under Suno's Terms of Service. While the game code is CC0, please note that the music tracks may be subject to Suno's usage terms and should not be used to create competing AI music services.
+
 ## 🙏 **Credits**
 
 * **Typography**: Terminal Grotesque by Raphaël Bastide, with the contribution of Jérémy Landes. Distributed by velvetyne.fr
