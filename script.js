@@ -281,6 +281,17 @@ class TronPong {
         this.cameraTarget = { x: 0, y: 0, z: 0, zoom: 22 };
         this.cameraSmooth = 0.015; // Much more gradual camera movement (was 0.05)
         
+        // 3D Death skull system
+        this.deathSkull = null;
+        this.deathSkullAnimation = {
+            active: false,
+            startTime: 0,
+            duration: 2000, // 2 seconds total animation
+            scaleInDuration: 800, // Scale in for 0.8s
+            holdDuration: 400, // Hold for 0.4s
+            fadeOutDuration: 800 // Fade out for 0.8s
+        };
+        
         // Camera drift correction system
         this.cameraDriftCorrection = {
             enabled: false, // DISABLED - causing camera drift issues
@@ -1154,6 +1165,7 @@ class TronPong {
         this.createPaddles();
         this.createBoundaries();
         this.createParticles();
+        this.loadDeathSkull(); // Load 3D skull for death screen
         
         // Event listeners
         this.setupEventListeners();
@@ -2950,6 +2962,54 @@ class TronPong {
         log('✨ Item highlight particles removed!');
     }
     
+    loadDeathSkull() {
+        // Load 3D skull model for death screen
+        const loader = new THREE.FBXLoader();
+        
+        loader.load('assets/3D/Lowpoly-HumanSkull.fbx', (fbx) => {
+            // Clone the loaded model
+            this.deathSkull = fbx.clone();
+            
+            // Create shiny magenta material
+            const skullMaterial = new THREE.MeshStandardMaterial({
+                color: 0xff00ff, // Bright magenta
+                metalness: 0.9, // Very metallic for shine
+                roughness: 0.1, // Very smooth for maximum reflectivity
+                emissive: 0xff00ff, // Magenta glow
+                emissiveIntensity: 0.3, // Subtle glow
+                envMapIntensity: 1.0 // Full environment reflection
+            });
+            
+            // Apply material to all meshes in the skull
+            this.deathSkull.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = skullMaterial;
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+            
+            // Position skull in 3D world (initially hidden)
+            this.deathSkull.position.set(0, 0, -5); // In front of camera
+            this.deathSkull.scale.set(0.01, 0.01, 0.01); // Start very small
+            this.deathSkull.visible = false;
+            
+            // Set to layer 0 for post-processing effects
+            this.deathSkull.layers.set(0);
+            
+            // Add to scene
+            this.scene.add(this.deathSkull);
+            
+            log('💀 Death skull loaded successfully!');
+        }, (progress) => {
+            // Loading progress
+            console.log('Skull loading progress:', (progress.loaded / progress.total * 100) + '%');
+        }, (error) => {
+            console.error('Failed to load death skull:', error);
+            log('❌ Failed to load death skull - falling back to text');
+        });
+    }
+    
     setupEventListeners() {
         // Keyboard controls
         window.addEventListener('keydown', (e) => {
@@ -3167,6 +3227,72 @@ class TronPong {
     
     
     
+    
+    updateDeathSkull(deltaTime) {
+        if (!this.deathSkull || !this.deathSkullAnimation.active) return;
+        
+        const elapsed = performance.now() - this.deathSkullAnimation.startTime;
+        const totalDuration = this.deathSkullAnimation.duration;
+        const scaleInDuration = this.deathSkullAnimation.scaleInDuration;
+        const holdDuration = this.deathSkullAnimation.holdDuration;
+        const fadeOutDuration = this.deathSkullAnimation.fadeOutDuration;
+        
+        // Calculate screen size (66% of vertical height)
+        const screenHeight = window.innerHeight;
+        const targetScale = (screenHeight * 0.66) / 100; // Convert to world units
+        
+        if (elapsed < scaleInDuration) {
+            // Phase 1: Scale in with rotation
+            const progress = elapsed / scaleInDuration;
+            const eased = this.easeOutCubic(progress);
+            
+            // Scale from tiny to target size
+            this.deathSkull.scale.setScalar(0.01 + (targetScale - 0.01) * eased);
+            
+            // Rotate into screen (similar to logo animation)
+            this.deathSkull.rotation.x = -15 * (1 - eased);
+            this.deathSkull.rotation.y = -60 * (1 - eased);
+            this.deathSkull.rotation.z = 0;
+            
+            // Move into position
+            this.deathSkull.position.z = -15 + (5 - (-15)) * eased;
+            
+            this.deathSkull.visible = true;
+            
+        } else if (elapsed < scaleInDuration + holdDuration) {
+            // Phase 2: Hold at target size and position
+            this.deathSkull.scale.setScalar(targetScale);
+            this.deathSkull.rotation.set(0, 0, 0);
+            this.deathSkull.position.z = 5;
+            this.deathSkull.visible = true;
+            
+        } else if (elapsed < totalDuration) {
+            // Phase 3: Fade out
+            const fadeProgress = (elapsed - scaleInDuration - holdDuration) / fadeOutDuration;
+            const eased = this.easeInCubic(fadeProgress);
+            
+            // Scale down and fade
+            this.deathSkull.scale.setScalar(targetScale * (1 - eased));
+            this.deathSkull.material.opacity = 1 - eased;
+            this.deathSkull.material.transparent = true;
+            
+        } else {
+            // Animation complete - hide skull
+            this.deathSkull.visible = false;
+            this.deathSkullAnimation.active = false;
+            this.deathSkull.material.opacity = 1;
+            this.deathSkull.material.transparent = false;
+            this.deathSkull.scale.set(0.01, 0.01, 0.01);
+        }
+    }
+    
+    easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
+    }
+    
+    easeInCubic(t) {
+        return t * t * t;
+    }
     
     updateStartMenuGamepad() {
         // Check for gamepad input during start menu
@@ -6453,6 +6579,20 @@ class TronPong {
         this.gameSpeed = 0; // Freeze game speed
         this.isGameFrozen = true; // Set freeze flag
         
+        // Show 3D death skull instead of text
+        if (this.deathSkull) {
+            this.deathSkullAnimation.active = true;
+            this.deathSkullAnimation.startTime = performance.now();
+            log('💀 3D Death skull animation starting!');
+        } else {
+            // Fallback to text if skull failed to load
+            this.domElements.deathScreen.style.display = 'block';
+            this.domElements.deathText.classList.remove('active', 'exit');
+            void this.domElements.deathText.offsetWidth; // Force reflow
+            this.domElements.deathText.classList.add('active');
+            log('💀 Fallback to text death screen');
+        }
+        
         // Add magenta vignette for death atmosphere
         const vignette = document.getElementById('vignette');
         vignette.classList.add('death');
@@ -7774,6 +7914,7 @@ class TronPong {
             
             // Critical systems that need smooth updates (every frame)
             this.updateBonusCube(deltaTime); // Move outside frame skip for smooth light blinking
+            this.updateDeathSkull(deltaTime); // Update 3D death skull animation
             
             if (this._frameSkipCounter % skipFrequency === 0) {
                 this.updateAnimatedLights();
