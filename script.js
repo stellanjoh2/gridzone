@@ -122,7 +122,7 @@ class TronPong {
         this.ballLastPositions = []; // Track ball positions for stuck detection
         this.ballStuckFrames = []; // Count frames ball hasn't moved much
         this.maxStuckFrames = 60; // Reset ball after 60 frames of being stuck (1 second at 60fps)
-        this.collisionCooldownTime = 3; // Frames to wait between same collision type
+        this.collisionCooldownTime = 8; // Frames to wait between same collision type (increased to prevent false triggers)
         
         // FPS counter system
         this.fpsCounter = {
@@ -6319,7 +6319,7 @@ class TronPong {
             this.checkBonusCubeCollision();
         
         // Wall collisions - ANTI-STUCK system prevents sound/effect spam
-            if (ball.position.x <= -11.5 && !this.isCollisionOnCooldown(i, 'wall')) {
+            if (ball.position.x <= -11.5 && !this.isCollisionOnCooldown(i, 'wall') && velocity.x < 0) {
                 // Set cooldown to prevent rapid-fire collisions
                 this.setCollisionCooldown(i, 'wall');
                 
@@ -6348,7 +6348,7 @@ class TronPong {
                 this.recordBallCollision(ball.position.clone());
             }
         
-            if (ball.position.x >= 11.5 && !this.isCollisionOnCooldown(i, 'wall')) {
+            if (ball.position.x >= 11.5 && !this.isCollisionOnCooldown(i, 'wall') && velocity.x > 0) {
                 // Set cooldown to prevent rapid-fire collisions
                 this.setCollisionCooldown(i, 'wall');
                 
