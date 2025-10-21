@@ -101,6 +101,7 @@ class TronPong {
         // Death reset optimization
         this.deathResetPhase = 0;
         this.deathResetProgress = 0;
+        this.scoreSequenceActive = false; // Prevent multiple win/death sequences
         
         // Death camera lock
         this.deathCameraLocked = false;
@@ -286,10 +287,10 @@ class TronPong {
         this.deathSkullAnimation = {
             active: false,
             startTime: 0,
-            duration: 2000, // 2 seconds total animation
-            scaleInDuration: 800, // Scale in for 0.8s
-            holdDuration: 400, // Hold for 0.4s
-            fadeOutDuration: 800 // Fade out for 0.8s
+            duration: 1200, // 1.2 seconds total animation (matches original timing)
+            scaleInDuration: 600, // Scale in for 0.6s
+            holdDuration: 300, // Hold for 0.3s
+            fadeOutDuration: 300 // Fade out for 0.3s
         };
         
         // Camera drift correction system
@@ -720,11 +721,6 @@ class TronPong {
         this.messageActive = false;
         this.deathScreenWasHidden = false; // Track if death screen was hidden during pause
         
-        // RGB Split effect - always active at low level to prevent rendering pipeline changes
-        this.rgbSplitActive = true; // Always active
-        this.rgbSplitIntensity = 0.05; // Always at 5% base level
-        this.rgbSplitDuration = 0;
-        this.rgbSplitOriginalDuration = 0;
         
         
         // Color transition system
@@ -2970,15 +2966,18 @@ class TronPong {
             // Clone the loaded model
             this.deathSkull = obj.clone();
             
-            // Create shiny magenta material
+            // Create dark material like floor tiles with animated brightness
             const skullMaterial = new THREE.MeshStandardMaterial({
-                color: 0xff00ff, // Bright magenta
-                metalness: 0.9, // Very metallic for shine
-                roughness: 0.1, // Very smooth for maximum reflectivity
-                emissive: 0xff00ff, // Magenta glow
-                emissiveIntensity: 0.3, // Subtle glow
+                color: 0x1a1a1a, // Dark gray like floor tiles
+                metalness: 0.8, // Metallic
+                roughness: 0.2, // Smooth
+                emissive: 0x000000, // Start with no glow
+                emissiveIntensity: 0.0, // Start with no emissive
                 envMapIntensity: 1.0 // Full environment reflection
             });
+            
+            // Store reference to skull material for animation
+            this.skullMaterial = skullMaterial;
             
             // Apply material to all meshes in the skull
             this.deathSkull.traverse((child) => {
@@ -2989,8 +2988,8 @@ class TronPong {
                 }
             });
             
-            // Position skull in 3D world (initially hidden)
-            this.deathSkull.position.set(0, 0, -5); // In front of camera
+                // Position skull in 3D world (initially hidden) - will be positioned relative to camera
+                this.deathSkull.position.set(0, 0, 0); // Temporary position, will be set based on camera
             this.deathSkull.scale.set(0.01, 0.01, 0.01); // Start very small
             this.deathSkull.visible = false;
             
@@ -3153,7 +3152,7 @@ class TronPong {
         
         // Mouse controls for paddle movement and camera tilt
         window.addEventListener('mousemove', (e) => {
-            if (this.mouseControlsEnabled && this.gameStarted && !this.isPaused) {
+            if (this.mouseControlsEnabled && this.gameStarted && !this.isPaused && this.deathResetPhase === 0) {
                 // Calculate mouse movement delta
                 const deltaX = e.movementX || 0;
                 
@@ -3217,7 +3216,7 @@ class TronPong {
         document.addEventListener('pointerlockchange', () => {
             if (document.pointerLockElement === document.body) {
                 this.mouseControlsEnabled = true;
-            } else {
+                } else {
                 this.mouseControlsEnabled = false;
                 this.mouseTiltVelocity = 0; // Reset mouse tilt when losing pointer lock
             }
@@ -3229,6 +3228,150 @@ class TronPong {
     
     
     
+    startIndependentSkullAnimation() {
+        if (!this.deathSkull) return;
+        
+        const targetScale = 0.04536; // Fixed scale of 4.536 units max width (5% increase)
+        const animationDuration = 1200; // 1.2 seconds total animation
+        
+        // FOV animation is handled by the death sequence, not the skull
+        
+        // Set initial state
+        this.deathSkull.scale.set(0.01, 0.01, 0.01);
+        this.deathSkull.rotation.y = Math.PI / 2; // Start at 90 degrees
+        
+        // Set initial material state (80% darker)
+        if (this.skullMaterial) {
+            this.skullMaterial.color.setHex(0x050505); // Start 80% darker than 0x1a1a1a
+            this.skullMaterial.emissive.setHex(0x000000);
+            this.skullMaterial.emissiveIntensity = 0.0;
+        }
+        
+        // Get camera position and direction
+        const cameraDirection = new THREE.Vector3();
+        this.camera.getWorldDirection(cameraDirection);
+        const spawnPosition = this.camera.position.clone().add(cameraDirection.multiplyScalar(15));
+        spawnPosition.y += 0.1; // Adjust Y position up 1% to center on screen (moved down 5%)
+        this.deathSkull.position.copy(spawnPosition);
+        
+        this.deathSkull.visible = true;
+        
+        // Simple skull animation - purely visual, no game system interference
+        const skullStartTime = performance.now();
+        const skullAnimationDuration = 1700; // 1.7 seconds (0.5s longer)
+        
+        const animateSkull = () => {
+            if (!this.deathSkull || !this.deathSkullAnimation.active) return;
+            
+            const elapsed = performance.now() - skullStartTime;
+            const progress = Math.min(elapsed / skullAnimationDuration, 1);
+            const eased = this.easeOutCubic(progress);
+            
+            if (progress < 1) {
+                // Continue skull animation
+                this.deathSkull.scale.setScalar(0.01 + (targetScale - 0.01) * eased);
+                
+                // Smooth rotation from 90 degrees to 0 degrees
+                const currentRotation = Math.PI / 2 + (0 - Math.PI / 2) * eased;
+                this.deathSkull.rotation.y = currentRotation;
+                this.deathSkull.lookAt(this.camera.position);
+                this.deathSkull.rotation.y += currentRotation * 0.3;
+                
+                // Move closer to camera
+                const cameraDirection = new THREE.Vector3();
+                this.camera.getWorldDirection(cameraDirection);
+                const currentPosition = this.camera.position.clone().add(cameraDirection.multiplyScalar(15 + (5 - 15) * eased));
+                currentPosition.y += 0.1;
+                this.deathSkull.position.copy(currentPosition);
+                
+                // Animate material brightness from dark to normal
+                if (this.skullMaterial) {
+                    // Transition from dark (0x050505) to normal (0x1a1a1a)
+                    const darkColor = 0x050505;
+                    const normalColor = 0x1a1a1a;
+                    const currentColor = darkColor + (normalColor - darkColor) * eased;
+                    this.skullMaterial.color.setHex(Math.floor(currentColor));
+                }
+                
+                // Continue animation
+                requestAnimationFrame(animateSkull);
+            } else {
+                // Animation complete - hide skull after 1.2 seconds
+                this.deathSkull.visible = false;
+                this.deathSkullAnimation.active = false;
+                this.deathSkull.scale.set(0.01, 0.01, 0.01);
+                
+                // Reset material to normal brightness
+                if (this.skullMaterial) {
+                    this.skullMaterial.color.setHex(0x1a1a1a); // Back to normal color
+                    this.skullMaterial.emissive.setHex(0x000000);
+                    this.skullMaterial.emissiveIntensity = 0.0;
+                }
+            }
+        };
+        
+        // Start the skull animation
+        requestAnimationFrame(animateSkull);
+    }
+    
+    startFOVZoomAnimation() {
+        const originalFOV = this.camera.fov; // Current FOV (75)
+        const targetFOV = 50; // Target FOV
+        const startTime = performance.now();
+        const duration = 1200; // 1.2 seconds
+        
+        const zoom = () => {
+            const elapsed = performance.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = this.easeOutCubic(progress);
+            
+            if (progress < 1) {
+                // Gradually zoom FOV from 75 to 50
+                const currentFOV = originalFOV + (targetFOV - originalFOV) * eased;
+                this.camera.fov = currentFOV;
+                this.camera.updateProjectionMatrix();
+                
+                // Continue zoom
+                requestAnimationFrame(zoom);
+            } else {
+                // Zoom complete - set to exact target FOV
+                this.camera.fov = targetFOV;
+                this.camera.updateProjectionMatrix();
+            }
+        };
+        
+        // Start zoom
+        requestAnimationFrame(zoom);
+    }
+    
+    startFOVRestoration(originalFOV, duration) {
+        const startFOV = this.camera.fov; // Current FOV (50)
+        const startTime = performance.now();
+        
+        const restore = () => {
+            const elapsed = performance.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = this.easeOutCubic(progress);
+            
+            if (progress < 1) {
+                // Gradually restore FOV from 50 back to 75
+                const currentFOV = startFOV + (originalFOV - startFOV) * eased;
+                this.camera.fov = currentFOV;
+                this.camera.updateProjectionMatrix();
+                
+                // Continue restoration
+                requestAnimationFrame(restore);
+            } else {
+                // Restoration complete - set to exact original FOV
+                this.camera.fov = originalFOV;
+                this.camera.updateProjectionMatrix();
+            }
+        };
+        
+        // Start restoration
+        requestAnimationFrame(restore);
+    }
+    
     updateDeathSkull(deltaTime) {
         if (!this.deathSkull || !this.deathSkullAnimation.active) return;
         
@@ -3238,9 +3381,8 @@ class TronPong {
         const holdDuration = this.deathSkullAnimation.holdDuration;
         const fadeOutDuration = this.deathSkullAnimation.fadeOutDuration;
         
-        // Calculate screen size (66% of vertical height)
-        const screenHeight = window.innerHeight;
-        const targetScale = (screenHeight * 0.66) / 100; // Convert to world units
+                // Calculate screen size - larger for better visibility
+                const targetScale = 0.054; // Fixed scale of 5.4 units max width (20% increase)
         
         if (elapsed < scaleInDuration) {
             // Phase 1: Scale in with rotation
@@ -3250,21 +3392,60 @@ class TronPong {
             // Scale from tiny to target size
             this.deathSkull.scale.setScalar(0.01 + (targetScale - 0.01) * eased);
             
-            // Rotate into screen (similar to logo animation)
-            this.deathSkull.rotation.x = -15 * (1 - eased);
-            this.deathSkull.rotation.y = -60 * (1 - eased);
-            this.deathSkull.rotation.z = 0;
+            // Get camera position and direction
+            const cameraDirection = new THREE.Vector3();
+            this.camera.getWorldDirection(cameraDirection);
             
-            // Move into position
-            this.deathSkull.position.z = -15 + (5 - (-15)) * eased;
+            // Calculate spawn position in front of camera
+            const spawnDistance = 15 + (5 - 15) * eased; // Move from 15 units to 5 units in front of camera
+            const spawnPosition = this.camera.position.clone().add(cameraDirection.multiplyScalar(spawnDistance));
+            
+            // Adjust Y position up 3% to center on screen (accounting for model origin offset)
+            spawnPosition.y += 0.6; // Move up 3% to center on screen (moved down 2%)
+            
+            // Position skull in front of camera
+            this.deathSkull.position.copy(spawnPosition);
+            
+            // Smooth rotation from 90 degrees to camera-facing angle
+            const startRotation = Math.PI / 2; // 90 degrees in radians
+            const endRotation = 0; // 0 degrees (facing camera)
+            const currentRotation = startRotation + (endRotation - startRotation) * eased;
+            
+            // Apply the rotation animation
+            this.deathSkull.rotation.y = currentRotation;
+            
+            // Make skull face camera by looking at camera position
+            this.deathSkull.lookAt(this.camera.position);
+            
+            // Add back some of the rotation effect to maintain the spinning animation
+            this.deathSkull.rotation.y += currentRotation * 0.3; // Partial rotation effect
             
             this.deathSkull.visible = true;
             
         } else if (elapsed < scaleInDuration + holdDuration) {
-            // Phase 2: Hold at target size and position
+            // Phase 2: Hold at target size and position (facing camera)
             this.deathSkull.scale.setScalar(targetScale);
-            this.deathSkull.rotation.set(0, 0, 0);
-            this.deathSkull.position.z = 5;
+            
+            // Use same position calculation as Phase 1 for smooth transition
+            const cameraDirection = new THREE.Vector3();
+            this.camera.getWorldDirection(cameraDirection);
+            const finalPosition = this.camera.position.clone().add(cameraDirection.multiplyScalar(5));
+            
+            // Adjust Y position up 3% to center on screen (accounting for model origin offset)
+            finalPosition.y += 0.6; // Move up 3% to center on screen (moved down 2%)
+            
+            this.deathSkull.position.copy(finalPosition);
+            
+            // Smooth transition to final rotation (facing camera)
+            const holdProgress = (elapsed - scaleInDuration) / holdDuration;
+            const startRotation = Math.PI / 2; // 90 degrees in radians
+            const endRotation = 0; // 0 degrees (facing camera)
+            const currentRotation = startRotation + (endRotation - startRotation) * this.easeOutCubic(holdProgress);
+            
+            this.deathSkull.rotation.y = currentRotation;
+            this.deathSkull.lookAt(this.camera.position); // Face camera
+            this.deathSkull.rotation.y += currentRotation * 0.3; // Maintain rotation effect
+            
             this.deathSkull.visible = true;
             
         } else if (elapsed < totalDuration) {
@@ -3452,7 +3633,7 @@ class TronPong {
             this.gamepad = gamepads[0];
         }
         
-        if (!this.gamepad) return;
+        if (!this.gamepad || this.deathResetPhase > 0) return;
         
         // PS5 DualSense: Left stick horizontal axis (axis 0)
         const leftStickX = this.gamepad.axes[0];
@@ -4298,72 +4479,50 @@ class TronPong {
         }
     }
     
-    updateRGBSplit(deltaTime) {
-        // Update RGB split effect
-        if (this.rgbSplitActive && this.rgbSplitDuration > 0) {
-            this.rgbSplitDuration -= deltaTime * 1000; // Convert to milliseconds
-            
-            // Handle ease-in phase
-            if (this.rgbSplitPhase === 'ease-in') {
-                const easeInElapsed = performance.now() - this.rgbSplitEaseInStartTime;
-                const easeInProgress = Math.min(easeInElapsed / this.rgbSplitEaseInDuration, 1.0);
-                
-                // Quick ease-in curve (cubic ease-in)
-                this.rgbSplitIntensity = easeInProgress * easeInProgress * easeInProgress;
-                
-                // Switch to hold phase when ease-in is complete
-                if (easeInProgress >= 1.0) {
-                    this.rgbSplitPhase = 'hold';
-                    this.rgbSplitIntensity = 1.0; // Ensure we reach full intensity
-                }
-            }
-            // Handle fade-out phase
-            else if (this.rgbSplitPhase === 'fade-out') {
-                // Calculate fade-out progress based on remaining time vs fade-out duration
-                // Use different fade-out durations for win celebration vs bonus pickup
-                const fadeOutDuration = this.rgbSplitOriginalDuration === 1200 ? 600 : 150; // 600ms for win, 150ms for bonus
-                const fadeProgress = Math.max(0, this.rgbSplitDuration / fadeOutDuration);
-                
-                // Smooth fade out with easing (prevents pop at end)
-                this.rgbSplitIntensity = fadeProgress * fadeProgress * (3 - 2 * fadeProgress); // Smoothstep function
-            }
-            // Handle hold phase - check if we should start fade-out
-            else if (this.rgbSplitPhase === 'hold') {
-                // Start fade-out based on effect type (win celebration vs bonus pickup)
-                let fadeStartTime;
-                if (this.rgbSplitOriginalDuration === 1200) {
-                    // Win celebration: 600ms fade-out
-                    fadeStartTime = 600;
-                } else {
-                    // Bonus pickup: 150ms fade-out (much shorter)
-                    fadeStartTime = 150;
-                }
-                
-                if (this.rgbSplitDuration <= fadeStartTime) {
-                    this.rgbSplitPhase = 'fade-out';
-                }
-            }
-            
-            if (this.rgbSplitDuration <= 0) {
-                // Smoothly fade out intensity to prevent visual pop
-                this.rgbSplitIntensity = Math.max(0, this.rgbSplitIntensity - 0.02); // Slower fade-out
-                
-                // Only deactivate when intensity is very low to prevent pop
-                if (this.rgbSplitIntensity <= 0.001) {
-                    this.rgbSplitActive = false;
-                    this.rgbSplitIntensity = 0;
-                    log('🌈 RGB Split effect ended');
-                }
-            }
-            
-            // Update shader uniforms (add base intensity of 5%)
-            if (this.rgbSplitMaterial) {
-                this.rgbSplitMaterial.uniforms.intensity.value = this.rgbSplitIntensity + 0.05; // Always add 5% base
-                this.rgbSplitMaterial.uniforms.time.value = performance.now() * 0.001;
-            } else {
-                log('❌ RGB Split material not found!');
-            }
+    
+    triggerChromaticAberrationBoost() {
+        // Start chromatic aberration boost animation during death
+        this.chromaticAberrationAnimation = {
+            active: true,
+            startTime: performance.now(),
+            duration: 1700, // Match skull animation duration
+            startValue: 1.0, // Start at normal
+            endValue: 16.0   // End at 16x boost
+        };
+        log('💀 Chromatic aberration animation started!');
+    }
+    
+    updateChromaticAberrationAnimation() {
+        if (!this.chromaticAberrationAnimation || !this.chromaticAberrationAnimation.active) return;
+        
+        const elapsed = performance.now() - this.chromaticAberrationAnimation.startTime;
+        const progress = Math.min(elapsed / this.chromaticAberrationAnimation.duration, 1);
+        const eased = this.easeOutCubic(progress);
+        
+        // Gradually increase aberration from 1.0 to 8.0
+        const currentValue = this.chromaticAberrationAnimation.startValue + 
+                           (this.chromaticAberrationAnimation.endValue - this.chromaticAberrationAnimation.startValue) * eased;
+        
+        if (this.crtMaterial) {
+            this.crtMaterial.uniforms.aberrationBoost.value = currentValue;
         }
+        
+        // Animation complete
+        if (progress >= 1) {
+            this.chromaticAberrationAnimation.active = false;
+        }
+    }
+    
+    resetChromaticAberration() {
+        // Start chromatic aberration reset animation
+        this.chromaticAberrationAnimation = {
+            active: true,
+            startTime: performance.now(),
+            duration: 1200, // Match FOV restoration duration
+            startValue: this.crtMaterial ? this.crtMaterial.uniforms.aberrationBoost.value : 16.0, // Current value
+            endValue: 1.0    // Back to normal
+        };
+        log('💀 Chromatic aberration reset started!');
     }
     
     updateWaveLights() {
@@ -4608,6 +4767,7 @@ class TronPong {
         // Start celebration - begin smooth transition to cyan
         this.isCelebrating = true;
         this.celebrationTimer = 2000; // 2.0 seconds celebration
+        this.scoreSequenceActive = true; // Mark score sequence as active
         
         // Start smooth color transition to cyan
         this.undergroundLightTransition.active = true;
@@ -4716,6 +4876,12 @@ class TronPong {
                 // Celebration ended
                 this.isCelebrating = false;
                 this.waveSoundPlayed = false; // Reset sound flag for next celebration
+                this.scoreSequenceActive = false; // Reset score sequence flag
+                
+                // UNFREEZE GAME: Resume normal gameplay after win celebration
+                this.gameSpeed = 1.0; // Restore normal game speed
+                this.isGameFrozen = false; // Unfreeze game
+                
                 this.undergroundLightTransition.active = false;
                 this.undergroundLightTransition.direction = 1; // Reset for next celebration
                 this.undergroundLightTransition.startColor = 0x6600cc; // Reset to purple
@@ -4843,6 +5009,7 @@ class TronPong {
         // Start celebration - begin smooth transition to magenta
         this.isCelebrating = true;
         this.celebrationTimer = 2000; // 2.0 seconds celebration
+        this.scoreSequenceActive = true; // Mark score sequence as active
         
         // Start smooth color transition to magenta
         this.undergroundLightTransition.active = true;
@@ -5893,7 +6060,7 @@ class TronPong {
     }
     
     updatePlayerPaddle() {
-        if (this.isPaused || this.isGameFrozen) return;
+        if (this.isPaused || this.isGameFrozen || this.deathResetPhase > 0) return;
         
         // Store previous position for tilt calculation
         const previousX = this.paddle1.position.x;
@@ -6041,7 +6208,7 @@ class TronPong {
     }
     
     updateBall() {
-        if (!this.gameStarted || this.isPaused || this.isGameFrozen) return;
+        if (!this.gameStarted || this.isPaused || this.isGameFrozen || this.scoreSequenceActive) return;
         
         // Frame skipping for collision detection in performance mode
         if (this.performanceMode) {
@@ -6120,7 +6287,7 @@ class TronPong {
         }
         
         // Track balls that scored (to remove after loop)
-        const ballsToRemove = [];
+        let ballsToRemove = [];
         
         // Multi-ball spawn flag (prevent multiple spawns in same frame)
         let multiBallSpawnedThisFrame = false;
@@ -6416,6 +6583,12 @@ class TronPong {
         // Remove scored balls (in reverse order to maintain indices)
         ballsToRemove.sort((a, b) => b.index - a.index);
         
+        // Check if score sequence is already active OR game is frozen (prevent multiple sequences)
+        if ((this.scoreSequenceActive || this.isGameFrozen) && ballsToRemove.length > 0) {
+            log('🚫 Ignoring all scores - sequence already active or game frozen');
+            ballsToRemove = []; // Clear all pending scores
+        }
+        
         // Check if ANY ball died (player failed)
         const playerDied = ballsToRemove.some(removal => removal.scorer === 'player2');
         
@@ -6486,15 +6659,32 @@ class TronPong {
             this.trails.splice(removal.index, 1);
             this.ballSounds.splice(removal.index, 1);
             
+            // Check if score sequence is already active (prevent multiple sequences)
+            if (this.scoreSequenceActive) {
+                log('🚫 Ignoring additional score - sequence already active');
+                return;
+            }
+            
             if (removal.scorer === 'player2') {
             this.score.player2++;
+                this.scoreSequenceActive = true; // Mark sequence as active
                 // Flash player goal MAGENTA (ball went past player - enemy scored!)
                 this.flashGoalMagenta(this.playerGoal);
                 
                 // Trigger enemy celebratory wave (inverse direction with magenta colors)
                 this.triggerEnemyCelebratoryWave();
+                
+                // Update score display
+                this.updateScore();
+                
+                // Spawn new ball after enemy celebration (2.5s delay to match celebration)
+                const enemyBallSpawnTimeout = setTimeout(() => {
+                    this.spawnBall(0, 0, 0, { x: 0, y: 0, z: -this.baseBallSpeed });
+                }, 2500);
+                this.activeTimeouts.push(enemyBallSpawnTimeout);
             } else {
                 this.score.player1++;
+                this.scoreSequenceActive = true; // Mark sequence as active
                 
                 // FREEZE GAME: Stop all ball and paddle movement during win
                 this.gameSpeed = 0; // Freeze game speed
@@ -6579,21 +6769,46 @@ class TronPong {
         // FREEZE GAME: Stop all ball and paddle movement
         this.gameSpeed = 0; // Freeze game speed
         this.isGameFrozen = true; // Set freeze flag
+        this.deathResetPhase = 1; // Lock paddle movement during death
         
-        // Show 3D death skull instead of text
-        if (this.deathSkull) {
-            this.deathSkullAnimation.active = true;
-            this.deathSkullAnimation.startTime = performance.now();
-            log('💀 3D Death skull animation starting!');
-            // Don't show "YOU DIED" text when skull is active
-        } else {
-            // Fallback to text if skull failed to load
-            this.domElements.deathScreen.style.display = 'block';
-            this.domElements.deathText.classList.remove('active', 'exit');
-            void this.domElements.deathText.offsetWidth; // Force reflow
-            this.domElements.deathText.classList.add('active');
-            log('💀 Fallback to text death screen');
-        }
+        // Additional freeze measures to ensure 100% freeze
+        this.timeScale = 0; // Completely stop all time-based animations
+        this.collisionDisabled = true; // Disable all collisions during death
+        
+        // Start FOV zoom animation (part of death sequence, not skull)
+        this.startFOVZoomAnimation();
+        
+        // Trigger noticeable camera shake on every death
+        this.triggerCameraShake(0.5, true, false, 0); // Subtle shake with rotation
+        
+        // Boost chromatic aberration 8x during death moment
+        this.triggerChromaticAberrationBoost();
+        
+        // Hide score UI during death - DISABLED FOR NOW
+        // this.domElements.player1Score.style.opacity = '0';
+        // this.domElements.player2Score.style.opacity = '0';
+        
+            // Show 3D death skull animation (completely independent of game flow)
+            if (this.deathSkull) {
+                this.deathSkullAnimation.active = true;
+                this.deathSkullAnimation.startTime = performance.now();
+                
+                // Hide "YOU DIED" text while skull is on screen
+                this.domElements.deathScreen.style.display = 'none';
+                this.domElements.deathText.classList.remove('active', 'exit');
+                
+                // Start independent skull animation that doesn't interfere with game timing
+                this.startIndependentSkullAnimation();
+                
+                log('💀 3D Death skull animation starting!');
+            } else {
+                // Fallback to text if skull failed to load
+                this.domElements.deathScreen.style.display = 'block';
+                this.domElements.deathText.classList.remove('active', 'exit');
+                void this.domElements.deathText.offsetWidth; // Force reflow
+                this.domElements.deathText.classList.add('active');
+                log('💀 Fallback to text death screen');
+            }
         
         // Add magenta vignette for death atmosphere
         const vignette = document.getElementById('vignette');
@@ -6604,40 +6819,36 @@ class TronPong {
             this.sounds.music.volume = 0.67;
         }
         
-        // Show death screen (transparent background, just for positioning)
-        this.domElements.deathScreen.style.display = 'block';
-        
-        // Use same animation style as "AWESOME" text
-        this.domElements.deathText.classList.remove('active', 'exit');
-        void this.domElements.deathText.offsetWidth; // Force reflow
-        
-        // Enter with 3 hard blinks
-        this.domElements.deathText.classList.add('active');
-        
-        // Start exit animation after display time
+        // Keep original death sequence timing for game restart logic
+        // Start exit animation after display time (same timing as before)
         setTimeout(() => {
-            this.domElements.deathText.classList.remove('active');
-            this.domElements.deathText.classList.add('exit');
+            // UNFREEZE GAME: Resume normal gameplay
+            this.gameSpeed = 1.0;
+            this.isGameFrozen = false;
+            this.deathResetPhase = 0; // Unlock paddle movement
+            this.scoreSequenceActive = false; // Reset score sequence flag
+            this.timeScale = 1.0; // Restore normal time scale
+            this.collisionDisabled = false; // Re-enable collisions
             
-            // Fully hide after exit animation
+                // Start FOV restoration when game unfreezes
+                this.startFOVRestoration(75, 1200); // Restore from 50 to 75 over 1.2s
+                
+                // Reset chromatic aberration to normal gradually
+                this.resetChromaticAberration();
+            
+            // Fade score UI back in - DISABLED FOR NOW
+            // this.domElements.player1Score.style.opacity = '1';
+            // this.domElements.player2Score.style.opacity = '1';
+            
+            // Reset stuck ball collision system after death
+            this.collisionDisabled = false;
+            this.collisionDisableTimer = 0;
+            this.ballCollisionHistory = [];
+            
+            // Clean up death vignette class after animation completes
             setTimeout(() => {
-                this.domElements.deathText.classList.remove('exit');
-                this.domElements.deathScreen.style.display = 'none';
-                
-                // UNFREEZE GAME: Resume normal gameplay
-                this.gameSpeed = 1.0;
-                this.isGameFrozen = false;
-                
-                // Reset stuck ball collision system after death
-                this.collisionDisabled = false;
-                this.collisionDisableTimer = 0;
-                this.ballCollisionHistory = [];
-                
-                // Clean up death vignette class after animation completes
-                setTimeout(() => {
-                    vignette.classList.remove('death');
-                }, 1800); // Match updated timing (1.2s display + 0.6s exit = 1.8s)
-            }, 600);
+                vignette.classList.remove('death');
+            }, 1800); // Match updated timing (1.2s display + 0.6s exit = 1.8s)
         }, 1200); // Show for 1.2s before starting exit (total 2.0s)
     }
     
@@ -6903,9 +7114,10 @@ class TronPong {
         `;
         
         const crtFragmentShader = `
-            uniform sampler2D tDiffuse;
-            uniform float time;
-            uniform vec2 resolution;
+                uniform sampler2D tDiffuse;
+                uniform float time;
+                uniform vec2 resolution;
+                uniform float aberrationBoost;
             varying vec2 vUv;
             
             void main() {
@@ -6925,7 +7137,7 @@ class TronPong {
                 color.rgb *= vignette;
                 
                 // Chromatic aberration
-                float aberration = 0.002;
+                float aberration = 0.002 * aberrationBoost;
                 color.r = texture2D(tDiffuse, uv + vec2(aberration, 0.0)).r;
                 color.b = texture2D(tDiffuse, uv - vec2(aberration, 0.0)).b;
                 
@@ -6944,7 +7156,8 @@ class TronPong {
             uniforms: {
                 tDiffuse: { value: null },
                 time: { value: 0.0 },
-                resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+                resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+                aberrationBoost: { value: 1.0 } // Multiplier for chromatic aberration during death
             }
         });
         
@@ -7916,14 +8129,14 @@ class TronPong {
             
             // Critical systems that need smooth updates (every frame)
             this.updateBonusCube(deltaTime); // Move outside frame skip for smooth light blinking
-            this.updateDeathSkull(deltaTime); // Update 3D death skull animation
+            // this.updateDeathSkull(deltaTime); // Update 3D death skull animation - DISABLED to prevent game flow interruption
             
             if (this._frameSkipCounter % skipFrequency === 0) {
                 this.updateAnimatedLights();
                 this.updatePaddleBlinks(deltaTime);
                 this.updateBonusEffect(deltaTime);
                 this.updateLensFlare(deltaTime); // Lens flare fade
-                this.updateRGBSplit(deltaTime); // RGB split effect
+                this.updateChromaticAberrationAnimation(); // Chromatic aberration animation
                 this.updateWallWaveAnimation(deltaTime); // Wall wave animation
                 this.updateWaveLights(); // Traveling wave lights (win sequence)
                 this.updateCelebration(deltaTime); // Celebration system
@@ -8058,15 +8271,6 @@ class TronPong {
                 this.renderer.render(this.lensFlareScene, this.lensFlareCamera);
             }
             
-            // 8. Apply RGB split as final overlay (always active, intensity varies) - COMMENTED OUT
-            // this.renderer.setRenderTarget(this.rgbSplitRenderTarget);
-            // this.rgbSplitMaterial.uniforms.tDiffuse.value = this.fisheyeRenderTarget.texture;
-            // this.renderer.clear();
-            // this.renderer.render(this.rgbSplitScene, this.rgbSplitCamera);
-            // 
-            // // Render RGB split result to screen
-            // this.renderer.setRenderTarget(null);
-            // this.renderer.render(this.rgbSplitScene, this.rgbSplitCamera);
         }
     }
 }
