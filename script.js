@@ -6679,6 +6679,8 @@ class TronPong {
                 
                 // Spawn new ball after enemy celebration (2.5s delay to match celebration)
                 const enemyBallSpawnTimeout = setTimeout(() => {
+                    // CRITICAL: Reset ball speed multiplier to ensure consistent ball speed
+                    this.ballSpeedMultiplier = 1.0;
                     this.spawnBall(0, 0, 0, { x: 0, y: 0, z: -this.baseBallSpeed });
                 }, 2500);
                 this.activeTimeouts.push(enemyBallSpawnTimeout);
@@ -6732,6 +6734,8 @@ class TronPong {
                     log('✨ Celebration light cleaned up before new ball spawn');
                 }
                 
+                // CRITICAL: Reset ball speed multiplier to ensure consistent ball speed
+                this.ballSpeedMultiplier = 1.0;
                 this.spawnBall(0, 0, 0, { x: 0, y: 0, z: -this.baseBallSpeed });
             }, 2500);
             this.activeTimeouts.push(ballSpawnTimeout);
@@ -7328,6 +7332,10 @@ class TronPong {
         // Optimized reset specifically for death scenario - spreads work across frames
         log('🔄 Optimized death reset starting...');
         
+        // CRITICAL: Reset ball speed multiplier to ensure consistent ball speed
+        this.ballSpeedMultiplier = 1.0;
+        log('⚽ Ball speed multiplier reset to 1.0 (death reset)');
+        
         // Phase 1: Immediate cleanup (spread across multiple frames)
         this.deathResetPhase = 1;
         this.deathResetProgress = 0;
@@ -7507,6 +7515,10 @@ class TronPong {
         }
         this.balls = [];
         this.ballVelocities = [];
+        
+        // CRITICAL: Reset ball speed multiplier to ensure consistent ball speed
+        this.ballSpeedMultiplier = 1.0;
+        log('⚽ Ball speed multiplier reset to 1.0 (resetBall)');
         
         // Restore paddle lights (energy restored!)
         this.fadePaddleLights(1.0, 500); // Fade back to full over 0.5 seconds
