@@ -6319,7 +6319,7 @@ class TronPong {
             this.checkBonusCubeCollision();
         
         // Wall collisions - ANTI-STUCK system prevents sound/effect spam
-            if (ball.position.x <= -11.5 && !this.isCollisionOnCooldown(i, 'wall') && velocity.x < 0) {
+            if (ball.position.x <= -11.5 && !this.isCollisionOnCooldown(i, 'wall') && velocity.x < 0 && !this.isCelebrating && !this.deathResetPhase && !this.scoreSequenceActive) {
                 // Set cooldown to prevent rapid-fire collisions
                 this.setCollisionCooldown(i, 'wall');
                 
@@ -6348,7 +6348,7 @@ class TronPong {
                 this.recordBallCollision(ball.position.clone());
             }
         
-            if (ball.position.x >= 11.5 && !this.isCollisionOnCooldown(i, 'wall') && velocity.x > 0) {
+            if (ball.position.x >= 11.5 && !this.isCollisionOnCooldown(i, 'wall') && velocity.x > 0 && !this.isCelebrating && !this.deathResetPhase && !this.scoreSequenceActive) {
                 // Set cooldown to prevent rapid-fire collisions
                 this.setCollisionCooldown(i, 'wall');
                 
