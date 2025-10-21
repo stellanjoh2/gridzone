@@ -26,7 +26,7 @@ class TronPong {
         //   - Less reflective: roughness: 0.8
         // ═══════════════════════════════════════════════════════════════════════
         this.defaultMaterialConfig = {
-            color: 0x0a0a0a,              // Main surface color (10% darker from previous)
+            color: 0x323232,              // Neutral mid-gray (RGB 50, 50, 50)
             metalness: 0.9,               // High metalness for reflections
             roughness: 0.3,               // Lower = more reflective
             emissive: 0x000000,           // Emissive glow color (black)
@@ -1139,8 +1139,8 @@ class TronPong {
         this.initCRTEffect();
         
         // Shadow quality will be initialized after ballLights are created
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.5;
+        this.renderer.toneMapping = THREE.NoToneMapping; // TEMPORARILY DISABLED for color testing
+        this.renderer.toneMappingExposure = 1.0;
         this.renderer.outputEncoding = THREE.sRGBEncoding; // Important for proper reflection rendering
         this.renderer.autoClear = false; // Important for bloom effect
         document.body.appendChild(this.renderer.domElement);
@@ -1717,7 +1717,7 @@ class TronPong {
     
     
     createLighting() {
-        const ambientLight = new THREE.AmbientLight(0x6600cc, 10.0); // Purple color, 25% increase from 8.0 to 10.0
+        const ambientLight = new THREE.AmbientLight(0x6600cc, 10.0); // Purple color, restored to original intensity
         this.scene.add(ambientLight);
         
         this.overheadLight = new THREE.PointLight(0xff6600, 6.75, 120); // Orange laser gate - back to original intensity
@@ -1734,24 +1734,27 @@ class TronPong {
         this.overheadLight2.visible = false; // Hidden during title screen
         this.scene.add(this.overheadLight2);
         
-        // Underground purple light for building illumination
+        // Underground purple light for building illumination - TEMPORARILY DISABLED for neon testing
         this.undergroundLight = new THREE.PointLight(0x6600cc, 0, 150); // Purple color - starts at zero for dramatic effect
         this.undergroundLight.position.set(0, -30, -20); // Moved forward towards enemy (from 0 to -20)
         this.undergroundLight.castShadow = false; // No shadows for performance
         this.undergroundLight.layers.set(0);
+        this.undergroundLight.visible = true; // Restored
         this.scene.add(this.undergroundLight);
         
-        // Paddle lights to illuminate environment!
+        // Paddle lights to illuminate environment! - TEMPORARILY DISABLED for neon testing
         // Player paddle light (lime-yellow)
         this.playerLight = new THREE.PointLight(0x00FEFC, 0.75, 75); // Restored to reasonable paddle light intensity
         this.playerLight.castShadow = false; // No shadows for performance
         this.playerLight.layers.set(0);
+        this.playerLight.visible = true; // Restored
         this.scene.add(this.playerLight);
         
         // AI paddle light (magenta)
         this.aiLight = new THREE.PointLight(0xff00ff, 0.75, 75); // Restored to reasonable paddle light intensity
         this.aiLight.castShadow = false; // No shadows for performance
         this.aiLight.layers.set(0);
+        this.aiLight.visible = true; // Restored
         this.scene.add(this.aiLight);
         
         // Ball lights with shadows - one per ball (max 2)
@@ -2539,6 +2542,121 @@ class TronPong {
         
         // TEST: Comment out layer isolation to see if paddles match ball
         // Exclude paddles from their own point lights using layers
+        
+        // ========================================
+        // 🧪 INTERNAL TEST BLOCKS (NEVER PUSH ONLINE)
+        // ========================================
+        
+        // Test blocks - Pure colors for material testing
+        const testBlock1Geometry = new THREE.BoxGeometry(2, 2, 2); // 2x2x2 units
+        
+        // 100% Magenta - pure color with quadruple emissive intensity
+        const testBlock1Material = new THREE.MeshStandardMaterial({ 
+            color: 0x000000, // Black base
+            emissive: 0xff00ff, // Pure magenta emissive
+            emissiveIntensity: 4.0, // Quadruple intensity
+            metalness: 0.0, // Completely non-metallic
+            roughness: 0.8, // More matte
+            transparent: false,
+            opacity: 1.0
+        });
+        const testBlock1 = new THREE.Mesh(testBlock1Geometry, testBlock1Material);
+        testBlock1.position.set(-8, 8, 0); // Left side of playfield
+        this.scene.add(testBlock1);
+        
+        // Cyan attempt - using emissive approach since base colors are shifting
+        const testBlock2Geometry = new THREE.BoxGeometry(2, 2, 2); // 2x2x2 units
+        const testBlock2Material = new THREE.MeshStandardMaterial({ 
+            color: 0x000000, // Black base
+            emissive: 0x00ffff, // Pure cyan emissive
+            emissiveIntensity: 4.0, // Quadruple intensity
+            metalness: 0.0, // Completely non-metallic
+            roughness: 0.8, // More matte
+            transparent: false,
+            opacity: 1.0
+        });
+        const testBlock2 = new THREE.Mesh(testBlock2Geometry, testBlock2Material);
+        testBlock2.position.set(0, 8, 0); // Center of playfield
+        this.scene.add(testBlock2);
+        
+        // Removed duplicate orange block - keeping only the true orange at position -6
+        
+        // White block - using emissive approach for true color
+        const testBlock4Geometry = new THREE.BoxGeometry(2, 2, 2); // 2x2x2 units
+        const testBlock4Material = new THREE.MeshStandardMaterial({ 
+            color: 0x000000, // Black base
+            emissive: 0xffffff, // Pure white emissive
+            emissiveIntensity: 4.0, // Quadruple intensity
+            metalness: 0.0, // Completely non-metallic
+            roughness: 0.8, // More matte
+            transparent: false,
+            opacity: 1.0
+        });
+        const testBlock4 = new THREE.Mesh(testBlock4Geometry, testBlock4Material);
+        testBlock4.position.set(12, 8, 0); // Far right side of playfield
+        this.scene.add(testBlock4);
+        
+        // Warm yellow block - softer, more orange-tinted
+        const testBlock5Geometry = new THREE.BoxGeometry(2, 2, 2); // 2x2x2 units
+        const testBlock5Material = new THREE.MeshStandardMaterial({ 
+            color: 0x000000, // Black base
+            emissive: 0xffaa33, // Softer warm yellow with more orange
+            emissiveIntensity: 3.0, // Reduced intensity
+            metalness: 0.0, // Completely non-metallic
+            roughness: 0.8, // More matte
+            transparent: false,
+            opacity: 1.0
+        });
+        const testBlock5 = new THREE.Mesh(testBlock5Geometry, testBlock5Material);
+        testBlock5.position.set(-12, 8, 0); // Far left side of playfield
+        this.scene.add(testBlock5);
+        
+        // Red block - compensated for red reduction
+        const testBlock6Geometry = new THREE.BoxGeometry(2, 2, 2); // 2x2x2 units
+        const testBlock6Material = new THREE.MeshStandardMaterial({ 
+            color: 0x000000, // Black base
+            emissive: 0xff3300, // More red, less blue to compensate
+            emissiveIntensity: 4.0, // Quadruple intensity
+            metalness: 0.0, // Completely non-metallic
+            roughness: 0.8, // More matte
+            transparent: false,
+            opacity: 1.0
+        });
+        const testBlock6 = new THREE.Mesh(testBlock6Geometry, testBlock6Material);
+        testBlock6.position.set(-4, 8, 0); // Left-center side of playfield
+        this.scene.add(testBlock6);
+        
+        // True red block
+        const testBlock7Geometry = new THREE.BoxGeometry(2, 2, 2); // 2x2x2 units
+        const testBlock7Material = new THREE.MeshStandardMaterial({ 
+            color: 0x000000, // Black base
+            emissive: 0xff0000, // Pure red emissive
+            emissiveIntensity: 4.0, // Quadruple intensity
+            metalness: 0.0, // Completely non-metallic
+            roughness: 0.8, // More matte
+            transparent: false,
+            opacity: 1.0
+        });
+        const testBlock7 = new THREE.Mesh(testBlock7Geometry, testBlock7Material);
+        testBlock7.position.set(4, 8, 0); // Right-center side of playfield
+        this.scene.add(testBlock7);
+        
+        // True orange block - much more red to distinguish from yellow
+        const testBlock8Geometry = new THREE.BoxGeometry(2, 2, 2); // 2x2x2 units
+        const testBlock8Material = new THREE.MeshStandardMaterial({ 
+            color: 0x000000, // Black base
+            emissive: 0xff2200, // Much more red, minimal yellow for true orange
+            emissiveIntensity: 4.0, // Quadruple intensity
+            metalness: 0.0, // Completely non-metallic
+            roughness: 0.8, // More matte
+            transparent: false,
+            opacity: 1.0
+        });
+        const testBlock8 = new THREE.Mesh(testBlock8Geometry, testBlock8Material);
+        testBlock8.position.set(-6, 8, 0); // Left side of playfield
+        this.scene.add(testBlock8);
+        
+        log('🧪 Test blocks created (cyan & magenta)');
     }
     
     createBoundaries() {
@@ -3534,10 +3652,10 @@ class TronPong {
         
         // Show overhead lights when game starts
         if (this.overheadLight) {
-            this.overheadLight.visible = true;
+            this.overheadLight.visible = true; // Restored
         }
         if (this.overheadLight2) {
-            this.overheadLight2.visible = true;
+            this.overheadLight2.visible = true; // Restored
         }
         
         // Start underground light fade-in for dramatic effect
@@ -7130,8 +7248,8 @@ class TronPong {
                 // Sample the texture
                 vec4 color = texture2D(tDiffuse, uv);
                 
-                // Scanlines
-                float scanline = sin(uv.y * resolution.y * 0.7) * 0.04;
+                // Scanlines - made more visible
+                float scanline = sin(uv.y * resolution.y * 0.7) * 0.12;
                 color.rgb += scanline;
                 
                 // Vignette (simple distance from center)
@@ -7140,10 +7258,12 @@ class TronPong {
                 float vignette = 1.0 - dist * 0.8;
                 color.rgb *= vignette;
                 
-                // Chromatic aberration
-                float aberration = 0.002 * aberrationBoost;
-                color.r = texture2D(tDiffuse, uv + vec2(aberration, 0.0)).r;
-                color.b = texture2D(tDiffuse, uv - vec2(aberration, 0.0)).b;
+                // Chromatic aberration - balanced approach like original CodeSandbox
+                float aberration = 0.001 * aberrationBoost; // Reduced base intensity
+                vec3 colorR = texture2D(tDiffuse, uv + vec2(aberration, 0.0)).rgb;
+                vec3 colorG = texture2D(tDiffuse, uv).rgb;
+                vec3 colorB = texture2D(tDiffuse, uv - vec2(aberration, 0.0)).rgb;
+                color.rgb = vec3(colorR.r, colorG.g, colorB.b);
                 
                 // Noise
                 float noise = fract(sin(dot(uv + time, vec2(12.9898, 78.233))) * 43758.5453) * 0.02;
@@ -7176,7 +7296,78 @@ class TronPong {
         // Create render target
         this.renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
         
+        // Initialize bloom effect for neon materials
+        this.initBloomEffect();
+        
         log('📺 CRT effect initialized');
+    }
+    
+    // Initialize bloom effect for neon materials
+    initBloomEffect() {
+        // Create bloom render target
+        this.bloomRenderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
+        this.bloomRenderTarget.samples = 4;
+        
+        // Bloom shader - simple bright pass
+        const bloomVertexShader = `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+        
+        const bloomFragmentShader = `
+            uniform sampler2D tDiffuse;
+            uniform float threshold;
+            uniform float radius;
+            uniform vec2 resolution;
+            varying vec2 vUv;
+            
+            void main() {
+                vec2 texelSize = 1.0 / resolution;
+                vec4 sum = vec4(0.0);
+                
+                // Sample surrounding pixels for blur effect
+                for (int x = -2; x <= 2; x++) {
+                    for (int y = -2; y <= 2; y++) {
+                        vec2 offset = vec2(float(x), float(y)) * texelSize * radius;
+                        vec4 color = texture2D(tDiffuse, vUv + offset);
+                        
+                        // Extract bright areas for bloom
+                        float brightness = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+                        if (brightness > threshold) {
+                            sum += color * (brightness - threshold);
+                        }
+                    }
+                }
+                
+                // Average and apply bloom intensity
+                sum /= 25.0; // 5x5 kernel
+                gl_FragColor = sum * 1.5;
+            }
+        `;
+        
+        this.bloomMaterial = new THREE.ShaderMaterial({
+            vertexShader: bloomVertexShader,
+            fragmentShader: bloomFragmentShader,
+            uniforms: {
+                tDiffuse: { value: null },
+                threshold: { value: 0.3 }, // Lower threshold like original CodeSandbox
+                radius: { value: 2.0 }, // Bloom radius for soft edges
+                resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+            }
+        });
+        
+        // Create bloom plane
+        this.bloomGeometry = new THREE.PlaneGeometry(2, 2);
+        this.bloomMesh = new THREE.Mesh(this.bloomGeometry, this.bloomMaterial);
+        this.bloomMesh.position.z = -1;
+        this.bloomScene = new THREE.Scene();
+        this.bloomScene.add(this.bloomMesh);
+        this.bloomCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        
+        log('✨ Bloom effect initialized for neon materials');
     }
     
     // Toggle CRT effect
