@@ -2963,10 +2963,52 @@ class TronPong {
     }
     
     loadDeathSkull() {
-        // TODO: Temporarily disabled - FBXLoader not working properly
-        // Will implement a different approach for 3D skull
-        log('💀 Death skull loading disabled - using text fallback');
-        this.deathSkull = null; // Force fallback to text
+        // Load 3D skull model using OBJ loader (more reliable than FBX)
+        const loader = new THREE.OBJLoader();
+        
+        loader.load('assets/3D/LowpolyHuman Skull.obj', (obj) => {
+            // Clone the loaded model
+            this.deathSkull = obj.clone();
+            
+            // Create shiny magenta material
+            const skullMaterial = new THREE.MeshStandardMaterial({
+                color: 0xff00ff, // Bright magenta
+                metalness: 0.9, // Very metallic for shine
+                roughness: 0.1, // Very smooth for maximum reflectivity
+                emissive: 0xff00ff, // Magenta glow
+                emissiveIntensity: 0.3, // Subtle glow
+                envMapIntensity: 1.0 // Full environment reflection
+            });
+            
+            // Apply material to all meshes in the skull
+            this.deathSkull.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = skullMaterial;
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+            
+            // Position skull in 3D world (initially hidden)
+            this.deathSkull.position.set(0, 0, -5); // In front of camera
+            this.deathSkull.scale.set(0.01, 0.01, 0.01); // Start very small
+            this.deathSkull.visible = false;
+            
+            // Set to layer 0 for post-processing effects
+            this.deathSkull.layers.set(0);
+            
+            // Add to scene
+            this.scene.add(this.deathSkull);
+            
+            log('💀 Death skull loaded successfully from OBJ!');
+        }, (progress) => {
+            // Loading progress
+            console.log('Skull loading progress:', (progress.loaded / progress.total * 100) + '%');
+        }, (error) => {
+            console.error('Failed to load death skull:', error);
+            log('❌ Failed to load death skull - falling back to text');
+            this.deathSkull = null;
+        });
     }
     
     setupEventListeners() {
