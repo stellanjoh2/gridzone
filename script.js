@@ -33,6 +33,77 @@ class TronPong {
             emissiveIntensity: 0.15       // Emissive strength - increased for better CRT glow
         };
         
+        // ═══════════════════════════════════════════════════════════════════════
+        // DEDICATED COLOR LIBRARY - Centralized color management system
+        // ═══════════════════════════════════════════════════════════════════════
+        this.colorLibrary = {
+            // Core Game Colors
+            warmYellow: 0xffaa33,        // Warm yellow emissive
+            trueOrange: 0xff2200,        // True orange emissive  
+            magenta: 0xff00ff,           // Pure magenta emissive
+            cyan: 0x00ffff,              // Pure cyan emissive
+            trueRed: 0xff0000,           // True red emissive
+            white: 0xffffff,             // Pure white emissive
+            
+            // Player Colors
+            playerPaddle: 0x00FEFC,      // Lime-yellow (kept as is)
+            playerBall: 0x00FEFC,        // Lime-yellow (kept as is)
+            
+            // AI Colors  
+            aiPaddle: 0xff00ff,          // Pure magenta emissive
+            aiBall: 0xff00ff,            // Pure magenta emissive
+            
+            // Goal Colors
+            playerGoal: 0xffaa33,        // Warm yellow emissive
+            aiGoal: 0xff2200,            // True orange emissive
+            
+            // Light Colors
+            overheadLight: 0xff2200,     // True orange emissive
+            aiPaddleLight: 0xff00ff,     // Pure magenta emissive
+            playerPaddleLight: 0x00FEFC, // Lime-yellow (kept as is)
+            
+            // Effect Colors
+            impactEffect: 0xff00ff,      // Pure magenta emissive
+            bonusCube: 0xff0000,         // True red emissive
+            wallPillars: 0xffffff,       // Pure white emissive
+            paddleBlink: 0xffffff,       // Pure white emissive
+            
+            // Environment Colors
+            ambientLight: 0x6600cc,      // Purple ambient
+            undergroundLight: 0x6600cc   // Purple underground
+        };
+        
+        // ═══════════════════════════════════════════════════════════════════════
+        // COLOR LIBRARY HELPER FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        // Get color from library with fallback
+        this.getColor = (colorName, fallback = 0xffffff) => {
+            return this.colorLibrary[colorName] || fallback;
+        };
+        
+        // Get THREE.Color object from library
+        this.getColorObject = (colorName, fallback = 0xffffff) => {
+            return new THREE.Color(this.getColor(colorName, fallback));
+        };
+        
+        // Add new color to library
+        this.addColor = (name, hexValue, description = '') => {
+            this.colorLibrary[name] = hexValue;
+            log(`🎨 Added color to library: ${name} = ${hexValue.toString(16)} ${description}`);
+        };
+        
+        // Update existing color in library
+        this.updateColor = (name, hexValue, description = '') => {
+            if (this.colorLibrary.hasOwnProperty(name)) {
+                const oldValue = this.colorLibrary[name];
+                this.colorLibrary[name] = hexValue;
+                log(`🎨 Updated color in library: ${name} = ${oldValue.toString(16)} → ${hexValue.toString(16)} ${description}`);
+            } else {
+                log(`⚠️ Color '${name}' not found in library. Use addColor() instead.`);
+            }
+        };
+        
         this.scene = null;
         this.camera = null;
         this.renderer = null;
@@ -1146,7 +1217,7 @@ class TronPong {
         document.body.appendChild(this.renderer.domElement);
         
         
-        // Custom bloom setup using render targets
+        // Restore bloom setup for quality mode pipeline
         this.setupCustomBloom();
         
         // Setup environment map for reflections
@@ -1219,7 +1290,7 @@ class TronPong {
             uniforms: {
                 tDiffuse: { value: null },
                 bloomStrength: { value: 0.75 }, // +20% from 2.8
-                bloomRadius: { value: 0.5 } // 20% reduction from 2.125
+                bloomRadius: { value: 1.2 } // Increased radius for softer falloff
             },
             vertexShader: `
                 varying vec2 vUv;
@@ -1239,7 +1310,7 @@ class TronPong {
                     
                     // Optimized blur - same visual quality, much better performance
                     vec4 sum = vec4(0.0);
-                    float blurSize = 0.0055 * bloomRadius; // Slightly larger blur size to compensate for fewer samples
+                    float blurSize = 0.008 * bloomRadius; // Increased blur size for softer falloff
                     float totalWeight = 0.0;
                     
                     // Optimized 9x9 kernel (was 15x15) - 81 samples instead of 225!
@@ -1720,14 +1791,14 @@ class TronPong {
         const ambientLight = new THREE.AmbientLight(0x6600cc, 10.0); // Purple color, restored to original intensity
         this.scene.add(ambientLight);
         
-        this.overheadLight = new THREE.PointLight(0xff6600, 6.75, 120); // Orange laser gate - back to original intensity
+        this.overheadLight = new THREE.PointLight(0xff2200, 6.75, 120); // True orange emissive
         this.overheadLight.position.set(0, 60, 20);
         this.overheadLight.castShadow = false; // Keep shadows disabled for performance
         this.overheadLight.layers.set(0);
         this.overheadLight.visible = false; // Hidden during title screen
         this.scene.add(this.overheadLight);
         
-        this.overheadLight2 = new THREE.PointLight(0xff6600, 23.2, 100); // Orange laser gate - 25% increase
+        this.overheadLight2 = new THREE.PointLight(0xff2200, 23.2, 100); // True orange emissive
         this.overheadLight2.position.set(0, 80, -60); // Halfway back from -70 to -60
         this.overheadLight2.castShadow = false; // Keep shadows disabled for performance
         this.overheadLight2.layers.set(0);
@@ -1751,7 +1822,7 @@ class TronPong {
         this.scene.add(this.playerLight);
         
         // AI paddle light (magenta)
-        this.aiLight = new THREE.PointLight(0xff00ff, 0.75, 75); // Restored to reasonable paddle light intensity
+        this.aiLight = new THREE.PointLight(0xff00ff, 0.75, 75); // Pure magenta emissive light
         this.aiLight.castShadow = false; // No shadows for performance
         this.aiLight.layers.set(0);
         this.aiLight.visible = true; // Restored
@@ -2242,22 +2313,22 @@ class TronPong {
         } else if (owner === 'ai') {
             // Magenta for AI
             if (ball.material.uniforms && ball.material.uniforms.baseColor) {
-                ball.material.uniforms.baseColor.value.setHex(0xff00ff); // ShaderMaterial
+                ball.material.uniforms.baseColor.value.setHex(0xff00ff); // Pure magenta emissive
             } else if (ball.material.color) {
                 ball.material.color.setHex(0xff00ff); // Fallback
             }
             
             // Update trail color
             if (trail) {
-                trail.mesh.material.color.setHex(0xff00ff);
+                trail.mesh.material.color.setHex(0xff00ff); // Pure magenta emissive
                 trail.spheres.forEach(sphere => {
-                sphere.material.color.setHex(0xff00ff);
+                sphere.material.color.setHex(0xff00ff); // Pure magenta emissive
             });
             }
             
             // Update ball light color
             if (this.ballLights[ballIndex]) {
-                this.ballLights[ballIndex].color.setHex(0xff00ff);
+                this.ballLights[ballIndex].color.setHex(0xff00ff); // Pure magenta emissive
         }
         }
         
@@ -2470,7 +2541,7 @@ class TronPong {
         const paddle2Material = new THREE.ShaderMaterial({
             uniforms: {
                 time: { value: 0 },
-                baseColor: { value: new THREE.Color(0xff00ff) }, // Bright magenta!
+                baseColor: { value: new THREE.Color(0xff00ff) }, // Pure magenta emissive
                 emissiveIntensity: { value: 5.0 },
                 opacity: { value: 1.0 }
             },
@@ -2534,7 +2605,7 @@ class TronPong {
         this.paddle2.add(rightCap2);
         this.paddle2.position.set(0, 0, -15);
         this.paddle2.userData.originalColor = 0xff00ff;
-        this.paddle2.userData.originalEmissive = 0xff00ff; // MAGENTA emissive for glow
+        this.paddle2.userData.originalEmissive = 0xff00ff; // Pure magenta emissive
         this.paddle2.userData.originalEmissiveIntensity = 0.8; // Show true color (was 2.0)
         // Store material reference for blink animations
         this.paddle2.userData.material = paddle2Material;
@@ -2759,13 +2830,13 @@ class TronPong {
         const goalWidth = 24; // Match play area width
         const goalHeight = 6; // Match wall pillar height
         
-        // Shader material for animated gradient laser effect
+        // Shader material for animated gradient laser effect - using new emissive materials
         const goalShader = {
             uniforms: {
                 time: { value: 0 },
-                baseColor: { value: new THREE.Color(0xff3300) }, // Deep red/orange - DANGER MODE!
-                emissiveIntensity: { value: 7.8125 }, // AGGRESSIVE GLOW + 25% increase (was 6.25)
-                opacity: { value: 0.3 } // More transparent for deeper effect
+                baseColor: { value: new THREE.Color(0xffaa33) }, // Warm yellow emissive material
+                emissiveIntensity: { value: 4.0 }, // Same as test blocks
+                opacity: { value: 0.75 } // 75% opacity - much more visible
             },
             vertexShader: `
                 varying vec2 vUv;
@@ -2798,20 +2869,21 @@ class TronPong {
                     // Combine effects
                     vec3 color = baseColor * (stripes * 0.5 + 0.5) * pulse;
                     
-                    // Hyper-emissive glow
-                    vec3 finalColor = color * emissiveIntensity;
+                    // Emissive glow like test blocks - black base with colored emissive
+                    vec3 finalColor = vec3(0.0, 0.0, 0.0); // Black base
+                    vec3 emissiveColor = color * emissiveIntensity;
                     
                     // Add edge glow
                     float edgeGlow = 1.0 - abs(vUv.x * 2.0 - 1.0);
                     edgeGlow = pow(edgeGlow, 2.0) * 0.5;
-                    finalColor += baseColor * edgeGlow;
+                    emissiveColor += baseColor * edgeGlow * emissiveIntensity;
                     
-                    gl_FragColor = vec4(finalColor, opacity);
+                    gl_FragColor = vec4(finalColor + emissiveColor, opacity);
                 }
             `
         };
         
-        // Create player goal (at z = 17, behind player paddle)
+        // Create player goal (at z = 17, behind player paddle) - Warm yellow
         const playerGoalGeometry = new THREE.PlaneGeometry(goalWidth, goalHeight);
         const playerGoalMaterial = new THREE.ShaderMaterial({
             uniforms: THREE.UniformsUtils.clone(goalShader.uniforms),
@@ -2821,13 +2893,15 @@ class TronPong {
             side: THREE.DoubleSide,
             blending: THREE.AdditiveBlending
         });
+        // Set warm yellow color for player goal
+        playerGoalMaterial.uniforms.baseColor.value = new THREE.Color(0xffaa33); // Warm yellow
         
         this.playerGoal = new THREE.Mesh(playerGoalGeometry, playerGoalMaterial);
         this.playerGoal.position.set(0, goalHeight / 2 - 2, 19); // Moved 2 units closer to camera
-        this.playerGoal.userData.originalColor = new THREE.Color(0xff3300); // Deep red/orange
+        this.playerGoal.userData.originalColor = new THREE.Color(0xffaa33); // Warm yellow
         this.scene.add(this.playerGoal);
         
-        // Create AI goal (at z = -19, 2 units deeper down the corridor)
+        // Create AI goal (at z = -19, 2 units deeper down the corridor) - True orange
         const aiGoalGeometry = new THREE.PlaneGeometry(goalWidth, goalHeight);
         const aiGoalMaterial = new THREE.ShaderMaterial({
             uniforms: THREE.UniformsUtils.clone(goalShader.uniforms),
@@ -2837,10 +2911,12 @@ class TronPong {
             side: THREE.DoubleSide,
             blending: THREE.AdditiveBlending
         });
+        // Set true orange color for AI goal
+        aiGoalMaterial.uniforms.baseColor.value = new THREE.Color(0xff2200); // True orange
         
         this.aiGoal = new THREE.Mesh(aiGoalGeometry, aiGoalMaterial);
         this.aiGoal.position.set(0, goalHeight / 2 - 2, -19); // Moved 2 units further down corridor
-        this.aiGoal.userData.originalColor = new THREE.Color(0xff3300); // Deep red/orange
+        this.aiGoal.userData.originalColor = new THREE.Color(0xff2200); // True orange
         this.scene.add(this.aiGoal);
         
         log('✨ Laser forcefield goals created!');
@@ -4087,7 +4163,7 @@ class TronPong {
         const material = paddle.userData.material;
         
         // Set target color to white for shader material
-        material.uniforms.baseColor.value.setHex(0xffffff); // WHITE!
+        material.uniforms.baseColor.value.setHex(0xffffff); // Pure white emissive
         material.uniforms.emissiveIntensity.value = 8.0; // SUPER BRIGHT
         
         // Boost the paddle's point light intensity when hit
@@ -4111,7 +4187,7 @@ class TronPong {
             
             const material = this.paddle1.userData.material;
             const originalColor = 0x00FEFC; // Lime-yellow (original working color)
-            const whiteColor = 0xffffff;
+            const whiteColor = 0xffffff; // Pure white emissive
             
             // Lerp from white back to original green
             const r = Math.floor(((whiteColor >> 16) & 255) * fadeProgress + ((originalColor >> 16) & 255) * (1 - fadeProgress));
@@ -4138,8 +4214,8 @@ class TronPong {
             const fadeProgress = Math.max(0, this.paddleBlinkTimers.paddle2 / 0.3);
             
             const material = this.paddle2.userData.material;
-            const originalColor = 0xff00ff; // Magenta
-            const whiteColor = 0xffffff;
+            const originalColor = 0xff00ff; // Pure magenta emissive
+            const whiteColor = 0xffffff; // Pure white emissive
             
             // Lerp from white back to original magenta
             const r = Math.floor(((whiteColor >> 16) & 255) * fadeProgress + ((originalColor >> 16) & 255) * (1 - fadeProgress));
@@ -4173,8 +4249,8 @@ class TronPong {
                     pillar.userData.blinkTimer = pillar.userData.blinkDuration || 0.25;
                     
                     // Set initial bright state
-                    pillar.material.color.setHex(pillar.userData.targetColor || 0xffffff);
-                    pillar.material.emissive.setHex(pillar.userData.targetEmissive || 0xffffff);
+                    pillar.material.color.setHex(pillar.userData.targetColor || 0xffffff); // Pure white emissive
+                    pillar.material.emissive.setHex(pillar.userData.targetEmissive || 0xffffff); // Pure white emissive
                     pillar.material.emissiveIntensity = pillar.userData.targetIntensity || 3.0;
                 }
             }
@@ -4187,8 +4263,8 @@ class TronPong {
                 
                 const originalColor = pillar.userData.originalColor;
                 const originalEmissive = pillar.userData.originalEmissive;
-                const targetColor = pillar.userData.targetColor || 0xffffff;
-                const targetEmissive = pillar.userData.targetEmissive || 0xffffff;
+                const targetColor = pillar.userData.targetColor || 0xffffff; // Pure white emissive
+                const targetEmissive = pillar.userData.targetEmissive || 0xffffff; // Pure white emissive
                 const targetIntensity = pillar.userData.targetIntensity || 3.0;
                 
                 // Lerp from target color back to original
@@ -4232,8 +4308,8 @@ class TronPong {
                     pillar.userData.blinkTimer = pillar.userData.blinkDuration || 0.25;
                     
                     // Set initial bright state
-                    pillar.material.color.setHex(pillar.userData.targetColor || 0xffffff);
-                    pillar.material.emissive.setHex(pillar.userData.targetEmissive || 0xffffff);
+                    pillar.material.color.setHex(pillar.userData.targetColor || 0xffffff); // Pure white emissive
+                    pillar.material.emissive.setHex(pillar.userData.targetEmissive || 0xffffff); // Pure white emissive
                     pillar.material.emissiveIntensity = pillar.userData.targetIntensity || 3.0;
                 }
             }
@@ -4246,8 +4322,8 @@ class TronPong {
                 
                 const originalColor = pillar.userData.originalColor;
                 const originalEmissive = pillar.userData.originalEmissive;
-                const targetColor = pillar.userData.targetColor || 0xffffff;
-                const targetEmissive = pillar.userData.targetEmissive || 0xffffff;
+                const targetColor = pillar.userData.targetColor || 0xffffff; // Pure white emissive
+                const targetEmissive = pillar.userData.targetEmissive || 0xffffff; // Pure white emissive
                 const targetIntensity = pillar.userData.targetIntensity || 3.0;
                 
                 // Lerp from target color back to original
@@ -4682,7 +4758,7 @@ class TronPong {
             // Immediate red blinking - no yellow delay
             const blinkCycle = (this.bonusCubeFlickerTimer % 0.15) / 0.15; // 0-1 per blink
             if (blinkCycle < 0.6) { // 60% on, 40% off
-                    color = 0xff0000; // Red
+                    color = 0xff0000; // True red emissive
                     intensity = 8.0;
                 } else {
                     color = 0x000000; // Off
@@ -5259,8 +5335,8 @@ class TronPong {
     }
     
     initializePerformanceMode() {
-        // Initialize to quality mode for full visual experience
-        this.performanceMode = false;
+        // Initialize to performance mode to avoid black screen
+        this.performanceMode = true;
         this.performanceSettings.renderScale = 1.0; // Full resolution
         this.performanceSettings.enableFisheye = true; // Full fisheye effect
         this.performanceSettings.enableBloom = true; // Full bloom effects
@@ -5938,7 +6014,7 @@ class TronPong {
         this.setItemHighlightColor({ r: 1.0, g: 0.0, b: 0.0 }); // Red
         
         // Spawn red point light at bonus position
-        const bonusLight = new THREE.PointLight(0xff0000, 8.0, 15);
+        const bonusLight = new THREE.PointLight(0xff0000, 8.0, 15); // True red emissive
         bonusLight.position.copy(this.bonusCube.position);
         bonusLight.castShadow = false;
         this.scene.add(bonusLight);
@@ -6667,7 +6743,7 @@ class TronPong {
                 this.triggerCameraShake(0.3, true);
             this.triggerPaddleBlink(this.paddle2, 'paddle2');
                 this.triggerRumble(0.3, 100);
-                this.createImpactEffect(ball.position.clone(), 0xff00ff);
+                this.createImpactEffect(ball.position.clone(), 0xff00ff); // Pure magenta emissive
                 this.setBallColor(i, 'ai');
                 this.worldLightBoost = 12.0;
             this.playSound('paddleHit');
@@ -7248,16 +7324,6 @@ class TronPong {
                 // Sample the texture
                 vec4 color = texture2D(tDiffuse, uv);
                 
-                // Scanlines - made more visible
-                float scanline = sin(uv.y * resolution.y * 0.7) * 0.12;
-                color.rgb += scanline;
-                
-                // Vignette (simple distance from center)
-                vec2 center = vec2(0.5, 0.5);
-                float dist = length(uv - center);
-                float vignette = 1.0 - dist * 0.8;
-                color.rgb *= vignette;
-                
                 // Chromatic aberration - balanced approach like original CodeSandbox
                 float aberration = 0.001 * aberrationBoost; // Reduced base intensity
                 vec3 colorR = texture2D(tDiffuse, uv + vec2(aberration, 0.0)).rgb;
@@ -7268,6 +7334,16 @@ class TronPong {
                 // Noise
                 float noise = fract(sin(dot(uv + time, vec2(12.9898, 78.233))) * 43758.5453) * 0.02;
                 color.rgb += noise;
+                
+                // Scanlines - matching CodeSandbox implementation, 25% finer
+                float scanline = sin(uv.y * resolution.y * 0.875) * 0.04;
+                color.rgb += scanline;
+                
+                // Vignette - rendered LAST on top of all CRT effects
+                vec2 center = vec2(0.5, 0.5);
+                float dist = length(uv - center);
+                float vignette = 1.0 - dist * 0.8;
+                color.rgb *= vignette;
                 
                 gl_FragColor = color;
             }
@@ -7354,7 +7430,7 @@ class TronPong {
             uniforms: {
                 tDiffuse: { value: null },
                 threshold: { value: 0.3 }, // Lower threshold like original CodeSandbox
-                radius: { value: 2.0 }, // Bloom radius for soft edges
+                radius: { value: 3.0 }, // Increased bloom radius for softer, more linear falloff
                 resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
             }
         });
@@ -8083,7 +8159,7 @@ class TronPong {
             } else if (realElapsed < totalDuration) {
                 // Phase 3: Slow fade out from fully lit orange to neutral
                 const fadeProgress = Math.min(1.0, (realElapsed - blinkDuration - solidDuration) / fadeOutDuration);
-                this.goalBlinkTarget.material.uniforms.baseColor.value.setHex(0xff3300); // Keep orange color
+                this.goalBlinkTarget.material.uniforms.baseColor.value.setHex(0xffaa33); // Keep warm yellow color
                 this.goalBlinkTarget.material.uniforms.opacity.value = 1.0 - (fadeProgress * 0.7); // Fade from 1.0 to 0.3
                 this.goalBlinkTarget.material.uniforms.emissiveIntensity.value = 8.0 - (fadeProgress * (8.0 - 7.8125)); // Fade from 8.0 to 7.8125
             }
@@ -8106,13 +8182,13 @@ class TronPong {
         if (!goal) return;
         
         // Change to bright magenta with HIGH opacity
-        goal.material.uniforms.baseColor.value.setHex(0xff00ff); // Bright magenta
+        goal.material.uniforms.baseColor.value.setHex(0xff00ff); // Pure magenta emissive
         goal.material.uniforms.emissiveIntensity.value = 2.0; // Very bright!
         goal.material.uniforms.opacity.value = 0.9; // Nearly solid
         
         // Keep overhead lights orange during death flash
-        this.overheadLight.color.setHex(0xff6600);
-        this.overheadLight2.color.setHex(0xff6600);
+        this.overheadLight.color.setHex(0xff2200); // True orange emissive
+        this.overheadLight2.color.setHex(0xff2200); // True orange emissive
         
         // Start fade after death sequence (2 seconds)
         // Fade happens over 0.8 seconds for smooth transition
@@ -8147,8 +8223,8 @@ class TronPong {
                     clearInterval(fadeTimer);
                     // Ensure final values - RESET TO ORIGINAL COLOR
                     goal.material.uniforms.baseColor.value.copy(goal.userData.originalColor);
-                    goal.material.uniforms.emissiveIntensity.value = 7.8125;
-                    goal.material.uniforms.opacity.value = 0.2;
+                    goal.material.uniforms.emissiveIntensity.value = 4.0; // Use new emissive intensity
+                    goal.material.uniforms.opacity.value = 0.75; // Use new opacity
                     
                     // Reset lights to orange laser gates (keep orange after wins)
                     this.overheadLight.color.setHex(0xff6600);
@@ -8176,8 +8252,8 @@ class TronPong {
         goal.material.uniforms.opacity.value = 0.8; // Much more visible!
         
         // Keep overhead lights orange during win flash
-        this.overheadLight.color.setHex(0xff6600);
-        this.overheadLight2.color.setHex(0xff6600);
+        this.overheadLight.color.setHex(0xff2200); // True orange emissive
+        this.overheadLight2.color.setHex(0xff2200); // True orange emissive
         
         // SLOW MOTION on win!
         this.timeScale = 0.3; // Slow down to 30% speed
@@ -8234,8 +8310,8 @@ class TronPong {
                     clearInterval(fadeTimer);
                     // Ensure final values
             goal.material.uniforms.baseColor.value.copy(goal.userData.originalColor);
-                    goal.material.uniforms.emissiveIntensity.value = 7.8125;
-                    goal.material.uniforms.opacity.value = 0.3;
+                    goal.material.uniforms.emissiveIntensity.value = 4.0; // Use new emissive intensity
+                    goal.material.uniforms.opacity.value = 0.75; // Use new opacity
                     // Remove from tracking when complete
                     this.activeIntervals = this.activeIntervals.filter(interval => interval.id !== fadeTimer);
             
@@ -8413,7 +8489,7 @@ class TronPong {
         
         // Optimized rendering pipeline with performance mode support
         if (this.performanceMode) {
-            // Performance mode: simplified pipeline
+            // Performance mode: simplified pipeline with bloom
             if (this.crtEffect.enabled) {
                 // Render to CRT render target
                 this.renderer.setRenderTarget(this.renderTarget);
@@ -8421,7 +8497,7 @@ class TronPong {
                 this.renderer.clear();
                 this.renderer.render(this.scene, this.camera);
                 
-                // Apply CRT effect
+                // Apply CRT effect (which includes bloom)
                 this.crtMaterial.uniforms.tDiffuse.value = this.renderTarget.texture;
                 this.renderer.setRenderTarget(null);
                 this.renderer.render(this.crtScene, this.crtCamera);
