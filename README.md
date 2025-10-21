@@ -115,12 +115,14 @@ A modern, immersive 3D arcade game featuring stunning visuals, dynamic lighting,
 
 ### **Controls**
 
-* **Movement**: WASD, Arrow Keys, or Mouse
-* **Start Game**: Space or Enter
-* **Pause**: P key
+* **Movement**: WASD, Arrow Keys, Mouse, or Gamepad
+* **Start Game**: Space, Enter, or Gamepad Start button
+* **Pause**: P key or Gamepad Start button
 * **Reset**: Square button (gamepad) or Reset button
 * **Fullscreen Toggle**: J key (keyboard) or F11
 * **Performance Mode**: Available in pause menu
+* **Camera Tilt**: Mouse movement or Gamepad right stick
+* **Paddle Control**: Mouse Y-axis, Gamepad left stick, or WASD/Arrow Keys
 
 ### **Gameplay**
 
