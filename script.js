@@ -3508,13 +3508,16 @@ class TronPong {
             this.deathSkull = obj.clone();
             
             // Create dark material like floor tiles with animated brightness
+            // Apply TrueOrange metallic material from the test swatches
             const skullMaterial = new THREE.MeshStandardMaterial({
-                color: 0x1a1a1a, // Dark gray like floor tiles
-                metalness: 0.8, // Metallic
-                roughness: 0.2, // Smooth
-                emissive: 0x000000, // Start with no glow
-                emissiveIntensity: 0.0, // Start with no emissive
-                envMapIntensity: 1.0 // Full environment reflection
+                color: 0xffffff, // White metallic
+                metalness: 0.5,
+                roughness: 0.3,
+                // Subtle self-illumination to resist scene tinting
+                emissive: 0xffffff,
+                emissiveIntensity: 0.25,
+                envMapIntensity: 1.0,
+                toneMapped: true
             });
             
             // Store reference to skull material for animation
