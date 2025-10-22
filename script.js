@@ -2619,6 +2619,11 @@ class TronPong {
         // ========================================
         
         // Test blocks - Pure colors for material testing
+        // Group all test materials to allow easy positioning/toggling
+        this.materialTestGroup = new THREE.Group();
+        this.scene.add(this.materialTestGroup);
+        // Hide by default; toggle with 'M'
+        this.materialTestGroup.visible = false;
         const testBlock1Geometry = new THREE.BoxGeometry(2, 2, 2); // 2x2x2 units
         
         // 100% Magenta - pure color with quadruple emissive intensity
@@ -2632,8 +2637,8 @@ class TronPong {
             opacity: 1.0
         });
         const testBlock1 = new THREE.Mesh(testBlock1Geometry, testBlock1Material);
-        testBlock1.position.set(-8, 8, 0); // Left side of playfield
-        this.scene.add(testBlock1);
+        testBlock1.position.set(14, 1, -5); // Bottom right area, above floor
+        this.materialTestGroup.add(testBlock1);
         
         // Cyan attempt - using emissive approach since base colors are shifting
         const testBlock2Geometry = new THREE.BoxGeometry(2, 2, 2); // 2x2x2 units
@@ -2647,8 +2652,8 @@ class TronPong {
             opacity: 1.0
         });
         const testBlock2 = new THREE.Mesh(testBlock2Geometry, testBlock2Material);
-        testBlock2.position.set(0, 8, 0); // Center of playfield
-        this.scene.add(testBlock2);
+        testBlock2.position.set(14, -1, -5); // Bottom right area, near floor
+        this.materialTestGroup.add(testBlock2);
         
         // Removed duplicate orange block - keeping only the true orange at position -6
         
@@ -2664,8 +2669,8 @@ class TronPong {
             opacity: 1.0
         });
         const testBlock4 = new THREE.Mesh(testBlock4Geometry, testBlock4Material);
-        testBlock4.position.set(12, 8, 0); // Far right side of playfield
-        this.scene.add(testBlock4);
+        testBlock4.position.set(14, -3, -5); // Bottom right area
+        this.materialTestGroup.add(testBlock4);
         
         // Warm yellow block - softer, more orange-tinted
         const testBlock5Geometry = new THREE.BoxGeometry(2, 2, 2); // 2x2x2 units
@@ -2679,8 +2684,8 @@ class TronPong {
             opacity: 1.0
         });
         const testBlock5 = new THREE.Mesh(testBlock5Geometry, testBlock5Material);
-        testBlock5.position.set(-12, 8, 0); // Far left side of playfield
-        this.scene.add(testBlock5);
+        testBlock5.position.set(14, -5, -5); // Bottom right area
+        this.materialTestGroup.add(testBlock5);
         
         // Red block - compensated for red reduction
         const testBlock6Geometry = new THREE.BoxGeometry(2, 2, 2); // 2x2x2 units
@@ -2694,8 +2699,8 @@ class TronPong {
             opacity: 1.0
         });
         const testBlock6 = new THREE.Mesh(testBlock6Geometry, testBlock6Material);
-        testBlock6.position.set(-4, 8, 0); // Left-center side of playfield
-        this.scene.add(testBlock6);
+        testBlock6.position.set(14, 3, -5); // Bottom right area, above floor
+        this.materialTestGroup.add(testBlock6);
         
         // True red block
         const testBlock7Geometry = new THREE.BoxGeometry(2, 2, 2); // 2x2x2 units
@@ -2709,8 +2714,8 @@ class TronPong {
             opacity: 1.0
         });
         const testBlock7 = new THREE.Mesh(testBlock7Geometry, testBlock7Material);
-        testBlock7.position.set(4, 8, 0); // Right-center side of playfield
-        this.scene.add(testBlock7);
+        testBlock7.position.set(14, 1, -5); // Bottom right area
+        this.materialTestGroup.add(testBlock7);
         
         // True orange block - much more red to distinguish from yellow
         const testBlock8Geometry = new THREE.BoxGeometry(2, 2, 2); // 2x2x2 units
@@ -2724,10 +2729,352 @@ class TronPong {
             opacity: 1.0
         });
         const testBlock8 = new THREE.Mesh(testBlock8Geometry, testBlock8Material);
-        testBlock8.position.set(-6, 8, 0); // Left side of playfield
-        this.scene.add(testBlock8);
+        testBlock8.position.set(14, -7, -5); // Bottom right area
+        this.materialTestGroup.add(testBlock8);
         
         log('🧪 Test blocks created (cyan & magenta)');
+        
+        // ═══════════════════════════════════════════════════════════════════════
+        // COMPREHENSIVE MATERIAL TESTING LIBRARY - Spheres for specular highlights
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        // ROW 1: Emissive Materials (Black base + colored emissive)
+        const materialTestSphereGeometry = new THREE.SphereGeometry(2, 32, 32); // 2x2 units for better visibility
+        
+        // Warm Yellow - Emissive
+        const emissiveYellow = new THREE.MeshStandardMaterial({ 
+            color: 0x000000, // Black base
+            emissive: 0xffaa33, // Warm yellow emissive
+            emissiveIntensity: 4.0,
+            metalness: 0.0,
+            roughness: 0.8
+        });
+        const sphere1 = new THREE.Mesh(materialTestSphereGeometry, emissiveYellow);
+        sphere1.position.set(8, 3, -5); // Bottom right area, above floor
+        this.materialTestGroup.add(sphere1);
+        
+        // True Orange - Emissive
+        const emissiveOrange = new THREE.MeshStandardMaterial({ 
+            color: 0x000000,
+            emissive: 0xff2200,
+            emissiveIntensity: 4.0,
+            metalness: 0.0,
+            roughness: 0.8
+        });
+        const sphere2 = new THREE.Mesh(materialTestSphereGeometry, emissiveOrange);
+        sphere2.position.set(10, 3, -5);
+        this.materialTestGroup.add(sphere2);
+        
+        // Magenta - Emissive
+        const emissiveMagenta = new THREE.MeshStandardMaterial({ 
+            color: 0x000000,
+            emissive: 0xff00ff,
+            emissiveIntensity: 4.0,
+            metalness: 0.0,
+            roughness: 0.8
+        });
+        const sphere3 = new THREE.Mesh(materialTestSphereGeometry, emissiveMagenta);
+        sphere3.position.set(12, 3, -5);
+        this.materialTestGroup.add(sphere3);
+        
+        // Cyan - Emissive
+        const emissiveCyan = new THREE.MeshStandardMaterial({ 
+            color: 0x000000,
+            emissive: 0x00ffff,
+            emissiveIntensity: 4.0,
+            metalness: 0.0,
+            roughness: 0.8
+        });
+        const sphere4 = new THREE.Mesh(materialTestSphereGeometry, emissiveCyan);
+        sphere4.position.set(8, 1, -5);
+        this.materialTestGroup.add(sphere4);
+        
+        // True Red - Emissive
+        const emissiveRed = new THREE.MeshStandardMaterial({ 
+            color: 0x000000,
+            emissive: 0xff0000,
+            emissiveIntensity: 6.0, // boost so it reads clearly as emissive
+            metalness: 0.0,
+            roughness: 0.8,
+            toneMapped: false // keep emissive unaffected by tone mapping
+        });
+        const sphere5 = new THREE.Mesh(materialTestSphereGeometry, emissiveRed);
+        sphere5.position.set(10, 1, -5);
+        this.materialTestGroup.add(sphere5);
+        
+        // White - Emissive
+        const emissiveWhite = new THREE.MeshStandardMaterial({ 
+            color: 0x000000,
+            emissive: 0xffffff,
+            emissiveIntensity: 4.0,
+            metalness: 0.0,
+            roughness: 0.8
+        });
+        const sphere6 = new THREE.Mesh(materialTestSphereGeometry, emissiveWhite);
+        sphere6.position.set(12, 1, -5);
+        this.materialTestGroup.add(sphere6);
+        
+        // ROW 2: Specular/Metallic Materials (Normal materials with specular highlights)
+        
+        // Warm Yellow - Specular
+        const specularYellow = new THREE.MeshStandardMaterial({ 
+            color: 0xffaa33, // Normal color
+            emissive: 0x000000, // No emissive
+            emissiveIntensity: 0.0,
+            metalness: 0.1, // Slightly metallic
+            roughness: 0.3 // Smooth for specular highlights
+        });
+        const sphere7 = new THREE.Mesh(materialTestSphereGeometry, specularYellow);
+        sphere7.position.set(8, -1, -5); // Bottom right area, near floor
+        this.materialTestGroup.add(sphere7);
+        
+        // True Orange - Specular
+        const specularOrange = new THREE.MeshStandardMaterial({ 
+            color: 0xff2200,
+            emissive: 0x000000,
+            emissiveIntensity: 0.0,
+            metalness: 0.1,
+            roughness: 0.3
+        });
+        const sphere8 = new THREE.Mesh(materialTestSphereGeometry, specularOrange);
+        sphere8.position.set(10, -1, -5);
+        this.materialTestGroup.add(sphere8);
+        
+        // Magenta - Specular
+        const specularMagenta = new THREE.MeshStandardMaterial({ 
+            color: 0xff00ff,
+            emissive: 0x000000,
+            emissiveIntensity: 0.0,
+            metalness: 0.1,
+            roughness: 0.3
+        });
+        const sphere9 = new THREE.Mesh(materialTestSphereGeometry, specularMagenta);
+        sphere9.position.set(12, -1, -5);
+        this.materialTestGroup.add(sphere9);
+        
+        // Cyan - Specular
+        const specularCyan = new THREE.MeshStandardMaterial({ 
+            color: 0x00ffff,
+            emissive: 0x000000,
+            emissiveIntensity: 0.0,
+            metalness: 0.1,
+            roughness: 0.3
+        });
+        const sphere10 = new THREE.Mesh(materialTestSphereGeometry, specularCyan);
+        sphere10.position.set(8, -3, -5);
+        this.materialTestGroup.add(sphere10);
+        
+        // True Red - Specular
+        const specularRed = new THREE.MeshStandardMaterial({ 
+            color: 0xff0000,
+            emissive: 0x000000,
+            emissiveIntensity: 0.0,
+            metalness: 0.1,
+            roughness: 0.3
+        });
+        const sphere11 = new THREE.Mesh(materialTestSphereGeometry, specularRed);
+        sphere11.position.set(10, -3, -5);
+        this.materialTestGroup.add(sphere11);
+        
+        // White - Specular
+        const specularWhite = new THREE.MeshStandardMaterial({ 
+            color: 0xffffff,
+            emissive: 0x000000,
+            emissiveIntensity: 0.0,
+            metalness: 0.1,
+            roughness: 0.3
+        });
+        const sphere12 = new THREE.Mesh(materialTestSphereGeometry, specularWhite);
+        sphere12.position.set(12, -3, -5);
+        this.materialTestGroup.add(sphere12);
+        
+        // ROW 3: Metallic Materials (High metalness for metallic look)
+        
+        // Warm Yellow - Metallic
+        const metallicYellow = new THREE.MeshStandardMaterial({ 
+            color: 0xffaa33,
+            emissive: 0x000000,
+            emissiveIntensity: 0.0,
+            metalness: 0.5,
+            roughness: 0.3
+        });
+        const sphere13 = new THREE.Mesh(materialTestSphereGeometry, metallicYellow);
+        sphere13.position.set(8, -5, -5); // Bottom right area
+        this.materialTestGroup.add(sphere13);
+        
+        // True Orange - Metallic
+        const metallicOrange = new THREE.MeshStandardMaterial({ 
+            color: 0xff2200,
+            emissive: 0x000000,
+            emissiveIntensity: 0.0,
+            metalness: 0.5,
+            roughness: 0.3
+        });
+        const sphere14 = new THREE.Mesh(materialTestSphereGeometry, metallicOrange);
+        sphere14.position.set(10, -5, -5);
+        this.materialTestGroup.add(sphere14);
+        
+        // Magenta - Metallic
+        const metallicMagenta = new THREE.MeshStandardMaterial({ 
+            color: 0xff00ff,
+            emissive: 0x000000,
+            emissiveIntensity: 0.0,
+            metalness: 0.5,
+            roughness: 0.3
+        });
+        const sphere15 = new THREE.Mesh(materialTestSphereGeometry, metallicMagenta);
+        sphere15.position.set(12, -5, -5);
+        this.materialTestGroup.add(sphere15);
+        
+        // Cyan - Metallic
+        const metallicCyan = new THREE.MeshStandardMaterial({ 
+            color: 0x00ffff,
+            emissive: 0x000000,
+            emissiveIntensity: 0.0,
+            metalness: 0.5,
+            roughness: 0.3
+        });
+        const sphere16 = new THREE.Mesh(materialTestSphereGeometry, metallicCyan);
+        sphere16.position.set(8, -7, -5);
+        this.materialTestGroup.add(sphere16);
+        
+        // True Red - Metallic
+        const metallicRed = new THREE.MeshStandardMaterial({ 
+            color: 0xff0000,
+            emissive: 0x000000,
+            emissiveIntensity: 0.0,
+            metalness: 0.5,
+            roughness: 0.3
+        });
+        const sphere17 = new THREE.Mesh(materialTestSphereGeometry, metallicRed);
+        sphere17.position.set(10, -7, -5);
+        this.materialTestGroup.add(sphere17);
+        
+        // White - Metallic
+        const metallicWhite = new THREE.MeshStandardMaterial({ 
+            color: 0xffffff,
+            emissive: 0x000000,
+            emissiveIntensity: 0.0,
+            metalness: 0.5,
+            roughness: 0.3
+        });
+        const sphere18 = new THREE.Mesh(materialTestSphereGeometry, metallicWhite);
+        sphere18.position.set(12, -7, -5);
+        this.materialTestGroup.add(sphere18);
+        
+        // Arrange as horizontal columns per color with two rows:
+        // Row order: emissive (top), metallic (bottom)
+        const emissiveY = 12.0;  // increase vertical separation by +1 unit
+        const metallicY = 5.0;   // keep metallic at same level
+        const startX = -18.0;    // recenter for 5 columns at 9u spacing (no gaps)
+        const stepX = 9.0;       // spacing between columns
+        const zRow = 0.0;        // center z within group
+
+        // Hide previous specular/matte row
+        [sphere7, sphere8, sphere9, sphere10, sphere11, sphere12].forEach((s)=>{ if (s) s.visible = false; });
+
+        // Hide removed color (WarmYellow)
+        if (typeof sphere1 !== 'undefined') sphere1.visible = false;   // emissive WarmYellow
+        if (typeof sphere13 !== 'undefined') sphere13.visible = false; // metallic WarmYellow
+
+        const columns = [
+            { name: 'Cyan', emissive: sphere4, metallic: sphere16 },
+            { name: 'Red', emissive: sphere5, metallic: sphere17 },
+            { name: 'Magenta', emissive: sphere3, metallic: sphere15 },
+            { name: 'TrueOrange', emissive: sphere2, metallic: sphere14 },
+            { name: 'White', emissive: sphere6, metallic: sphere18 }
+        ];
+
+        columns.forEach((col, i) => {
+            const x = startX + i * stepX;
+            col.emissive.position.set(x, emissiveY, zRow);
+            col.metallic.position.set(x, metallicY, zRow);
+            
+            // Add 3D text labels above each sphere
+            const emissiveLabel = this.create3DText(col.name + '\nEmissive', 1.125);
+            emissiveLabel.position.set(x, emissiveY + 3.0, zRow);
+            // Put labels on layer 1 to skip bloom/post-processing if pipeline filters by layer
+            if (emissiveLabel.layers && emissiveLabel.layers.set) emissiveLabel.layers.set(1);
+            this.materialTestGroup.add(emissiveLabel);
+            
+            const metallicLabel = this.create3DText(col.name + '\nMetallic', 1.125);
+            metallicLabel.position.set(x, metallicY + 3.0, zRow);
+            if (metallicLabel.layers && metallicLabel.layers.set) metallicLabel.layers.set(1);
+            this.materialTestGroup.add(metallicLabel);
+        });
+
+        // Hide the old cubic swatches to keep the layout clean (spheres are clearer for specular)
+        if (typeof testBlock1 !== 'undefined') testBlock1.visible = false;
+        if (typeof testBlock2 !== 'undefined') testBlock2.visible = false;
+        if (typeof testBlock4 !== 'undefined') testBlock4.visible = false;
+        if (typeof testBlock5 !== 'undefined') testBlock5.visible = false;
+        if (typeof testBlock6 !== 'undefined') testBlock6.visible = false;
+        if (typeof testBlock7 !== 'undefined') testBlock7.visible = false;
+        if (typeof testBlock8 !== 'undefined') testBlock8.visible = false;
+
+        // Place the entire cluster at the center of the playfield, lifted 4 units higher for better visibility
+        // Move 10 units towards the camera (player goal side) and lift by 2
+        this.materialTestGroup.position.set(0, 6, 10);
+        // Scale down the entire material test group by 50%
+        this.materialTestGroup.scale.set(0.5, 0.5, 0.5);
+        log('🎨 Comprehensive material library created - 18 spheres with emissive, specular, and metallic materials');
+    }
+    
+    create3DText(text, size = 1.0) {
+        // Create 3D text using canvas texture and plane geometry (supports multi-line with \n)
+        // PERF: keep canvas small and scale in geometry, disable mipmaps and tone mapping for speed
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 512;   // smaller texture to reduce bandwidth
+        canvas.height = 256;  // enough for two lines
+
+        // Clear canvas with transparent background
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Set text properties for better visibility
+        const fontSizePx = 56; // slightly smaller on texture; geometry scales visual size
+        context.font = `bold ${fontSizePx}px Arial`;
+        context.fillStyle = '#ffffff';
+        context.strokeStyle = '#000000';
+        context.lineWidth = 4;
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+
+        const lines = String(text).split('\n');
+        const lineHeight = fontSizePx * 1.2; // 20% leading
+        const totalHeight = lineHeight * (lines.length - 1);
+        const centerY = canvas.height / 2 - totalHeight / 2;
+
+        // Draw text lines with outline for visibility
+        lines.forEach((line, idx) => {
+            const y = centerY + idx * lineHeight;
+            context.strokeText(line, canvas.width / 2, y);
+            context.fillText(line, canvas.width / 2, y);
+        });
+
+        // Create texture from canvas
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        texture.generateMipmaps = false; // avoid extra GPU work
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.anisotropy = 1;
+
+        // Create material (basic so it's unaffected by lighting)
+        const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            alphaTest: 0.1,
+            toneMapped: false,   // skip tone mapping
+            depthWrite: false    // reduce overdraw cost
+        });
+
+        // Create plane geometry - height scales with number of lines
+        const geometry = new THREE.PlaneGeometry(size * 6, size * (1.0 + 0.9 * (lines.length - 1)));
+
+        // Create mesh
+        const textMesh = new THREE.Mesh(geometry, material);
+        return textMesh;
     }
     
     createBoundaries() {
@@ -3237,6 +3584,13 @@ class TronPong {
                 this.toggleCRTEffect();
             }
             
+            // Material test cluster toggle on 'M' key
+            if (e.key.toLowerCase() === 'm') {
+                if (this.materialTestGroup) {
+                    this.materialTestGroup.visible = !this.materialTestGroup.visible;
+                }
+            }
+
             
             // Track controls
             if (e.key === '[' || e.key === '{') {
@@ -8487,27 +8841,12 @@ class TronPong {
         //     }
         // }
         
-        // Optimized rendering pipeline with performance mode support
         if (this.performanceMode) {
-            // Performance mode: simplified pipeline with bloom
-            if (this.crtEffect.enabled) {
-                // Render to CRT render target
-                this.renderer.setRenderTarget(this.renderTarget);
-                this.renderer.toneMappingExposure = 2.678;
-                this.renderer.clear();
-                this.renderer.render(this.scene, this.camera);
-                
-                // Apply CRT effect (which includes bloom)
-                this.crtMaterial.uniforms.tDiffuse.value = this.renderTarget.texture;
-                this.renderer.setRenderTarget(null);
-                this.renderer.render(this.crtScene, this.crtCamera);
-            } else {
-                // Direct render without CRT
+            // Performance mode: simple rendering
             this.renderer.setRenderTarget(null);
             this.renderer.toneMappingExposure = 2.678;
             this.renderer.clear();
             this.renderer.render(this.scene, this.camera);
-            }
         } else {
             // Quality mode: full post-processing pipeline
             // 1. Render scene to base render target
